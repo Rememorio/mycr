@@ -303,7 +303,15 @@ const statusMetrics = [
                     <div class="report-main">
                       <div class="report-heading">
                         <p class="report-date">{formatDate(report.generatedAt)}</p>
-                        <h2>{report.title}</h2>
+                        <h2>
+                          <a
+                            class="report-title-link"
+                            href={reportHref(report.htmlName)}
+                            aria-label={`Open full HTML report: ${report.title}`}
+                          >
+                            {report.title}
+                          </a>
+                        </h2>
                         <p class="repo-name">{report.repo}</p>
                       </div>
                       <p class="overview">{report.overview}</p>
