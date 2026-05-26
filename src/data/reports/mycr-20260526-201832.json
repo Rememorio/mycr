@@ -1,0 +1,120 @@
+{
+  "title": "MyCR Review Report 20260526-201832",
+  "repo": "trpc-group/trpc-agent-go",
+  "generated_at": "2026-05-26T20:18:32+08:00",
+  "overview": "本轮按用户指定只处理 GitHub PR #1800。该 PR 目标是给 workspace_exec / skill_run / LLMAgent 增加命令 allow/deny 策略，收敛模型在带网络沙箱里任意执行 shell 命令造成的 prompt-injection / SSRF 风险。门槛审计结果：作者 bytethm，base=main，非 draft/WIP，head=b4fdca7c728c70b05772d87dac4e24b8179689e6，CI/status rollup 全绿，codecov/patch 与 go-apidiff 均通过；历史 reviewDecision 仍显示 CHANGES_REQUESTED，但本轮发评论前 33 个 review thread 均 resolved 或 outdated，没有仍映射当前 diff 的未解决线程。xhigh review 和本地复核后确认 2 个当前 diff 直接引入/暴露的安全边界问题，已提交 2 条行级评论；因此未 LGTM、未 merge。",
+  "approved": [],
+  "commented": [
+    {
+      "number": 1800,
+      "title": "{tool/workspaceexec, tool/skill, agent/llmagent}: add command allow/deny policy for sandboxed exec",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1800",
+      "author": "bytethm",
+      "status": "commented",
+      "technical_background": "workspace_exec 是 agent 暴露给模型的共享工作区 shell 执行工具。没有策略时，它把模型给出的字符串交给 shell 执行，历史行为接近 `sh -lc <command>`：shell 会解析管道、变量、重定向、命令替换和启动文件。命令 allow/deny 策略的核心安全模型是先把用户命令解析成简单 argv/pipeline，再只允许或拒绝每个 pipeline segment 的可执行文件名。这个模型要成立，除了 parser 本身要保守，还必须保证真正拉起进程时不会被环境变量、PATH、shell 启动文件、后端 shell 拼接方式重新打开执行面。codeexecutor.RunProgramSpec 是 local/container/e2b 等 backend 的公共执行契约，`CleanEnv` 这种字段一旦成为 policy 边界，就需要每个相关 backend 都给出一致语义。",
+      "problem": "PR 试图解决 sandboxed workspace_exec 过于开放的问题：模型如果被用户 prompt injection 诱导，可以直接执行 `curl`、`wget`、`nc` 等命令访问内网或外部网络。目标能力是让业务方配置 allowed_commands / denied_commands，在命令进入 shell 前就阻止危险命令和明显的 shell 绕过形态，并在 LLMAgent 层提供统一 option。",
+      "problem_framing": "表层问题是“模型可能执行危险命令”，更深层根因是 workspace_exec 原本把自然语言模型输出当作可信 shell 程序处理，没有把“模型可控输入”和“后端进程启动环境”之间的安全边界形式化。PR 选择以命令名策略作为第一层边界，但命令名策略只检查 argv[0]，所以任何能在 argv[0] 之外重新解释 shell、改写 PATH、注入启动文件、或由 backend 拼接 shell 字符串的路径都会削弱该边界。",
+      "root_cause": "旧实现缺少结构化 shell 子集、命令名策略、不可覆盖的 wrapper deny set，以及策略开启时的 spawn hardening。PR 已补上大部分本地 runtime 路径，但当前 head 仍有两个根本性缺口：env key 没有按 shell-string backend 的需求做标识符校验；`CleanEnv` 被 workspace_exec 当作统一安全语义写入 RunProgramSpec，但 container/e2b backend 没有实现。",
+      "approach": "实现上新增 `internal/shellsafe`，用手写 lexer 接受 literal argv、引号、反斜杠转义，以及 `|` / `&&` / `||` / `;` 这类安全 sequencing operators；拒绝 `$VAR`、`${}`、`$()`、反引号、重定向、子 shell、函数、控制流、leading assignment、glob 等结构。`Policy` 提供 allow/deny 列表和不可覆盖的 implicit deny set，覆盖 sh/bash/zsh/busybox/eval/exec/xargs/env/sudo/time/nice/script/flock/trap/export/cd 等 wrapper 或 stateful builtin。`tool/workspaceexec` 新增 `WithAllowedCommands`、`WithDeniedCommands`、`TRPC_AGENT_WORKSPACE_EXEC_ALLOWED_COMMANDS`、`TRPC_AGENT_WORKSPACE_EXEC_DENIED_COMMANDS`，策略开启时改用 `sh -c`、scrub env、设置 `RunProgramSpec.CleanEnv=true`。LLMAgent 新增 `WithWorkspaceExecAllowedCommands` / `WithWorkspaceExecDeniedCommands` 并转发到 ExecTool。PR 还新增 `internal/envscrub`、local runtime CleanEnv 支持、RunEnvProvider 在 CleanEnv 下的 scrub、skill_run policy path 的 CleanEnv、单测和中英文文档。",
+      "alternative_designs": "一种更强方案是策略开启后完全不走 shell，而是把 parser 输出的 argv 直接交给 backend 执行；这样能避免大量 shell 语义和 env 拼接问题，但会丢失 pipeline / && / || / ; 的兼容性，需要自己实现组合执行。另一种方案是引入成熟 shell AST 并做 per-command argument validators，可以支持更多 shell 语法，但实现和审计成本更高。第三种方案是只依赖 sandbox network egress policy，把命令策略作为提示层防御；这更简单，但无法满足本 PR 想提供的代码级 SSRF 安全网。",
+      "tradeoffs": "当前方案保留了常见 shell 管道使用体验，迁移成本低，文档也明确了 deny-only 不等于安全边界；代价是实现必须覆盖 parser、policy、env、PATH、backend spawn 的组合面。只要某个 backend 仍通过 inherited shell 或未校验 env key 拼接命令，攻击者就可能绕过命令名检查。",
+      "design_assessment": "方向正确，但当前 head 还不能作为安全边界合入。local backend 的 parser、implicit deny、PATH scrub、CleanEnv 设计已经比早期版本稳很多；剩余问题集中在跨 backend 语义和 shell 字符串拼接。建议先修 env key 标识符校验，并让 container/e2b 实现 `CleanEnv`，或者在 policy mode 下显式拒绝不支持 CleanEnv 的 backend。修完后再考虑 follow-up 的 per-command argument validators。",
+      "modules": "internal/shellsafe；internal/envscrub；tool/workspaceexec；agent/llmagent；tool/skill；codeexecutor；codeexecutor/local；docs/mkdocs/en|zh/codeexecutor.md。间接受影响的 backend 包括 codeexecutor/container 与 codeexecutor/e2b，因为它们消费新增的 RunProgramSpec.CleanEnv 契约但当前没有实现。",
+      "api_surface": "新增公开 API/配置：`workspaceexec.WithAllowedCommands`、`workspaceexec.WithDeniedCommands`、`llmagent.WithWorkspaceExecAllowedCommands`、`llmagent.WithWorkspaceExecDeniedCommands`、环境变量 `TRPC_AGENT_WORKSPACE_EXEC_ALLOWED_COMMANDS` / `TRPC_AGENT_WORKSPACE_EXEC_DENIED_COMMANDS`。公开结构体 `codeexecutor.RunProgramSpec` 新增 exported field `CleanEnv`，这是用户可见 API surface 变化，且会影响外部不带字段名的 struct literal。`skill_run` policy path 语义也因 `CleanEnv: true` 发生变化。",
+      "change_inventory": "新增 shellsafe parser/policy 及大量 parser/policy 测试；新增 envscrub blocklist 和测试；workspace_exec 添加 policy options、env loading、schema description、policy check、spawn hardening、env scrub 和 policy tests；LLMAgent options 转发 workspace_exec policy；skill_run policy path 设置 CleanEnv；local runtime 根据 CleanEnv 从空环境启动并补默认 PATH；docs 新增“Restricting workspace_exec commands”中英文说明。",
+      "semantic_changes": "当 workspace_exec policy active 时，复杂 shell 结构会在执行前被拒绝；shell 从 `sh -lc` 变成 `sh -c`；per-call env 中 HOME/ENV/BASH_ENV/PATH/LD_* 等会被移除；RunEnvProvider 的危险 key 会被 scrub；local runtime 会从 CleanEnv 环境启动并补默认 PATH。无 policy 时保留历史 `sh -lc` 和原始 env。当前问题是 container/e2b 仍用 `/bin/bash -lc` 拼接执行命令，且没有 honor CleanEnv。",
+      "module_impact": "直接影响 workspace_exec 调用路径和 LLMAgent 工具构造；间接影响所有依赖 CodeExecutor backend 的部署。local backend 的行为变化已被测试覆盖；container/e2b 的行为没有跟上 `CleanEnv`，导致同一 LLMAgent option 在不同 backend 上安全语义不同。docs 已提醒 v1 scope，但代码层仍会让用户以为设置了 CleanEnv。",
+      "cross_module_impact": "`RunProgramSpec.CleanEnv` 是 codeexecutor 公共契约，workspaceexec、skill_run、RunEnvProvider、local/container/e2b runtime 都会被它耦合起来。envscrub 的 key 校验看似 internal，但 container/e2b 的 shell-string env construction 让它变成策略边界的一部分。",
+      "behavior_impact": "理想行为是模型只能运行被允许的简单命令，且无法通过 `$()`、PATH、BASH_ENV、shell wrapper 或 provider env 重新执行被拒命令。当前实际行为是在 local backend 基本接近这个目标；在 container/e2b backend，带 shell 元字符的 env key 可以注入额外命令，CleanEnv 也不会阻止 inherited env / login shell 行为。",
+      "tests_docs": "本地使用 `/Users/guoqizhou/sdk/go1.25.3/bin/go` 跑过目标测试：`go test ./internal/shellsafe ./internal/envscrub ./tool/workspaceexec ./codeexecutor/... ./agent/llmagent -run Test(Policy|Parse|ExecTool|Env|BuildProgramEnv|MergeProviderEnv|LLMAgentWorkspaceExecPolicy) -count=1`，全部通过。`git diff --check origin/main...HEAD` 通过。测试通过不覆盖本轮两个跨 backend 注入/契约问题。",
+      "attention_points": "作者需要重点处理两个必须修复项：一是 env key 必须按 portable identifier 校验或 container/e2b 不再通过 shell 字符串拼 env；二是 policy mode 不能在不支持 CleanEnv 的 backend 上继续声称完成 spawn hardening。`RunProgramSpec.CleanEnv` 作为 exported field 也建议在 PR 描述中明确 API 兼容影响。",
+      "outcome": "已提交 GitHub review 4363483446，包含 2 条行级评论；未 approve，未 merge。评论发布后最新 thread 审计显示当前 head 上有 2 个 unresolved current threads，均为本轮新增 WineChord 评论。",
+      "risk": "安全风险高。第一个问题是直接命令注入：策略允许的命令已通过检查，但 hostile env key 可在 container/e2b 组装 shell 命令时提前执行任意命令。第二个问题会让同一 policy 配置在不同 backend 上有不同安全边界，用户可能在 container/e2b 上误以为 PATH/HOME/LD_PRELOAD 等已隔离。",
+      "ci_state": "发评论前 `gh pr checks` 显示全部通过：build、lint、go test、examples、docs-build、go-apidiff、codecov/patch、CodeRabbit、CLA、CodeCC 等均 pass。head 为 b4fdca7c728c70b05772d87dac4e24b8179689e6；mergeable=MERGEABLE；mergeStateStatus=BLOCKED 主要来自 review state/request。",
+      "inline_comments": [
+        {
+          "path": "internal/envscrub/envscrub.go",
+          "line": 95,
+          "severity": "P1",
+          "focus": "env key shell injection in container/e2b",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1800#discussion_r3303564419",
+          "body": "Policy mode still accepts env keys with shell metacharacters, but the container and e2b runners concatenate `spec.Env` into `env KEY=value` inside a shell string. A key such as `X; curl http://x #` can run before the checked command, so please reject non-portable env names, for example `[A-Za-z_][A-Za-z0-9_]*`, or stop building env assignments through shell strings.\n\n<details><summary>中文</summary>\n策略模式仍然接受带 shell 元字符的 env key，但 container 和 e2b runner 会把 `spec.Env` 拼成 shell 字符串里的 `env KEY=value`。像 `X; curl http://x #` 这样的 key 可以在已经校验过的命令之前执行；请拒绝非可移植 env 名（例如只允许 `[A-Za-z_][A-Za-z0-9_]*`），或者不要用 shell 字符串拼 env 赋值。\n</details>"
+        },
+        {
+          "path": "tool/workspaceexec/workspace_exec.go",
+          "line": 637,
+          "severity": "P1",
+          "focus": "CleanEnv backend contract",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1800#discussion_r3303564425",
+          "body": "`CleanEnv` is part of the policy-mode boundary here, but container/e2b runners currently ignore it and still launch through inherited `/bin/bash -lc`. That makes the allow/deny policy backend-dependent; please implement `CleanEnv` for those runners or reject policy mode when the selected runner cannot provide a clean environment.\n\n<details><summary>中文</summary>\n这里的 `CleanEnv` 是策略模式安全边界的一部分，但 container/e2b runner 目前会忽略它，仍然通过继承环境的 `/bin/bash -lc` 启动。这会让 allow/deny 策略的安全语义依赖后端；请为这些 runner 实现 `CleanEnv`，或者在所选 runner 无法提供干净环境时拒绝启用策略模式。\n</details>"
+        }
+      ]
+    }
+  ],
+  "blocked": [],
+  "skipped_groups": [],
+  "follow_up": [
+    {
+      "number": 1800,
+      "title": "{tool/workspaceexec, tool/skill, agent/llmagent}: add command allow/deny policy for sandboxed exec",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1800",
+      "author": "bytethm",
+      "status": "blocked",
+      "skip_reason": "本轮已审并发出 2 条 P1 安全边界评论；等待作者修复后重新检查当前 threads 和 CI。",
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "env key shell metacharacter can inject commands in container/e2b shell construction",
+          "reviewer": "WineChord",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1800#discussion_r3303564419",
+          "path": "internal/envscrub/envscrub.go",
+          "line": 95,
+          "verification": "Current envscrub only rejects empty, =, NUL, \n and \r; container/e2b concatenate `k+\"=\"+shellQuote(v)` into `/bin/bash -lc` command lines."
+        },
+        {
+          "kind": "human_review",
+          "summary": "policy mode sets CleanEnv but container/e2b do not honor the field",
+          "reviewer": "WineChord",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1800#discussion_r3303564425",
+          "path": "tool/workspaceexec/workspace_exec.go",
+          "line": 637,
+          "verification": "workspace_exec sets `CleanEnv: policyActive`; local runtime implements it, while container/e2b still build `/bin/bash -lc` shell strings and do not branch on CleanEnv."
+        }
+      ]
+    }
+  ],
+  "timeline": [
+    {
+      "time": "20:01",
+      "text": "用户要求按 MyCR 流程 review PR #1800，重点关注恶意攻击下的边界问题。"
+    },
+    {
+      "time": "20:05",
+      "text": "确认当前 reviewer 为 WineChord；PR 作者 bytethm，base=main，非 draft/WIP，CI/status rollup 全绿。"
+    },
+    {
+      "time": "20:08",
+      "text": "拉取 PR head b4fdca7c 到独立 checkout `/Users/guoqizhou/projects/github/trpc-agent-go`，避免影响 inner 工作区未提交改动。"
+    },
+    {
+      "time": "20:10",
+      "text": "审计 GitHub review threads：发评论前 33 个 thread 均 resolved 或 outdated，aggregate CHANGES_REQUESTED 不是当前阻塞。"
+    },
+    {
+      "time": "20:11",
+      "text": "启动 xhigh 子任务做独立 PR review，同时本地复核 shellsafe、envscrub、workspaceexec、codeexecutor backend 和 docs。"
+    },
+    {
+      "time": "20:16",
+      "text": "使用 `/Users/guoqizhou/sdk/go1.25.3/bin/go` 跑目标测试，全部通过；`git diff --check` 通过。"
+    },
+    {
+      "time": "20:16",
+      "text": "提交 GitHub review 4363483446，新增 2 条安全边界 inline comments。"
+    },
+    {
+      "time": "20:17",
+      "text": "再次拉取最新 PR threads：当前 head 上 2 个 unresolved current threads，均为本轮新增评论；没有遗漏新的外部评论。"
+    }
+  ]
+}
