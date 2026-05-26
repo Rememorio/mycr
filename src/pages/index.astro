@@ -53,6 +53,16 @@ const formatNavDate = (value) => {
   return navDateFormatter.format(date);
 };
 const prLabel = (item) => (item?.number ? `#${item.number}` : "PR");
+const prStatusLabels = {
+  approved: "已批准",
+  blocked: "阻塞",
+  commented: "已评论",
+  merged: "已合并",
+  skipped: "未审核",
+};
+const prStatusClass = (item) => item?.status || "reviewed";
+const prStatusLabel = (item) =>
+  prStatusLabels[prStatusClass(item)] || prStatusClass(item);
 const reportShortTitle = (report) =>
   report.title.replace(/^MyCR Review Report\s*/u, "").trim() || report.reportId;
 const reportStatusLabel = (report) => {
@@ -321,8 +331,21 @@ const statusMetrics = [
                           <span class="muted">No reviewed PRs in this run.</span>
                         ) : (
                           report.headlineItems.map((item) => (
-                            <a href={item.url} target="_blank" rel="noreferrer">
-                              {prLabel(item)} · {item.title}
+                            <a
+                              class="quick-pr-chip"
+                              href={item.url}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <span class="quick-pr-title">
+                                {prLabel(item)} · {item.title}
+                              </span>
+                              <span class="quick-pr-meta">
+                                <span>{item.author || "unknown"}</span>
+                                <span class={`quick-pr-status ${prStatusClass(item)}`}>
+                                  {prStatusLabel(item)}
+                                </span>
+                              </span>
                             </a>
                           ))
                         )}

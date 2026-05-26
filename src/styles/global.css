@@ -431,6 +431,7 @@ h1 {
   max-width: 100%;
   min-height: 30px;
   align-items: center;
+  gap: 8px;
   border: 1px solid #dce3ec;
   border-radius: 999px;
   padding: 5px 10px;
@@ -443,6 +444,47 @@ h1 {
 .quick-prs a:hover {
   border-color: var(--teal);
   color: var(--teal);
+}
+
+.quick-pr-title {
+  min-width: 0;
+}
+
+.quick-pr-meta {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.quick-pr-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: #e9f7ef;
+  color: var(--green);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.quick-pr-status.commented {
+  background: #fff3e0;
+  color: var(--orange);
+}
+
+.quick-pr-status.approved {
+  background: #eef8f3;
+  color: var(--green);
+}
+
+.quick-pr-status.blocked,
+.quick-pr-status.skipped {
+  background: #fef2f2;
+  color: var(--red);
 }
 
 .run-details {
