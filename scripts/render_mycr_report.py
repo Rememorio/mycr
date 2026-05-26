@@ -263,6 +263,99 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
 .badge.commented {{ color: var(--warn); background: #fff4e5; }}
 .badge.skipped {{ color: var(--info); background: #eaf1ff; }}
 .badge.blocked {{ color: var(--bad); background: #fff0ee; }}
+.read-pill {{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}}
+.read-pill.critical {{
+  color: #9f1239;
+  background: #fff1f2;
+  border-color: #fecdd3;
+}}
+.read-pill.focus {{
+  color: #92400e;
+  background: #fffbeb;
+  border-color: #fde68a;
+}}
+.read-pill.skim {{
+  color: #166534;
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+}}
+.read-pill.follow {{
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}}
+.headline-row {{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}}
+.advice-reason {{
+  color: var(--muted);
+  font-size: 12px;
+  font-style: italic;
+}}
+.reading-guide {{
+  margin-top: 16px;
+}}
+.guide-head {{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}}
+.guide-head h2 {{ margin: 0; }}
+.guide-head span {{
+  color: var(--muted);
+  font-size: 13px;
+}}
+.guide-grid {{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}}
+.guide-card {{
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid #e5edf5;
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 12px;
+  background: linear-gradient(180deg, #fff, #fbfcfe);
+}}
+.guide-card.critical {{ border-left-color: #e11d48; }}
+.guide-card.focus {{ border-left-color: #d97706; }}
+.guide-card.skim {{ border-left-color: #16a34a; }}
+.guide-card.follow {{ border-left-color: #2563eb; }}
+.guide-card a {{
+  color: var(--ink);
+  font-weight: 900;
+  text-decoration: none;
+}}
+.guide-card a:hover {{ color: var(--accent); }}
+.guide-meta {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}}
+.guide-reason {{
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}}
 .card-body {{
   display: none;
   border-top: 1px solid #edf0f5;
@@ -366,6 +459,66 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
   display: grid;
   gap: 14px;
   align-self: start;
+}}
+.reading-callout {{
+  display: grid;
+  gap: 6px;
+  border: 1px solid #e5edf5;
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}}
+.reading-callout.critical {{
+  border-left-color: #e11d48;
+  background: linear-gradient(180deg, #fff7f8, #fff);
+}}
+.reading-callout.focus {{
+  border-left-color: #d97706;
+  background: linear-gradient(180deg, #fffbeb, #fff);
+}}
+.reading-callout.skim {{
+  border-left-color: #16a34a;
+  background: linear-gradient(180deg, #f0fdf4, #fff);
+}}
+.reading-callout.follow {{
+  border-left-color: #2563eb;
+  background: linear-gradient(180deg, #eff6ff, #fff);
+}}
+.reading-callout strong {{
+  font-size: 13px;
+}}
+.reading-callout span {{
+  color: var(--muted);
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.5;
+}}
+.story-text mark,
+.fact dd mark,
+.field-body mark,
+.overview-content mark,
+.comment mark,
+.skip-detail mark {{
+  border-radius: 5px;
+  padding: 0 4px;
+  font-weight: 850;
+}}
+.mark-good {{
+  color: #166534;
+  background: #dcfce7;
+}}
+.mark-warn {{
+  color: #92400e;
+  background: #fef3c7;
+}}
+.mark-bad {{
+  color: #9f1239;
+  background: #ffe4e6;
+}}
+.mark-info {{
+  color: #1d4ed8;
+  background: #dbeafe;
 }}
 .fact-list {{
   display: grid;
@@ -648,6 +801,15 @@ h1 {{
 .card[data-status="commented"] .card-head {{ border-left-color: var(--accent-2); }}
 .card[data-status="skipped"] .card-head {{ border-left-color: var(--info); }}
 .card[data-status="blocked"] .card-head {{ border-left-color: var(--bad); }}
+.card.priority-critical .card-head {{
+  background: linear-gradient(180deg, #fff7f8, #fff);
+}}
+.card.priority-focus .card-head {{
+  background: linear-gradient(180deg, #fffbeb, #fff);
+}}
+.card.priority-follow .card-head {{
+  background: linear-gradient(180deg, #eff6ff, #fff);
+}}
 .card-title {{
   font-size: 16px;
   line-height: 1.42;
@@ -760,6 +922,8 @@ h1 {{
 @media (max-width: 840px) {{
   .topbar, .card-head {{ grid-template-columns: 1fr; display: grid; }}
   .dashboard, .grid, .metrics {{ grid-template-columns: 1fr; }}
+  .guide-grid {{ grid-template-columns: 1fr; }}
+  .headline-row {{ align-items: flex-start; flex-direction: column; }}
   .pr-readout {{ grid-template-columns: 1fr; }}
   .review-rail {{ position: static; }}
   .story-line {{ grid-template-columns: 1fr; gap: 4px; }}
@@ -797,6 +961,13 @@ h1 {{
   <section class="panel" id="overviewPanel" style="display: none; margin-top: 16px;">
     <h2 data-i18n="overviewSection">整体摘要</h2>
     <div class="overview-content" id="overviewContent"></div>
+  </section>
+  <section class="panel reading-guide" id="readingGuidePanel" style="display: none;">
+    <div class="guide-head">
+      <h2 data-i18n="readingGuide">阅读建议</h2>
+      <span data-i18n="readingGuideHint">先看高风险和高影响 PR</span>
+    </div>
+    <div class="guide-grid" id="readingGuide"></div>
   </section>
   <section class="controls">
     <input class="search" id="search" type="search">
@@ -859,6 +1030,9 @@ const labels = {{
     impactAndEvidence: "影响与证据",
     reviewSummary: "审查结论",
     overviewSection: "整体摘要",
+    readingGuide: "阅读建议",
+    readingGuideHint: "先看高风险和高影响 PR",
+    readingAdvice: "阅读建议",
     modules: "涉及模块",
     apiSurface: "导出 API 变化",
     changeInventory: "具体变更清单",
@@ -931,6 +1105,9 @@ const labels = {{
     impactAndEvidence: "Impact and Evidence",
     reviewSummary: "Review Summary",
     overviewSection: "Overview",
+    readingGuide: "Reading Guide",
+    readingGuideHint: "Start with high-risk or high-impact PRs",
+    readingAdvice: "Reading Advice",
     modules: "Touched Modules",
     apiSurface: "Exported API Changes",
     changeInventory: "Concrete Change Inventory",
@@ -991,6 +1168,32 @@ function escapeHtml(value) {{
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}}
+
+function formatRich(value) {{
+  let html = escapeHtml(value);
+  const replacements = [
+    [
+      /(P[0-2]|codecov\\/patch=FAILURE|go-apidiff=FAILURE|go-apidiff|FAILURE|失败|阻塞|不能合入|不能 merge|未合并|破坏性|breaking|unbounded|无界|绕过|丢失|重复|不稳定|风险)/gi,
+      "mark-bad"
+    ],
+    [
+      /(LGTM|已合并|已批准|squash merge|merged|approved|CI 全绿|全绿|修复有效|\\bresolved\\b|\\bresolve\\b)/gi,
+      "mark-good"
+    ],
+    [
+      /(pending|soft[- ]?CI|软门禁|follow-up|后续|关注|CodeRabbit|reviewability ledger|not_reached)/gi,
+      "mark-info"
+    ],
+    [
+      /(导出 API|\\bAPI\\b|兼容性|\\bsession\\b|\\brunner\\b|\\bmemory\\b|GraphRAG|workspace_exec|OpenAPI|\\bpolicy\\b|security|安全)/gi,
+      "mark-warn"
+    ]
+  ];
+  for (const [pattern, className] of replacements) {{
+    html = html.replace(pattern, `<mark class="${{className}}">$1</mark>`);
+  }}
+  return html;
 }}
 
 function prs() {{
@@ -1112,7 +1315,7 @@ function renderOverview() {{
     return;
   }}
   panel.style.display = "block";
-  content.textContent = body;
+  content.innerHTML = formatRich(body);
 }}
 
 function renderChips() {{
@@ -1171,7 +1374,7 @@ function blockersSearchText(blockers) {{
 function field(label, value) {{
   const body = text(value);
   if (!body) return "";
-  return `<div class="field"><strong>${{label}}</strong><div class="field-body">${{escapeHtml(body)}}</div></div>`;
+  return `<div class="field"><strong>${{label}}</strong><div class="field-body">${{formatRich(body)}}</div></div>`;
 }}
 
 function renderBlockers(item) {{
@@ -1189,7 +1392,7 @@ function renderBlockers(item) {{
       data.latest_response ? `latest: ${{text(data.latest_response)}}` : "",
       data.verification ? text(data.verification) : ""
     ].filter(Boolean).join(" · ");
-    const summary = escapeHtml(data.summary || blocker);
+    const summary = formatRich(data.summary || blocker);
     const link = data.url
       ? ` <a href="${{escapeHtml(data.url)}}">link</a>`
       : "";
@@ -1202,13 +1405,162 @@ function blockerKindLabel(kind) {{
   return (labels[lang].blockerKinds || {{}})[kind] || text(kind);
 }}
 
+function allPrText(item) {{
+  const comments = (item.inline_comments || []).map(comment => [
+    comment.severity,
+    comment.focus,
+    comment.body,
+    comment.path
+  ].map(value => text(value)).join(" ")).join(" ");
+  const blockers = blockersSearchText(item.blockers);
+  return [
+    item.status,
+    item.number,
+    item.title,
+    item.author,
+    item.problem,
+    item.approach,
+    item.outcome,
+    item.risk,
+    item.ci_state,
+    item.skip_reason,
+    item.readiness_audit,
+    item.modules,
+    item.api_surface,
+    comments,
+    blockers
+  ].map(value => text(value)).join(" ").toLowerCase();
+}}
+
+function readingAdvice(item) {{
+  const status = item.status || "skipped";
+  const comments = item.inline_comments || [];
+  const blockers = item.blockers || [];
+  const body = allPrText(item);
+  const hasP1 = comments.some(comment =>
+    /\\bP[01]\\b/i.test(text(comment.severity)) ||
+    /\\bP[01]\\b/i.test(text(comment.body))
+  );
+  const hasCriticalRisk = hasP1 ||
+    /(security|安全|bypass|绕过|breaking|破坏性|unbounded|无界|丢失|重复|不稳定|兼容|api|go-apidiff|failure|失败|不能 merge|不能合入|race|并发)/i.test(body);
+  const highImpactFeature =
+    /(add|new|新增|support|支持|agent|runner|session|memory|graphrag|knowledge|openapi|workspace_exec|policy|extension|tool|graph|api)/i.test(body);
+
+  const copy = {{
+    critical: {{
+      icon: "🔥",
+      zh: "重点精读",
+      en: "Deep Read",
+      reasonZh: comments.length
+        ? `有 ${{comments.length}} 条行级评论，且包含 P1/兼容/正确性/安全类风险。`
+        : "包含高风险兼容性或正确性信号，需要重点复核。",
+      reasonEn: comments.length
+        ? `${{comments.length}} inline comment(s), including P1, compatibility, correctness, or security risk.`
+        : "High-risk compatibility or correctness signal; review carefully."
+    }},
+    focus: {{
+      icon: "🔎",
+      zh: "建议细看",
+      en: "Read Carefully",
+      reasonZh: comments.length
+        ? `有 ${{comments.length}} 条评论或重要设计取舍，建议看完整结论。`
+        : "涉及核心模块、导出 API 或较大功能，建议细看。",
+      reasonEn: comments.length
+        ? `${{comments.length}} comment(s) or important design tradeoffs; read the full conclusion.`
+        : "Core module, exported API, or larger feature; read carefully."
+    }},
+    skim: {{
+      icon: "✅",
+      zh: "快速略看",
+      en: "Quick Skim",
+      reasonZh: "风险低或改动较直接，扫结论和 CI 状态即可。",
+      reasonEn: "Low risk or straightforward change; skim outcome and CI state."
+    }},
+    follow: {{
+      icon: "⏳",
+      zh: "只看阻塞",
+      en: "Blocker Only",
+      reasonZh: blockers.length
+        ? `主要看 ${{blockers.length}} 个具体阻塞点，暂不需要读完整实现。`
+        : "当前不是可合并状态，先看阻塞和后续动作。",
+      reasonEn: blockers.length
+        ? `Focus on ${{blockers.length}} concrete blocker(s); no need to read the full implementation yet.`
+        : "Not merge-ready; focus on blockers and next action."
+    }}
+  }};
+
+  let level = "skim";
+  if (status === "blocked") {{
+    level = "follow";
+  }} else if (status === "commented") {{
+    level = hasCriticalRisk ? "critical" : "focus";
+  }} else if (status === "approved") {{
+    level = hasCriticalRisk || highImpactFeature ? "focus" : "skim";
+  }} else if (status === "merged") {{
+    level = highImpactFeature || hasCriticalRisk ? "focus" : "skim";
+  }} else if (status === "skipped") {{
+    level = blockers.length || /(conflict|ci|failure|失败|未回应|review)/i.test(body)
+      ? "follow"
+      : "skim";
+  }}
+
+  const selected = copy[level];
+  return {{
+    level,
+    icon: selected.icon,
+    label: lang === "zh" ? selected.zh : selected.en,
+    reason: lang === "zh" ? selected.reasonZh : selected.reasonEn
+  }};
+}}
+
+function priorityRank(level) {{
+  return {{ critical: 4, focus: 3, follow: 2, skim: 1 }}[level] || 0;
+}}
+
+function renderReadingGuide(items) {{
+  const panel = document.getElementById("readingGuidePanel");
+  const container = document.getElementById("readingGuide");
+  const candidates = [
+    ...items.filter(item => (item.status || "skipped") !== "skipped"),
+    ...(reportData.follow_up || []).map(item => ({{ ...item, status: item.status || "blocked" }}))
+  ].map(item => ({{ item, advice: readingAdvice(item) }}))
+    .filter(entry => entry.advice.level !== "skim")
+    .sort((left, right) => priorityRank(right.advice.level) - priorityRank(left.advice.level));
+
+  if (!candidates.length) {{
+    panel.style.display = "none";
+    container.innerHTML = "";
+    return;
+  }}
+
+  panel.style.display = "block";
+  container.innerHTML = candidates.slice(0, 9).map(entry => {{
+    const item = entry.item;
+    const advice = entry.advice;
+    const prText = item.number ? `#${{item.number}}` : "PR";
+    const prLink = item.url
+      ? `<a href="${{escapeHtml(item.url)}}">${{prText}} · ${{escapeHtml(text(item.title))}}</a>`
+      : `<span>${{prText}} · ${{escapeHtml(text(item.title))}}</span>`;
+    return `
+      <article class="guide-card ${{advice.level}}">
+        <div class="guide-meta">
+          <span class="read-pill ${{advice.level}}">${{advice.icon}} ${{escapeHtml(advice.label)}}</span>
+          <span class="badge ${{item.status || "skipped"}}">${{labels[lang][item.status] || item.status || labels[lang].skipped}}</span>
+        </div>
+        <div>${{prLink}}</div>
+        <div class="guide-reason">${{escapeHtml(advice.reason)}}</div>
+      </article>
+    `;
+  }}).join("");
+}}
+
 function storyLine(label, value) {{
   const body = text(value);
   if (!body) return "";
   return `
     <p class="story-line">
       <span class="story-label">${{escapeHtml(label)}}</span>
-      <span class="story-text">${{escapeHtml(body)}}</span>
+      <span class="story-text">${{formatRich(body)}}</span>
     </p>
   `;
 }}
@@ -1226,12 +1578,19 @@ function factItem(label, value) {{
   return `
     <div class="fact">
       <dt>${{escapeHtml(label)}}</dt>
-      <dd>${{escapeHtml(body)}}</dd>
+      <dd>${{formatRich(body)}}</dd>
     </div>
   `;
 }}
 
 function renderReviewRail(item) {{
+  const advice = readingAdvice(item);
+  const callout = `
+    <div class="reading-callout ${{advice.level}}">
+      <strong>${{advice.icon}} ${{escapeHtml(advice.label)}}</strong>
+      <span>${{escapeHtml(advice.reason)}}</span>
+    </div>
+  `;
   const facts = [
     factItem(labels[lang].outcome, item.outcome),
     factItem(labels[lang].risk, item.risk),
@@ -1242,8 +1601,8 @@ function renderReviewRail(item) {{
     factItem(labels[lang].apiSurface, item.api_surface),
     factItem(labels[lang].reason, item.skip_reason)
   ].filter(Boolean).join("");
-  if (!facts) return "";
-  return `<aside class="review-rail"><h4>${{labels[lang].reviewSummary}}</h4><dl class="fact-list">${{facts}}</dl></aside>`;
+  if (!facts) return `<aside class="review-rail">${{callout}}</aside>`;
+  return `<aside class="review-rail">${{callout}}<h4>${{labels[lang].reviewSummary}}</h4><dl class="fact-list">${{facts}}</dl></aside>`;
 }}
 
 function renderComments(item) {{
@@ -1252,7 +1611,7 @@ function renderComments(item) {{
   const rendered = comments.map(comment => `
     <div class="comment">
       <strong>${{escapeHtml(comment.path || "")}}${{comment.line ? ":" + escapeHtml(comment.line) : ""}}</strong>
-      <div>${{escapeHtml(text(comment.body || comment))}}</div>
+      <div>${{formatRich(text(comment.body || comment))}}</div>
       ${{comment.focus ? `<div><strong>${{labels[lang].focus}}:</strong> ${{escapeHtml(text(comment.focus))}}</div>` : ""}}
       ${{comment.severity ? `<div><strong>${{labels[lang].severity}}:</strong> ${{escapeHtml(text(comment.severity))}}</div>` : ""}}
     </div>
@@ -1303,16 +1662,23 @@ function renderCards() {{
   }}
   container.innerHTML = visible.map(item => {{
     const status = item.status || "skipped";
+    const advice = readingAdvice(item);
     const prText = item.number ? `#${{item.number}}` : "PR";
     const prLink = item.url
       ? `<a href="${{escapeHtml(item.url)}}">${{prText}}</a>`
       : prText;
     return `
-      <article class="card" data-status="${{status}}">
+      <article class="card priority-${{advice.level}}" data-status="${{status}}">
         <div class="card-head">
           <div>
-            <h3 class="card-title">${{prLink}} · ${{escapeHtml(text(item.title))}}</h3>
-            <div class="meta">${{labels[lang].author}}: ${{escapeHtml(item.author || "")}}</div>
+            <div class="headline-row">
+              <h3 class="card-title">${{prLink}} · ${{escapeHtml(text(item.title))}}</h3>
+              <span class="read-pill ${{advice.level}}">${{advice.icon}} ${{escapeHtml(advice.label)}}</span>
+            </div>
+            <div class="meta">
+              <span>${{labels[lang].author}}: ${{escapeHtml(item.author || "")}}</span>
+              <span class="advice-reason">${{escapeHtml(advice.reason)}}</span>
+            </div>
           </div>
           <span class="badge ${{status}}">${{labels[lang][status] || status}}</span>
         </div>
@@ -1374,11 +1740,11 @@ function renderSkipGroups() {{
                 <div class="skip-detail">${{labels[lang].author}}: ${{escapeHtml(item.author || "")}}</div>
               </div>
               <div>
-                <div><strong>${{labels[lang].blocker}}:</strong> ${{escapeHtml(text(item.skip_reason))}}</div>
-                ${{item.readiness_audit ? `<div class="skip-detail"><strong>${{labels[lang].readinessAudit}}:</strong> ${{escapeHtml(text(item.readiness_audit))}}</div>` : ""}}
+                <div><strong>${{labels[lang].blocker}}:</strong> ${{formatRich(text(item.skip_reason))}}</div>
+                ${{item.readiness_audit ? `<div class="skip-detail"><strong>${{labels[lang].readinessAudit}}:</strong> ${{formatRich(text(item.readiness_audit))}}</div>` : ""}}
                 ${{renderBlockers(item)}}
-                ${{item.ci_state ? `<div class="skip-detail">${{escapeHtml(text(item.ci_state))}}</div>` : ""}}
-                ${{item.risk ? `<div class="skip-detail">${{escapeHtml(text(item.risk))}}</div>` : ""}}
+                ${{item.ci_state ? `<div class="skip-detail">${{formatRich(text(item.ci_state))}}</div>` : ""}}
+                ${{item.risk ? `<div class="skip-detail">${{formatRich(text(item.risk))}}</div>` : ""}}
               </div>
             </div>
           `;
@@ -1451,6 +1817,7 @@ function render() {{
   renderBars(items);
   renderTimeline();
   renderOverview();
+  renderReadingGuide(items);
   renderChips();
   renderCards();
   renderSkipGroups();
