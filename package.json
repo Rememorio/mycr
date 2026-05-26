@@ -1,0 +1,17 @@
+{
+  "name": "winechord-mycr",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --host 127.0.0.1",
+    "build": "astro build",
+    "preview": "astro preview --host 127.0.0.1",
+    "check:reports": "node scripts/check-reports.mjs",
+    "verify": "npm run check:reports && npm run build"
+  },
+  "devDependencies": {
+    "@astrojs/sitemap": "^3.6.0",
+    "astro": "^5.7.13"
+  }
+}

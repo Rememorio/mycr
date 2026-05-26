@@ -1,0 +1,4 @@
+interface:
+  display_name: "MyCR"
+  short_description: "Review and merge ready trpc-agent-go PRs"
+  default_prompt: "执行 mycr"

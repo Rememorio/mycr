@@ -1,0 +1,372 @@
+---
+import "../styles/global.css";
+
+const reportModules = import.meta.glob("../data/reports/*.json", {
+  eager: true,
+});
+
+const basePath = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const dateFormatter = new Intl.DateTimeFormat("zh-CN", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: "Asia/Shanghai",
+});
+
+const asArray = (value) => (Array.isArray(value) ? value : []);
+const moduleData = (module) => module.default ?? module;
+const reportHref = (fileName) => `${basePath}reports/${fileName}`;
+const parseReportDate = (value) => {
+  if (!value) {
+    return new Date(Number.NaN);
+  }
+  const text = String(value).trim();
+  const shanghaiMatch = text.match(
+    /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})(?:\s+Asia\/Shanghai)?$/u,
+  );
+  if (shanghaiMatch) {
+    return new Date(`${shanghaiMatch[1]}T${shanghaiMatch[2]}+08:00`);
+  }
+  return new Date(text);
+};
+const formatDate = (value) => {
+  const date = parseReportDate(value);
+  if (Number.isNaN(date.getTime())) {
+    return value || "unknown";
+  }
+  return dateFormatter.format(date);
+};
+const prLabel = (item) => (item?.number ? `#${item.number}` : "PR");
+const reportStatusLabel = (report) => {
+  if (report.mergedCount > 0) {
+    return "Merged";
+  }
+  if (report.approvedCount > 0) {
+    return "Approved";
+  }
+  if (report.commentCount > 0) {
+    return "Commented";
+  }
+  return "Archived";
+};
+
+const reports = Object.entries(reportModules)
+  .map(([modulePath, module]) => {
+    const data = moduleData(module);
+    const jsonName = modulePath.split("/").pop();
+    const htmlName = jsonName.replace(/\.json$/u, ".html");
+    const approved = asArray(data.approved);
+    const commented = asArray(data.commented);
+    const blocked = asArray(data.blocked);
+    const followUp = asArray(data.follow_up);
+    const skippedGroups = asArray(data.skipped_groups);
+    const skippedItems = skippedGroups.flatMap((group) =>
+      asArray(group.items).map((item) => ({
+        ...item,
+        groupReason: group.reason || "",
+      })),
+    );
+    const mergedCount = approved.filter((item) => item.status === "merged")
+      .length;
+    const approvedOnlyCount = approved.length - mergedCount;
+    const statuses = [
+      mergedCount > 0 ? "merged" : "",
+      approvedOnlyCount > 0 ? "approved" : "",
+      commented.length > 0 ? "commented" : "",
+      skippedItems.length > 0 ? "skipped" : "",
+      followUp.length > 0 || blocked.length > 0 ? "followup" : "",
+    ].filter(Boolean);
+    const headlineItems = [...approved.slice(0, 3), ...commented.slice(0, 3)];
+    const haystack = [
+      data.title,
+      data.repo,
+      data.generated_at,
+      data.overview,
+      ...headlineItems.map((item) => `${item.number} ${item.title} ${item.author}`),
+      ...skippedItems
+        .slice(0, 10)
+        .map((item) => `${item.number} ${item.title} ${item.author} ${item.groupReason}`),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    return {
+      title: data.title || "MyCR Review Report",
+      repo: data.repo || "trpc-group/trpc-agent-go",
+      generatedAt: data.generated_at || "",
+      overview: data.overview || "",
+      timeline: asArray(data.timeline),
+      approved,
+      commented,
+      blocked,
+      followUp,
+      skippedGroups,
+      skippedItems,
+      mergedCount,
+      approvedOnlyCount,
+      approvedCount: approved.length,
+      commentCount: commented.length,
+      skippedCount: skippedItems.length,
+      followUpCount: followUp.length + blocked.length,
+      touchedCount: approved.length + commented.length + skippedItems.length,
+      generatedAtMs: parseReportDate(data.generated_at).getTime(),
+      statuses,
+      haystack,
+      jsonName,
+      htmlName,
+      headlineItems,
+    };
+  })
+  .sort(
+    (left, right) =>
+      (Number.isNaN(right.generatedAtMs) ? 0 : right.generatedAtMs) -
+      (Number.isNaN(left.generatedAtMs) ? 0 : left.generatedAtMs),
+  );
+
+const latest = reports[0];
+const totals = reports.reduce(
+  (acc, report) => {
+    acc.runs += 1;
+    acc.merged += report.mergedCount;
+    acc.approved += report.approvedOnlyCount;
+    acc.commented += report.commentCount;
+    acc.skipped += report.skippedCount;
+    acc.followUp += report.followUpCount;
+    acc.prs += report.touchedCount;
+    return acc;
+  },
+  {
+    runs: 0,
+    merged: 0,
+    approved: 0,
+    commented: 0,
+    skipped: 0,
+    followUp: 0,
+    prs: 0,
+  },
+);
+
+const statusMetrics = [
+  ["merged", "Merged", totals.merged],
+  ["approved", "Approved", totals.approved],
+  ["commented", "Commented", totals.commented],
+  ["skipped", "Skipped", totals.skipped],
+  ["followup", "Follow-up", totals.followUp],
+];
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="MyCR review report archive for trpc-agent-go pull requests."
+    />
+    <title>MyCR Reports</title>
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="hero" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">trpc-agent-go review archive</p>
+          <h1 id="page-title">MyCR Reports</h1>
+          <p class="hero-copy">
+            所有 MyCR 执行记录集中在这里：每次运行的结构化 JSON、完整 HTML 报告、审批与评论结果、跳过原因和后续关注项都可追溯。
+          </p>
+        </div>
+        <div class="hero-meta" aria-label="Archive summary">
+          <div>
+            <span>{totals.runs}</span>
+            <small>runs</small>
+          </div>
+          <div>
+            <span>{totals.prs}</span>
+            <small>PR entries</small>
+          </div>
+          <div>
+            <span>{latest ? formatDate(latest.generatedAt) : "none"}</span>
+            <small>latest run</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="metric-grid" aria-label="Status totals">
+        {
+          statusMetrics.map(([status, label, value]) => (
+            <div class={`metric metric-${status}`}>
+              <span>{value}</span>
+              <p>{label}</p>
+            </div>
+          ))
+        }
+      </section>
+
+      <section class="toolbar" aria-label="Report controls">
+        <label class="search-box">
+          <span>Search reports</span>
+          <input
+            id="report-search"
+            type="search"
+            placeholder="Search PR number, title, author, reason..."
+            autocomplete="off"
+          />
+        </label>
+        <div class="filter-group" aria-label="Status filters">
+          <button class="filter-button active" type="button" data-filter="all">
+            All
+          </button>
+          <button class="filter-button" type="button" data-filter="merged">
+            Merged
+          </button>
+          <button class="filter-button" type="button" data-filter="approved">
+            Approved
+          </button>
+          <button class="filter-button" type="button" data-filter="commented">
+            Commented
+          </button>
+          <button class="filter-button" type="button" data-filter="skipped">
+            Skipped
+          </button>
+          <button class="filter-button" type="button" data-filter="followup">
+            Follow-up
+          </button>
+        </div>
+      </section>
+
+      {
+        reports.length === 0 ? (
+          <section class="empty-state">
+            <h2>No reports archived yet</h2>
+            <p>Archive a run JSON with scripts/archive-report.mjs.</p>
+          </section>
+        ) : (
+          <section class="report-list" aria-label="Archived reports">
+            {reports.map((report) => (
+              <article
+                class="report-card"
+                data-report-card
+                data-statuses={report.statuses.join(" ")}
+                data-haystack={report.haystack}
+              >
+                <div class="report-main">
+                  <div class="report-heading">
+                    <p class="report-date">{formatDate(report.generatedAt)}</p>
+                    <h2>{report.title}</h2>
+                    <p class="repo-name">{report.repo}</p>
+                  </div>
+                  <p class="overview">{report.overview}</p>
+
+                  <div class="quick-prs" aria-label="Highlighted reviewed PRs">
+                    {report.headlineItems.length === 0 ? (
+                      <span class="muted">No reviewed PRs in this run.</span>
+                    ) : (
+                      report.headlineItems.map((item) => (
+                        <a href={item.url} target="_blank" rel="noreferrer">
+                          {prLabel(item)} · {item.title}
+                        </a>
+                      ))
+                    )}
+                  </div>
+
+                  <details class="run-details">
+                    <summary>Timeline and skip groups</summary>
+                    <div class="detail-grid">
+                      <div>
+                        <h3>Timeline</h3>
+                        <ol class="timeline">
+                          {report.timeline.map((item) => (
+                            <li>
+                              <span>{item.time}</span>
+                              <p>{item.label}</p>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                      <div>
+                        <h3>Skipped groups</h3>
+                        <ul class="skip-groups">
+                          {report.skippedGroups.map((group) => (
+                            <li>
+                              <strong>{group.reason}</strong>
+                              <span>{asArray(group.items).length} PRs</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </details>
+                </div>
+
+                <aside class="report-side" aria-label="Report result summary">
+                  <span class={`status-pill ${reportStatusLabel(report).toLowerCase()}`}>
+                    {reportStatusLabel(report)}
+                  </span>
+                  <dl class="result-grid">
+                    <div>
+                      <dt>Merged</dt>
+                      <dd>{report.mergedCount}</dd>
+                    </div>
+                    <div>
+                      <dt>Approved</dt>
+                      <dd>{report.approvedOnlyCount}</dd>
+                    </div>
+                    <div>
+                      <dt>Commented</dt>
+                      <dd>{report.commentCount}</dd>
+                    </div>
+                    <div>
+                      <dt>Skipped</dt>
+                      <dd>{report.skippedCount}</dd>
+                    </div>
+                    <div>
+                      <dt>Follow-up</dt>
+                      <dd>{report.followUpCount}</dd>
+                    </div>
+                  </dl>
+                  <div class="report-links">
+                    <a href={reportHref(report.htmlName)}>Open HTML</a>
+                    <a href={reportHref(report.jsonName)}>Raw JSON</a>
+                  </div>
+                </aside>
+              </article>
+            ))}
+          </section>
+        )
+      }
+    </main>
+
+    <script>
+      const cards = Array.from(document.querySelectorAll("[data-report-card]"));
+      const input = document.getElementById("report-search");
+      const buttons = Array.from(document.querySelectorAll("[data-filter]"));
+      let activeFilter = "all";
+
+      function updateCards() {
+        const query = input.value.trim().toLowerCase();
+        for (const card of cards) {
+          const statuses = card.dataset.statuses || "";
+          const haystack = card.dataset.haystack || "";
+          const statusMatches =
+            activeFilter === "all" || statuses.split(" ").includes(activeFilter);
+          const queryMatches = query === "" || haystack.includes(query);
+          card.hidden = !(statusMatches && queryMatches);
+        }
+      }
+
+      input.addEventListener("input", updateCards);
+      for (const button of buttons) {
+        button.addEventListener("click", () => {
+          activeFilter = button.dataset.filter;
+          for (const other of buttons) {
+            other.classList.toggle("active", other === button);
+          }
+          updateCards();
+        });
+      }
+    </script>
+  </body>
+</html>

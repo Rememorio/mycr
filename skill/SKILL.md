@@ -1,0 +1,422 @@
+---
+name: mycr
+description: Repo-managed MyCR workflow for reviewing and merging ready trpc-agent-go pull requests, archiving reports, and improving the MyCR skill itself. Use when the user says "执行 mycr", "run mycr", or asks Codex to batch-review open trpc-agent-go GitHub PRs, filter out WIP/draft/own/unready PRs, check CI and previously raised review threads, run one xhigh subagent review per candidate, post only Flash-LHR style inline comments for real issues, approve perfect PRs with "LGTM", merge mergeable approved PRs, write an xhigh-quality Chinese-first standalone engineering report, publish that report under the MyCR archive, and capture concrete self-improvement opportunities for the skill.
+---
+
+# MyCR
+
+## Overview
+
+Run the maintainer review loop for `trpc-group/trpc-agent-go` from the
+repo-managed MyCR workspace. The canonical workspace is
+`/Users/guoqizhou/projects/github/mycr`; it owns this skill, the report
+renderer, the report archive, the `/mycr` website, and the self-evolution
+records.
+
+Prefer repo-relative paths from the MyCR workspace. Resolve the target
+`trpc-agent-go` checkout in this order:
+
+1. `MYCR_TARGET_CHECKOUT`
+2. `../trpc-agent-go` relative to the MyCR workspace
+3. `/Users/guoqizhou/projects/github/trpc-agent-go` as the local fallback
+
+Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
+
+## Workflow
+
+1. Identify the target repo as `trpc-group/trpc-agent-go`, identify the MyCR
+   workspace as the current repo when it contains `skill/SKILL.md` and
+   `scripts/render_mycr_report.py`, otherwise as
+   `/Users/guoqizhou/projects/github/mycr`, and resolve the target checkout
+   using the order in the overview.
+2. Determine the authenticated reviewer login. Treat PRs authored by that login
+   as own PRs and skip them.
+3. List all open PRs and collect metadata for each PR:
+   title, author, labels, draft state, mergeability, requested reviewers, head
+   SHA, base branch, review threads, review submissions, commit statuses, and
+   pull-request workflow runs.
+   For every candidate that will appear in the reviewed-PR section, also build
+   a PR-content summary from the PR description, changed files, and diff. This
+   summary must describe what the PR itself changes, not what the reviewer did.
+   Capture the original problem or user/developer need, the new behavior or API
+   shape, the concrete packages/files/modules touched, the important added,
+   modified, or removed code paths, data/control flow changes, compatibility
+   impact, docs/examples/tests added, and any design tradeoffs visible from the
+   diff. Gather enough source detail to let the final report stand alone as an
+   engineering brief; do not rely on vague title-level summaries.
+4. Keep only PRs that satisfy every gate:
+   - state is open
+   - author is not the authenticated reviewer
+   - title and labels do not indicate WIP
+   - PR is not draft and is ready for review
+   - base branch is the repository default branch unless the user said otherwise
+   - all commit statuses and workflow runs for the current head SHA are green
+     before starting review, except the soft CI cases described below
+   - pending, queued, in-progress, cancelled, timed out, missing required
+     checks, or failures outside the soft CI cases mean do not review yet
+   - if the only non-green checks are `go-apidiff` and/or `codecov/patch`,
+     do not skip automatically. Inspect the PR diff, PR description, reviewer
+     discussion, and the concrete apidiff/codecov information. Treat the PR as
+     reviewable when the API break is explicitly acceptable for this change or
+     the codecov patch miss is not hiding a correctness risk. Record the
+     judgment in the report. If the apidiff/codecov failure exposes a real
+     compatibility, test-coverage, or quality blocker, skip or comment as
+     appropriate.
+   - `codecov/patch` is a review soft gate but still a merge hard gate. A PR
+     with a non-green `codecov/patch` may receive inline comments, and may be
+     approved with `LGTM` if review is clean, but it must not be merged until
+     `codecov/patch` is green or no longer present as a non-green check.
+   - human review comments are either resolved, or the PR author has replied
+     clearly that they fixed the issue or gave an explanation that we judge
+     acceptable after checking the current diff; a forgotten GitHub "Resolve"
+     click alone must not block review
+   - unresolved comments from bots are not hard blockers by themselves; inspect
+     whether they describe a concrete current correctness, compatibility, or
+     CI risk, and ignore weak, stale, stylistic, or unreasonable bot comments
+     after recording that judgment
+   - comments previously raised by us, `Flash-LHR`, or on our behalf must be
+     verified against the latest head; if fixed, proceed even if the thread was
+     not clicked resolved, and resolve our own/on-behalf threads when allowed
+5. For skipped PRs, record the concrete skip reason for the final report.
+6. Process candidates one at a time. Spawn exactly one subagent per candidate
+   with reasoning effort `xhigh`. Give it the PR number, repo, diff access
+   instructions, and ask for a code-review result only; do not let the subagent
+   post comments, approve, merge, or modify files.
+7. Ask the subagent to focus on design, compatibility, likely bugs, cross-module
+   impact, severity, and the smallest correct fix. Require findings to include
+   `path`, changed-side `line` or `position`, concise English body, Chinese
+   translation, and why the issue matters.
+8. Verify each returned finding against the current PR diff. Keep only concrete,
+   actionable issues that can be anchored to changed lines. Discard style,
+   preference, broad design commentary, or findings outside the diff unless the
+   changed line directly creates the risk.
+9. For valid findings, submit a GitHub review with only inline file comments.
+   Use the `flash-lhr-pr-comment` skill shape:
+   one or two direct English sentences, then a Chinese translation in
+   `<details><summary>中文</summary>...</details>`.
+   Do not post a top-level PR comment when inline comments are available.
+10. If the PR has no valid findings, approve it with a GitHub pull-request
+    review whose state is approve and whose body is exactly `LGTM`. This must
+    be the same visible effect as a human submitting an approving review from
+    the GitHub UI, not a standalone issue comment that says `LGTM`.
+11. After approval, merge the PR using the repository-supported merge method
+    only when it has no non-green `codecov/patch` check. For this repo, prefer
+    squash merge when repository metadata says only squash merge is allowed.
+    The merge must preserve GitHub's default squash commit title and body, the
+    same as clicking the UI "Squash and merge" button without editing the
+    generated message. Do not pass custom merge subjects or bodies. With
+    `gh pr merge`, use `--squash` and `--match-head-commit` as needed, but do
+    not use `--subject`, `--body`, or `--body-file`. With the GitHub connector
+    `_merge_pull_request`, pass `merge_method: "squash"` and
+    `expected_head_sha` as needed, but leave `commit_title` and
+    `commit_message` unset/null. If a tool path cannot omit custom title/body
+    fields, do not use that path. This keeps the PR number suffix generated by
+    GitHub, for example `(#1844)`. If `codecov/patch` is still non-green, leave
+    the approved PR unmerged and report it as approved but waiting for codecov.
+12. Before ending, fetch each processed PR's latest comments and review threads
+    again. If new actionable comments appeared and can be fixed or require a
+    different outcome, handle them before reporting; otherwise include them in
+    the report. If the PR head moved after comments or fixes, require CI to be
+    all green again before approving or merging, except for documented soft CI
+    failures that were explicitly re-evaluated after the head movement. A
+    re-evaluated `codecov/patch` soft failure can still allow review/approval,
+    but never merge while it remains non-green.
+13. Report all reviewed PRs, skipped PRs with reasons, comments posted,
+    approvals, merge results, and any blocked operations. Generate the
+    interactive HTML report described below before sending the final answer.
+    Follow the detailed reporting contract below. Treat report writing as an
+    xhigh-quality pass, not as a short run log: synthesize the PR content,
+    implementation design, review judgment, and follow-up priorities so the
+    user can understand the engineering state without opening GitHub or reading
+    a diff.
+
+## Reporting Contract
+
+In the final report:
+
+- Use Chinese as the primary reporting and analysis language. When writing
+  Chinese sections, summaries, skip reasons, follow-up judgments, timelines,
+  and plain-text final answers, make them as fully Chinese as practical.
+  Preserve original English only for source material that should stay exact,
+  such as PR titles, code identifiers, file paths, check names, branch names,
+  commit messages, quoted review bodies, and GitHub UI/status literals.
+- Create a structured JSON summary of the run and render it with
+  `scripts/render_mycr_report.py`. The HTML report must be default Chinese,
+  switchable to English, and include visual/interactive UI for status totals,
+  reviewed PRs, skipped PR groups, comment details, CI/thread state, search,
+  and status filtering.
+- The HTML report should feel like a polished engineering dashboard, inspired
+  by high-quality developer tools such as GitHub/Graphite review timelines,
+  Linear-style dense status lists, Vercel-style deployment/status cards, and
+  Raycast-style detail panes. Keep it self-contained, fast, responsive, and
+  readable: clear hierarchy, restrained color, strong scanability, sticky
+  search/filter controls, status dots, compact metrics, readable long-form PR
+  details, and obvious reviewed / commented / skipped / follow-up sections.
+  Avoid decorative clutter, marketing-page layout, or generic blog styling.
+- The report must be a self-contained engineering brief, not merely an action
+  log. A reader should be able to understand, from the report alone, what each
+  reviewed PR changes, why the change exists, which modules and code paths are
+  affected, how the implementation works, what behavior/API/docs/tests changed,
+  why the review outcome was chosen, and which items still deserve attention.
+  If this cannot be understood without opening the PR diff, the report is not
+  good enough.
+- Every reviewed PR entry must include beginner-friendly technical background
+  for all important modules and concepts touched by the PR, not just the PR's
+  immediate motivation. Explain the underlying technical principles from zero:
+  what the module is responsible for, how it fits into the agent runtime, what
+  data flows through it, which lifecycle/callback/tool/session/model concepts
+  matter, and why those concepts make the PR's change non-trivial. When a PR
+  touches multiple modules, explain each module's role and how they cooperate.
+  The goal is that a reader unfamiliar with this area of the codebase can first
+  learn the relevant domain model, then understand the PR.
+- Use xhigh-level care when writing the report. Before rendering, make one
+  dedicated pass over every reviewed PR entry and ask whether a maintainer who
+  has not read the code could still explain the PR's goal, implementation,
+  touched modules, behavior impact, test/docs coverage, and review risk. Expand
+  any entry that fails that check.
+- The overall report must include a rich top-level narrative: how many PRs were
+  considered, how they were partitioned, which PRs changed code versus docs or
+  examples, which areas of the repository were touched, what was merged, what
+  was blocked by real findings, what was blocked by readiness gates, and what
+  the maintainer should look at next. Avoid presenting only counters.
+- In the structured JSON summary, fields named `problem`, `approach`, or shown
+  as "解决的问题" / "实现方式" must describe the PR itself. Never fill these
+  fields with review-process narration such as "ran a subagent", "checked CI",
+  "reviewed the diff", "posted comments", or "resolved a thread". Put review
+  actions only in `outcome`, `ci_state`, `risk`, `inline_comments`, timeline,
+  or the final plain-text summary.
+- For each reviewed PR, include `technical_background` (shown as "技术背景").
+  This field is not a PR summary. It should teach the reader the module-level
+  and concept-level background needed to understand the PR: core abstractions,
+  responsibilities, request/response or control flow, state/session model,
+  callback/lifecycle model, storage/runtime model, security boundary,
+  serialization format, graph/query model, or any other domain knowledge the
+  PR depends on. Write it for an absolute beginner, but keep it directly tied
+  to the touched code so it stays useful to maintainers.
+- For "解决的问题", explain the concrete product, developer, API, runtime,
+  compatibility, correctness, performance, or documentation gap the PR is
+  trying to address. Include the old behavior or missing capability, why it
+  matters, and the intended user-visible or maintainer-visible result. If the
+  PR description does not state the problem directly, infer it from the diff
+  and say that it is inferred.
+- For every reviewed PR, add a problem-framing and root-cause analysis before
+  or near the implementation discussion. Explain what the PR appears to treat
+  as the underlying problem, what deeper root cause may be driving that problem,
+  and whether the same user/developer pain might be better understood from a
+  different angle. If there is a more fundamental architecture, API,
+  lifecycle, observability, compatibility, or product-model issue underneath
+  the immediate bug or feature request, say so plainly.
+- For "实现方式", describe the PR's design and implementation in enough detail
+  that the user can understand the change without opening the PR diff. Mention
+  the main packages/files touched, new public APIs or options, changed defaults,
+  important algorithms or control flow, persistence/session/streaming behavior,
+  error handling, compatibility behavior, docs/examples, and test coverage when
+  relevant. The goal is for the report reader to judge whether the PR's design
+  and implementation direction look reasonable before reading code.
+- For every reviewed PR, analyze the solution space, not only the submitted
+  implementation. Describe the design approach the PR chose, other plausible
+  approaches the author could have taken, and the tradeoffs among them. Discuss
+  dimensions such as API simplicity, backward compatibility, correctness,
+  safety, maintainability, extensibility, observability, runtime cost, test
+  scope, migration cost, and how much complexity is pushed onto users.
+- For every reviewed PR, include a design assessment. State whether the PR's
+  chosen design is a good fit for the root problem, whether it reaches a
+  reasonable local optimum across the relevant tradeoffs, and whether there may
+  be a better architecture or simpler solution. If a better approach exists,
+  explain it concretely enough for the maintainer to judge whether to ask the
+  author for redesign, a follow-up PR, or no change.
+- For each reviewed PR, include a concrete change inventory in the report body.
+  Cover newly added symbols/options/files, modified behavior, removed or renamed
+  behavior, updated docs/examples, and tests that prove the change. When the PR
+  touches multiple modules, group the explanation by module or execution path
+  instead of collapsing everything into one generic sentence.
+- For each reviewed PR, explicitly describe the exported API surface change.
+  List newly added, modified, renamed, or removed exported variables,
+  constants, functions, methods, interfaces, structs, struct fields, types,
+  options, constructors, tool names, config keys, environment variables, command
+  names, JSON fields, document sections, and examples when they are part of the
+  user-facing or maintainer-facing contract. If no exported/user-visible API
+  changed, say that explicitly and explain why the change is internal.
+- For each reviewed PR, explicitly describe semantic changes and module impact.
+  Explain behavior changes, default changes, compatibility or migration impact,
+  error-handling changes, lifecycle/session/streaming/persistence changes,
+  concurrency or ordering changes, and performance or resource-use implications.
+  Also explain which modules are directly affected and which other modules may
+  be indirectly affected through shared interfaces, callbacks, tools, runtime
+  contracts, docs/examples, or tests.
+- Explain behavior from first principles. Prefer before/after descriptions,
+  request/response or call-flow narratives, and small concrete examples when
+  they make the change easier to understand. Define local concepts briefly when
+  they are not obvious from the PR title.
+- Make attention points explicit. Separate "must fix before merge" findings
+  from "watch this later" residual risks, soft-CI judgments, compatibility
+  notes, migration concerns, and reviewer assumptions. Do not hide these only
+  inside inline comment text.
+- Avoid low-information phrases such as "updates logic", "improves handling",
+  "adds support", "refactors code", or "reviewed implementation" unless they
+  are immediately followed by the concrete modules, code paths, data structures,
+  or behaviors involved.
+- Separate PR-content summary from review judgment. Design concerns found by
+  the reviewer belong in `risk` or `inline_comments`; the `problem` and
+  `approach` fields should remain a faithful explanation of the author's PR.
+- In the HTML report, PRs that were not reviewed must be shown in a grouped
+  section by exclusion reason, not only as a flat list. Each group should show
+  the group reason, count, PR links, authors, concrete blockers, CI state, and
+  any follow-up judgment.
+- Store generated run reports under the MyCR repository so every run is
+  traceable through Git and visible on the public archive. Write the canonical
+  structured JSON summary to `src/data/reports/mycr-YYYYmmdd-HHMMSS.json`, and
+  write public copies to `public/reports/mycr-YYYYmmdd-HHMMSS.json` and
+  `public/reports/mycr-YYYYmmdd-HHMMSS.html`. Prefer
+  `node scripts/archive-report.mjs <summary.json>` to copy the JSON and render
+  the HTML through `scripts/render_mycr_report.py`.
+- Treat meaningful report artifacts as website history. After a completed MyCR
+  run, run `npm run verify` from the MyCR workspace and commit/push the new
+  report files to `main` unless the user explicitly asks to keep the run local
+  or the run failed before producing a useful report. Do not write new reports
+  into the target checkout's `.vscode/mycr-reports` directory.
+- Include the absolute HTML report path under the MyCR repo as a clickable
+  Markdown link in the final answer. After the report archive is pushed, also
+  include the public URL under `https://www.wineandchord.com/mycr/reports/`.
+  The plain Markdown answer should summarize the result, while the HTML file is
+  the rich auditable report.
+- Every PR reference must be a clickable Markdown link whose visible text is the
+  PR number, for example `[#123](https://github.com/owner/repo/pull/123)`.
+  Do not leave bare `#123` text anywhere in the report.
+- Present the final report in this order:
+  1. PRs approved with `LGTM` first, including merge result when merged, or the
+     explicit `codecov/patch` blocker when approved but intentionally not
+     merged.
+  2. PRs that received inline comments second.
+  3. PRs that were not reviewed, grouped by the reason they were excluded.
+- For every reviewed candidate PR, include:
+  - author
+  - title
+  - beginner-friendly technical background for every important module and
+    concept touched by the PR, including how those modules work and cooperate
+  - what problem the PR tries to solve
+  - the problem framing: what root cause the PR is addressing and whether the
+    problem should be viewed from another angle
+  - the implementation approach used by the PR
+  - plausible alternative designs or implementation strategies
+  - the key tradeoffs between the PR's design and those alternatives
+  - a design assessment: whether the PR's chosen approach is close to optimal,
+    merely acceptable, over-engineered, under-designed, or likely needs a
+    different architecture
+  - the main modules, packages, files, or code paths changed by the PR
+  - exported API surface changes: exported vars, consts, funcs, methods,
+    interfaces, structs, fields, types, options, constructors, tool names,
+    config keys, env vars, JSON fields, docs/examples, or explicit "none"
+  - the specific APIs, options, data structures, behavior, docs, examples, or
+    tests added, modified, or removed by the PR
+  - semantic changes: defaults, runtime behavior, compatibility, migration,
+    errors, lifecycle/session/streaming/persistence, concurrency, ordering,
+    performance, or resource use
+  - module impact and cross-module impact: direct package changes and indirect
+    effects on callers, adapters, tools, examples, docs, tests, and shared
+    contracts
+  - the expected before/after behavior from the user's or maintainer's point of
+    view
+  - review outcome: commented, approved, merged, skipped after recheck, or
+    blocked
+  - possible remaining issues or compatibility risks
+  - if approved, why it is acceptable to approve and whether any residual risk
+    remains
+  - if approved while `codecov/patch` is non-green, state that it was not merged
+    because codecov is still a merge blocker
+  - if comments were posted, the exact inline comment bodies, the review focus,
+    severity, and whether the user should pay extra attention
+  - latest CI and review-thread state when it affects the outcome
+- For PRs that were not reviewed, group them by skip reason and still use
+  clickable PR links. For each PR, include the author, title, concrete blocker,
+  and whether the blocker is CI, draft/WIP/own PR state, unresolved human review,
+  a still-valid bot finding, or another readiness issue.
+- After the not-reviewed section, call out which not-reviewed PRs may need
+  follow-up attention and why, such as flaky/failing CI, unresolved review
+  threads from important reviewers, long-stale high-impact changes, or blocked
+  PRs that look close to ready.
+- Keep the report readable, but prefer useful detail over brevity. The report is
+  allowed to be long when the PRs are substantial. The quality bar is that the
+  user can understand the relevant code-related information, implementation
+  direction, and review outcome without opening GitHub or reading the PR code
+  first.
+
+## Self-Evolution Loop
+
+- Treat the MyCR repo as the skill's long-term memory and implementation home.
+  The installed `~/.codex/skills/mycr` copy should stay a bootstrap that points
+  back to this repo.
+- At the end of each real MyCR run, capture concrete friction, repeated manual
+  work, missed edge cases, brittle path assumptions, weak report fields,
+  confusing UI, or unclear review gates in `data/evolution/backlog.md`.
+- When the user asks for MyCR maintenance, or when a low-risk improvement is
+  clearly local to this repo, update the relevant canonical files here:
+  `skill/SKILL.md`, `scripts/`, `src/`, `data/specs/`, or `data/evolution/`.
+  Then run `npm run verify`, commit, and push to `main`.
+- Prefer environment overrides and repo-relative paths. Document the rare
+  absolute fallback in `README.md`, `AGENTS.md`, or this skill instead of
+  scattering hardcoded paths through scripts.
+- Keep self-evolution changes separate from target PR review judgments. Do not
+  let a MyCR skill improvement modify `trpc-agent-go` unless the user asked for
+  that target-repo change.
+- For durable design decisions, add a dated note under `data/evolution/` so
+  future runs can explain why the skill or report workflow changed.
+
+## Practical Notes
+
+- If `gh` has no valid GitHub auth, use the GitHub connector instead of blocking
+  unless a required action is unavailable there.
+- For CI, check both combined commit statuses and GitHub Actions workflow runs.
+  Treat pending, queued, in-progress, cancelled, timed out, skipped unexpectedly,
+  or missing required checks as not ready.
+- Soft CI exception: when the only non-green checks are `go-apidiff` and/or
+  `codecov/patch`, inspect the concrete failure instead of skipping by rule.
+  For `go-apidiff`, fetch the check details/logs or reproduce the relevant
+  apidiff locally when practical, then decide whether the break is intentional,
+  documented, and acceptable for the PR. For `codecov/patch`, inspect the diff
+  and tests to decide whether the uncovered patch area creates a meaningful
+  regression risk. Review can proceed when the only remaining concern is an
+  acceptable API break or an acceptable patch-coverage miss. Approval can
+  proceed when the review is clean, but merge must not proceed while
+  `codecov/patch` remains non-green. Record the soft-CI judgment and any
+  approval-without-merge decision in the report.
+- Human review comments can be considered addressed when the author clearly
+  replied `fixed`, `done`, or gave a concrete acceptable explanation, even if
+  the GitHub thread is still unresolved. Verify the latest diff before relying
+  on the reply.
+- Bot review comments, including CodeRabbit-style comments, are advisory. Do
+  not let weak, stale, stylistic, or unreasonable bot comments block review.
+  Let them block only when our own inspection confirms a current, concrete bug,
+  compatibility risk, or CI/test issue.
+- "WIP" includes labels or title markers such as `WIP`, `[WIP]`, and draft PRs.
+- "Ready for review" means not draft, not WIP, CI green or only acceptable
+  soft CI failures, and not blocked by a still-actionable human or verified bot
+  review issue.
+- Never merge a PR that received new inline findings during this run.
+- Never merge a PR while `codecov/patch` is non-green, even if it has no review
+  findings and has been approved with `LGTM`.
+- Never override GitHub's default squash merge commit message. In particular,
+  never set the squash commit subject to the raw PR title, because that drops
+  the UI-generated PR number suffix such as `(#1844)`.
+- Keep the final answer concise but include enough detail for the user to audit
+  what happened.
+
+## Subagent Prompt
+
+Use a prompt shaped like this for each candidate:
+
+```text
+Review trpc-group/trpc-agent-go PR #<number> at xhigh depth.
+
+Focus only on changed behavior in this PR and directly related code. Prioritize
+design soundness, API and semantic compatibility, potential bugs, data races,
+streaming/session semantics, cross-module impact, and test gaps that expose real
+regression risk.
+
+Do not post comments, approve, merge, or edit files. Return only:
+- "no findings" if the PR is clean
+- or a list of findings with path, changed-side line or diff position, exact
+  problem, impact, and minimal fix
+
+Only report issues that would justify an inline review comment.
+```

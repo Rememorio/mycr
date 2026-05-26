@@ -1,0 +1,1110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyCR Review Report 20260525-203906</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f7f8fb;
+  --panel: #ffffff;
+  --ink: #19202a;
+  --muted: #667085;
+  --line: #d8dee8;
+  --accent: #116466;
+  --accent-2: #d17a22;
+  --ok: #188038;
+  --warn: #b45309;
+  --bad: #b42318;
+  --info: #1d4ed8;
+  --shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background:
+    linear-gradient(180deg, rgba(17, 100, 102, 0.08), transparent 340px),
+    var(--bg);
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  line-height: 1.5;
+}
+a { color: var(--accent); text-decoration-thickness: 1px; }
+.shell { max-width: 1180px; margin: 0 auto; padding: 28px 18px 56px; }
+.topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+h1 { margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }
+.subtitle { color: var(--muted); max-width: 760px; margin: 0; }
+.toggle {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 999px;
+  padding: 3px;
+  box-shadow: var(--shadow);
+  flex: none;
+}
+.toggle button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 8px 13px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.toggle button.active { background: var(--accent); color: white; }
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+.metric {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.metric .value { font-size: 32px; line-height: 1; font-weight: 800; }
+.metric .label { color: var(--muted); margin-top: 7px; font-size: 13px; }
+.dashboard {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 16px;
+  align-items: stretch;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+.panel h2 { margin: 0 0 12px; font-size: 18px; }
+.bars { display: grid; gap: 12px; }
+.bar-row {
+  display: grid;
+  grid-template-columns: 122px 1fr 36px;
+  gap: 10px;
+  align-items: center;
+}
+.bar-label { color: var(--muted); font-size: 13px; }
+.bar-track {
+  height: 12px;
+  background: #eef2f7;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.bar-fill { height: 100%; border-radius: 999px; background: var(--accent); }
+.bar-fill.approved, .bar-fill.merged { background: var(--ok); }
+.bar-fill.commented { background: var(--accent-2); }
+.bar-fill.skipped { background: var(--info); }
+.bar-fill.blocked { background: var(--bad); }
+.timeline { display: grid; gap: 10px; }
+.timeline-item {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #edf0f5;
+}
+.timeline-item:last-child { border-bottom: 0; }
+.time { color: var(--muted); font-size: 13px; }
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 18px 0 12px;
+}
+.search {
+  flex: 1 1 280px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  background: white;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 8px 11px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.chip.active { background: var(--ink); color: white; border-color: var(--ink); }
+.cards { display: grid; gap: 12px; }
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 22px 0 12px;
+}
+.section-heading h2 { margin: 0; font-size: 20px; }
+.section-heading .hint { color: var(--muted); font-size: 13px; }
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.card[data-status="approved"],
+.card[data-status="merged"] { border-left-color: var(--ok); }
+.card[data-status="commented"] { border-left-color: var(--accent-2); }
+.card[data-status="skipped"] { border-left-color: var(--info); }
+.card[data-status="blocked"] { border-left-color: var(--bad); }
+.card-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  padding: 16px;
+  cursor: pointer;
+}
+.card-title { margin: 0; font-size: 17px; }
+.meta { color: var(--muted); font-size: 13px; margin-top: 5px; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  background: #eef2f7;
+}
+.badge.approved, .badge.merged { color: var(--ok); background: #e7f5ec; }
+.badge.commented { color: var(--warn); background: #fff4e5; }
+.badge.skipped { color: var(--info); background: #eaf1ff; }
+.badge.blocked { color: var(--bad); background: #fff0ee; }
+.card-body {
+  display: none;
+  border-top: 1px solid #edf0f5;
+  padding: 0 16px 16px;
+}
+.card.open .card-body { display: block; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.field {
+  border: 1px solid #edf0f5;
+  background: #fbfcfe;
+  border-radius: 8px;
+  padding: 12px;
+}
+.field strong {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+.field-body {
+  white-space: pre-wrap;
+}
+.overview-content {
+  white-space: pre-wrap;
+  color: var(--ink);
+}
+.comment {
+  border-left: 3px solid var(--accent-2);
+  padding: 10px 12px;
+  background: #fffaf2;
+  border-radius: 6px;
+  margin-top: 10px;
+  white-space: pre-wrap;
+}
+.skip-groups { display: grid; gap: 14px; margin-top: 12px; }
+.skip-group {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.skip-group-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  padding: 15px 16px;
+  cursor: pointer;
+  background: #fbfcfe;
+}
+.skip-group-title { margin: 0; font-size: 16px; }
+.skip-group-count {
+  color: var(--info);
+  background: #eaf1ff;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-weight: 800;
+  font-size: 12px;
+}
+.skip-group-body { display: none; border-top: 1px solid #edf0f5; }
+.skip-group.open .skip-group-body { display: block; }
+.skip-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 0.7fr);
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid #edf0f5;
+}
+.skip-row:last-child { border-bottom: 0; }
+.skip-title { font-weight: 750; }
+.skip-detail { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.empty {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 22px;
+  color: var(--muted);
+  text-align: center;
+  background: rgba(255, 255, 255, 0.68);
+}
+.footer {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 22px;
+}
+:root {
+  --bg: #f4f6f8;
+  --panel: #ffffff;
+  --ink: #111827;
+  --muted: #657386;
+  --line: #dce3ec;
+  --accent: #0f766e;
+  --accent-2: #b45309;
+  --ok: #167a3a;
+  --warn: #a16207;
+  --bad: #b42318;
+  --info: #2563eb;
+  --soft: #f8fafc;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 18px 48px rgba(15, 23, 42, 0.10);
+}
+body {
+  background:
+    linear-gradient(180deg, rgba(15, 118, 110, 0.10), rgba(244, 246, 248, 0) 300px),
+    var(--bg);
+  font-size: 14px;
+}
+a:hover { color: #0a5d57; }
+.shell { max-width: 1280px; padding: 24px 20px 64px; }
+.topbar {
+  align-items: center;
+  background:
+    linear-gradient(135deg, rgba(15, 118, 110, 0.06), rgba(37, 99, 235, 0.04)),
+    var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 22px 24px;
+  box-shadow: var(--shadow-lg);
+}
+h1 {
+  font-size: clamp(30px, 4vw, 48px);
+  letter-spacing: 0;
+}
+.subtitle { max-width: 860px; font-size: 14px; }
+.toggle { box-shadow: none; }
+.toggle button { padding: 7px 12px; }
+.metrics {
+  grid-template-columns: repeat(5, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+.metric {
+  position: relative;
+  overflow: hidden;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+.metric::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--accent);
+}
+.metric .value { font-size: 30px; }
+.metric .label {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.dashboard {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+}
+.panel {
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+.panel h2 {
+  font-size: 15px;
+  letter-spacing: 0;
+}
+.bar-row {
+  grid-template-columns: 112px 1fr 32px;
+  padding: 4px 0;
+}
+.bar-label { font-weight: 700; }
+.bar-track { height: 9px; background: #edf2f7; }
+.timeline-item {
+  grid-template-columns: 74px 1fr;
+  padding: 9px 0;
+}
+.time {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+.overview-content {
+  background: var(--soft);
+  border: 1px solid #e7edf4;
+  border-radius: 8px;
+  padding: 14px;
+}
+.controls {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(244, 246, 248, 0.88);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(220, 227, 236, 0.86);
+  border-radius: 8px;
+  padding: 10px;
+  margin: 18px 0 14px;
+  box-shadow: var(--shadow);
+}
+.search {
+  min-height: 40px;
+  border-color: #cfd8e3;
+  box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.02);
+}
+.search:focus {
+  outline: 2px solid rgba(15, 118, 110, 0.22);
+  border-color: var(--accent);
+}
+.chips { align-items: center; }
+.chip, .utility-button {
+  min-height: 34px;
+  border: 1px solid #cfd8e3;
+  background: #fff;
+  border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 750;
+  padding: 7px 11px;
+}
+.chip:hover, .utility-button:hover { border-color: #9aa8bb; }
+.chip.active {
+  background: #15202b;
+  border-color: #15202b;
+  color: #fff;
+}
+.utilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+.utility-button {
+  color: var(--muted);
+  font-size: 12px;
+}
+.section-heading {
+  margin: 24px 0 12px;
+  padding-top: 2px;
+}
+.section-heading h2 { font-size: 18px; }
+.cards { gap: 14px; }
+.card {
+  border-left: 0;
+  box-shadow: var(--shadow);
+  transition: box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease;
+}
+.card:hover {
+  border-color: #c8d2df;
+  box-shadow: var(--shadow-lg);
+}
+.card-head {
+  align-items: center;
+  background: linear-gradient(180deg, #fff, #fbfcfe);
+  border-left: 4px solid var(--accent);
+}
+.card[data-status="approved"] .card-head,
+.card[data-status="merged"] .card-head { border-left-color: var(--ok); }
+.card[data-status="commented"] .card-head { border-left-color: var(--accent-2); }
+.card[data-status="skipped"] .card-head { border-left-color: var(--info); }
+.card[data-status="blocked"] .card-head { border-left-color: var(--bad); }
+.card-title {
+  font-size: 16px;
+  line-height: 1.42;
+}
+.meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 7px;
+}
+.badge {
+  gap: 7px;
+  min-width: 0;
+  padding: 6px 11px;
+  text-transform: none;
+  white-space: nowrap;
+}
+.badge::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.card-body {
+  background: #fff;
+  padding: 0 18px 18px;
+}
+.grid {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.field {
+  background: #fbfcfe;
+  border-color: #e6ecf3;
+  padding: 13px 14px;
+}
+.field strong {
+  color: #536175;
+  font-size: 11px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+.field-body {
+  color: #1f2937;
+  line-height: 1.62;
+}
+.comment {
+  background: #fff8ed;
+  border-left-color: var(--accent-2);
+  color: #1f2937;
+}
+.skip-group {
+  box-shadow: var(--shadow);
+}
+.skip-group-head {
+  align-items: center;
+  background: linear-gradient(180deg, #fff, #fbfcfe);
+}
+.skip-row {
+  grid-template-columns: minmax(0, 1.15fr) minmax(220px, 0.85fr);
+}
+.empty {
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+@media (max-width: 840px) {
+  .topbar, .card-head { grid-template-columns: 1fr; display: grid; }
+  .dashboard, .grid, .metrics { grid-template-columns: 1fr; }
+  .timeline-item { grid-template-columns: 1fr; }
+  .controls { position: static; }
+  .utilities { width: 100%; margin-left: 0; }
+  .utility-button { flex: 1 1 auto; }
+  .skip-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <div>
+      <h1 data-i18n="title">MyCR 审核报告</h1>
+      <p class="subtitle" id="subtitle"></p>
+    </div>
+    <div class="toggle" aria-label="Language">
+      <button type="button" data-lang-button="zh" class="active">中文</button>
+      <button type="button" data-lang-button="en">EN</button>
+    </div>
+  </div>
+  <section class="metrics" id="metrics"></section>
+  <section class="dashboard">
+    <div class="panel">
+      <h2 data-i18n="statusDistribution">状态分布</h2>
+      <div class="bars" id="bars"></div>
+    </div>
+    <div class="panel">
+      <h2 data-i18n="timeline">执行时间线</h2>
+      <div class="timeline" id="timeline"></div>
+    </div>
+  </section>
+  <section class="panel" id="overviewPanel" style="display: none; margin-top: 16px;">
+    <h2 data-i18n="overviewSection">整体摘要</h2>
+    <div class="overview-content" id="overviewContent"></div>
+  </section>
+  <section class="controls">
+    <input class="search" id="search" type="search">
+    <div class="chips" id="chips"></div>
+    <div class="utilities">
+      <button type="button" class="utility-button" id="openAll"></button>
+      <button type="button" class="utility-button" id="closeAll"></button>
+    </div>
+  </section>
+  <section class="section-heading">
+    <h2 data-i18n="reviewedSection">已处理 PR</h2>
+    <div class="hint" data-i18n="reviewedHint">点击卡片查看细节</div>
+  </section>
+  <main class="cards" id="cards"></main>
+  <section class="section-heading" id="skippedHeading">
+    <h2 data-i18n="skippedGroups">未审核 PR 分类</h2>
+    <div class="hint" data-i18n="skippedHint">按排除原因分组</div>
+  </section>
+  <section class="skip-groups" id="skipGroups"></section>
+  <section class="section-heading" id="followUpHeading">
+    <h2 data-i18n="followUpSection">后续关注</h2>
+    <div class="hint" data-i18n="followUpHint">接近可处理但仍有阻塞</div>
+  </section>
+  <section class="cards" id="followUpCards"></section>
+  <div class="footer" id="footer"></div>
+</div>
+<script>
+const reportData = {"approved":[{"alternative_designs":"可以把示例压缩到单文件，但会牺牲真实结构；也可以只写 README，但无法验证运行路径。当前拆分为多个小文件，更贴近实际项目组织。","api_surface":"无导出 API 变化。","approach":"新增 sports recap multinode 示例，包含 agent.go、evaluate.go、promptiter.go、print.go、main.go、metrics/evalset 数据和 README；同时在上层 PromptIter README 中补充入口。","attention_points":"后续如果 PromptIter API 变动，需要同步维护该较完整示例。","author":"Flash-LHR","behavior_impact":"用户可直接运行示例观察多节点 PromptIter 优化结果；现有用户代码不受影响。","change_inventory":"新增 multinode sports recap 示例代码、train/validation evalset、metrics JSON、详细 README；更新 PromptIter 示例索引。","ci_state":"最终状态 mergedAt=2026-05-25T11:50:19Z，head=88a8c35a，reviewDecision=APPROVED，无 unresolved thread。","cross_module_impact":"无核心模块交叉影响。","design_assessment":"示例边界清晰，数据与代码放在 examples/evaluation/promptiter/multinode 下；对主库没有侵入性。","module_impact":"影响示例目录和文档索引。","modules":"examples/evaluation/promptiter/multinode、examples/evaluation/promptiter/README.md","number":1858,"outcome":"本轮复核时已被 WineChord 合并；merge 命令返回 already merged，最终 state=MERGED。","problem":"现有示例覆盖单点或较简单流程，不足以说明多节点 agent 图、静态 evalset、manager progress 和最终 prompt 接受流程如何组合使用。","problem_framing":"这是示例与文档覆盖问题，不改变核心库行为；重点是让使用者能从一个真实业务任务理解 PromptIter 的多节点优化路径。","risk":"剩余风险主要是示例随 API 演进产生漂移。","root_cause":"缺少一个同时包含 train/validation evalset、metric 文件、多 agent 协作和长任务进度输出的完整示例。","semantic_changes":"仅新增示例语义；不改变 runtime、evaluation 或 PromptIter 核心行为。","status":"merged","technical_background":"PromptIter 需要一个更接近真实多节点工作流的示例，展示普通函数节点与 AgentNode fan-out/fan-in 同时存在时如何评测和优化多处 prompt surface。","tests_docs":"示例自带静态数据和 README，PR 描述记录了 sample score trajectory。","title":"examples/evaluation/promptiter: add multinode sports recap example","tradeoffs":"增加了较多示例数据和文档体量，但不影响库 API；换来的是可运行、可复现的多节点 PromptIter 参考。","url":"https://github.com/trpc-group/trpc-agent-go/pull/1858"},{"alternative_designs":"可以要求 prompt 禁止重复 entry，但模型输出不稳定，工程上更应在 sanitizer 中做结构化合并。","api_surface":"无导出 API 变化。","approach":"在 backwarder sanitizer 中合并同一 predecessor step 的多条 propagation，保持输出顺序，并扩展测试覆盖重复 entry。","attention_points":"仍需确保未知 predecessor 和 malformed packet 不被合并逻辑误吞。","author":"Flash-LHR","behavior_impact":"PromptIter run 在重复合法反馈场景下更可能继续执行。","change_inventory":"调整 backwarder.go 的 duplicate predecessor 合并逻辑；更新 backwarder_test.go 断言。","ci_state":"最终状态 mergedAt=2026-05-25T11:50:02Z，head=2062b525，reviewDecision=APPROVED，无 unresolved thread。","cross_module_impact":"无其他模块行为变化。","design_assessment":"改动集中在 backwarder.go 和既有 backwarder_test.go，范围小，符合当前 sanitizer 责任边界。","module_impact":"提升 PromptIter 对模型输出的鲁棒性。","modules":"evaluation/workflow/promptiter/backwarder","number":1855,"outcome":"本轮复核时已被 WineChord 合并；merge 命令返回 already merged，最终 state=MERGED。","problem":"旧 sanitization 对同一 predecessor 的重复 propagation entry 处理过于严格，模型输出重复 entry 时会让 run 失败。","problem_framing":"这是 LLM 输出容错问题；需要保留未知 predecessor 和 malformed packet 的校验，同时允许合法重复 entry 合并。","risk":"低。改动小且有直接单测。","root_cause":"backward result sanitizer 按 predecessor 唯一性处理，未把重复合法条目视为可合并的同一目标反馈。","semantic_changes":"同一 predecessor 的多条合法 backward propagation 不再失败，而是合并。","status":"merged","technical_background":"PromptIter backward propagation 会解析模型返回的上游 step 反馈。模型可能把同一 predecessor 的梯度拆成多段返回。","tests_docs":"新增/调整 backwarder 单测覆盖重复 propagation。","title":"evaluation/workflow/promptiter: merge duplicate backward propagations","tradeoffs":"合并逻辑略增复杂度；换来更稳的 LLM 输出适配，同时仍保留错误 predecessor 的硬校验。","url":"https://github.com/trpc-group/trpc-agent-go/pull/1855"},{"alternative_designs":"可以复用 JudgeModel.NumSamples，但会混淆 direct model sampling 与 runner 调用采样，且容易改变现有 direct judge 行为。","api_surface":"新增 WithJudgeRunnerNumSamples 和 JudgeRunnerOptions.NumSamples。","approach":"新增 WithJudgeRunnerNumSamples(numSamples int)、judgeRunnerNumSamples、JudgeRunnerOptions.NumSamples，并在 evaluation pipeline 中把构造器/单次运行 override 传播到 metric copy 和 LLM evaluator。","attention_points":"无额外 finding；注意成本随 runner sample count 增加。","author":"Flash-LHR","behavior_impact":"现有调用默认不变；新调用可控制 runner judge 的样本数。","change_inventory":"新增 option 字段与校验；metric copy 携带 runner sample count；LLM evaluator 使用 runner sample count；中英文 docs 补充说明；添加 evaluation/options/llm evaluator 测试。","ci_state":"合并前 CI 全绿；最终 state=MERGED mergedAt=2026-05-25T12:00:18Z，head=4f503435。","cross_module_impact":"文档同步中英文 evaluation 页面；criterion llm option 结构增加字段。","design_assessment":"设计清晰：runner sample count opt-in，默认仍一次 runner call；direct judge model sampling 保持原语义。","module_impact":"影响 evaluation API、runtime option 传播、LLM evaluator judge runner 路径。","modules":"evaluation、evaluation/evaluator/llm、evaluation/metric/criterion/llm、docs/mkdocs/{en,zh}/evaluation.md","number":1852,"outcome":"xhigh review 无有效 finding；已提交 LGTM approval 并 squash merge。","problem":"使用 judge runner 时缺少显式 sample count 控制，用户无法让 runner judge 进行多样本聚合，同时也不能把 direct judge model 的采样语义准确迁移过去。","problem_framing":"这是 evaluation runtime option 的能力缺口；需要保持默认单次 runner 调用，避免破坏现有评测成本和输出语义。","risk":"低。风险集中在采样成本，但 API 是显式 opt-in。","root_cause":"Evaluation options 和 metric copy/runtime judge options 中没有独立承载 judge runner num samples 的字段。","semantic_changes":"仅当用户显式设置 judge runner sample count 时，runner judge 会多次采样聚合；默认行为不变。","status":"merged","technical_background":"LLM judge evaluation 同时支持直接 judge model 和 judge runner。直接 judge model 已有采样语义，judge runner 默认只调用一次。","tests_docs":"新增 evaluation/evaluation_test.go、evaluation/evaluator/llm/llm_test.go、evaluation/options_test.go 覆盖；docs 已同步。","title":"evaluation: add judge runner sample count","tradeoffs":"新增一个专用 option 增加 API 面；换来 direct judge 与 runner judge 语义分离，默认兼容。","url":"https://github.com/trpc-group/trpc-agent-go/pull/1852"}],"blocked":[],"commented":[{"alternative_designs":"可以要求所有 tool result 必须带 ToolName，但历史事件/streaming 增量中可能缺失；因此投影层推断是更兼容的方案。","api_surface":"新增 llmagent context compaction option：skip recent、force clean tool names、keep tool names。","approach":"PR 新增 ContextCompactionConfig 策略字段、force-clean pass、keep rules、missing ToolName 推断、scoped timeline compaction、示例和大量 processor 单测。","attention_points":"#1843 作者已修复本轮 finding 和旧 WineChord thread；新 head CI 仍 pending，不能 approve/merge。","author":"Rememorio","behavior_impact":"用户可避免敏感或冗长工具结果进入模型，也可保护特定工具结果不被 compaction。","change_inventory":"新增 context compaction policy placeholder、force-clean pass、tool-name resolver、scoped timeline compaction、context compaction example 和 docs。","ci_state":"state=OPEN，head=245e2e81，mergeable=MERGEABLE，mergeStateStatus=BLOCKED，reviewDecision=REVIEW_REQUIRED；大量 go test / external consumer checks pending。","cross_module_impact":"agent option、processor 投影、docs/example 同步变化。","design_assessment":"总体方向合理，策略应用点放在投影和 compaction pass 中；本轮发现并推动修复了 ToolID 复用下的名称解析问题。","inline_comments":[{"body":"This global first-match map can assign a reused tool-call ID to the wrong tool name before keep/force-clean rules run. Resolve names against the nearest pending call/result round, or include request/invocation/round in the key, so policy rules cannot compact or preserve the wrong result.\n\n<details><summary>中文<\/summary>\n这里按全局 ToolID 保留第一次看到的工具名；如果后续轮次复用了同一个 ToolID 但工具不同，缺失 ToolName 的 tool result 会被补成旧工具名，导致 keep/force-clean 规则作用到错误结果。建议复用现有最近 pending call/result 配对逻辑，或把 request/invocation/轮次纳入 key。\n<\/details>","focus":"ToolID reuse can apply keep/force-clean to the wrong tool result","line":247,"path":"internal/flow/processor/context_compact.go","severity":"Major"}],"module_impact":"影响 prompt request projection、tool result compaction、llmagent option wiring。","modules":"agent/llmagent、internal/flow/processor、examples/context_compaction、docs/mkdocs/{en,zh}/session*","number":1843,"outcome":"发表 1 条行级评论；作者推送 245e2e81 后已验证修复有效，并 resolve 两条 WineChord thread。未 approve，等待 CI。","problem":"工具结果可能很长，且部分工具结果需要按策略强制清理或保留；同时 scoped timeline 模式下也应应用这些策略。","problem_framing":"这是 prompt 投影层的策略控制问题，核心风险是 tool result 和 tool call 的关联必须准确，否则 keep/force-clean 会作用到错误消息。","risk":"CI 未完成前仍不能合入；compaction pass 组合多，后续仍需依赖完整 CI 和现有单测。","root_cause":"原实现曾按全局 ToolID first-match 补齐 ToolName；当不同轮次复用 ToolID 但工具名不同，缺失 ToolName 的结果可能被错误补名。","semantic_changes":"工具结果可按 tool name 显式保留或强制清理；compaction 不再只限 TimelineFilterAll。","status":"commented","technical_background":"该 PR 为 prompt-side context compaction 增加按 tool name keep/force-clean、recent event skip、scoped timeline compaction 和真实模型示例。","tests_docs":"新增/扩展 internal/flow/processor 多个测试文件和 examples/context_compaction README/main.go；中英文 docs 同步。","title":"agent: add tool result compaction controls","tradeoffs":"策略能力增强带来更复杂的 compaction pass 顺序；需要靠测试锁定不同 timeline/filter 场景。","url":"https://github.com/trpc-group/trpc-agent-go/pull/1843"},{"alternative_designs":"可以不保存 partial text，保持历史取消语义，但会丢失用户已见文本；也可统一保存所有 delta，但必须防止 tool-call/reasoning-only delta 污染 session。","api_surface":"新增 runner/llmagent interrupted assistant persistence 相关 opt-in 配置。","approach":"PR 添加 opt-in interrupted assistant persistence、session write detach、dedupe key、事件身份保存和 runner 大量测试。","attention_points":"当前仍有本轮行级评论 unresolved；作者尚未推送修复。最终复核时发现一条旧 WineChord fixed thread，已验证 source event identity 修复覆盖并 resolve。","author":"Rememorio","behavior_impact":"可改善取消后的上下文连续性；若 accumulator 归属错误，则可能持久化错误 assistant 文本。","change_inventory":"runner.go 大幅扩展 cancellation partial accumulator、persist、dedupe 和 session write 逻辑；新增 runner_test 覆盖。","ci_state":"state=OPEN，head=1ec2e824，mergeStateStatus=BLOCKED，reviewDecision=REVIEW_REQUIRED，unresolved thread 包含本轮 comment。","cross_module_impact":"runner 与 agent invocation、docs 同步变化。","design_assessment":"方向合理；当前仍需按 response lineage 拆分 accumulator，避免同 session 并行/子调用场景错误。","inline_comments":[{"body":"This session-scoped accumulator drops or corrupts partial text when multiple streamed assistant responses interleave in the same session. Key interrupted buffers by response lineage, such as response ID plus invocation/branch fallback, and persist each buffer on cancellation instead of resetting the shared session accumulator.\n\n<details><summary>中文<\/summary>\n这里按 session 只保留一个 interrupted assistant accumulator；graph、parallel 或子 agent 场景里同一 session 可能交错出现多个流式 assistant response。不同 Response.ID 会重置并丢掉前一个 partial；空 ID 时又可能把不同 child invocation 的文本拼到同一个事件里。建议按 response lineage 建立多个 buffer，例如 response ID 加 invocation/branch 兜底，并在取消时分别持久化。\n<\/details>","focus":"Session-scoped interrupted accumulator can lose or corrupt interleaved responses","line":1482,"path":"runner/runner.go","severity":"Major"}],"module_impact":"影响 runner event processing、session persistence、agent invocation metadata。","modules":"runner、agent/invocation、docs/mkdocs/{en,zh}/runner.md","number":1820,"outcome":"发表 1 条行级评论；额外 resolve 1 条已修旧线程。未 approve/merge。","problem":"取消发生在流式 delta 之后、final message 之前时，session 可能丢失用户已经看到的 assistant 文本，后续对话缺少上下文。","problem_framing":"这是 runner cancellation finalization 的一致性问题；保存 partial text 必须按真实 response/session/invocation 归属隔离。","risk":"多个 streamed response 在同一 session 内交错时，partial text 仍有丢失或串接风险。","root_cause":"本轮 finding 指出 accumulator 仍是 session-scoped，共享状态在同一 session 多个 streamed assistant response 交错时会 reset/drop 或串接错误文本。","semantic_changes":"启用 opt-in 后，取消的流式 assistant 可被合成为非 partial session event。","status":"commented","technical_background":"该 PR 在 streamed run 被取消时，把已经输出给用户但尚未形成 final assistant response 的文本合成为 session 事件，以保留可见上下文。","tests_docs":"PR 自带 runner 大量测试和中英文 runner 文档。","title":"runner: preserve interrupted assistant text","tradeoffs":"持久化 partial 提升连续性，但增加 runner cancellation 路径复杂度和 dedupe/identity 风险。","url":"https://github.com/trpc-group/trpc-agent-go/pull/1820"},{"alternative_designs":"可以在模型 prompt 中软约束 TODO 完成，但 hard extension 能更稳定地拦截 premature final response。","api_surface":"新增 todoenforcer.New 与相关 options；tool/todo 增加 StateKeyPrefix。","approach":"PR 新增 todoenforcer package、state/format/tools/options/tests、tool/todo state key prefix、docs 和 examples/todoenforcer。","attention_points":"作者推送新 head 后，示例已改为 `Delta.Content` 为空时 fallback 到 `Message.Content`，本轮 thread 已 resolved。新 head 的检查仍在排队。","author":"bytethm","behavior_impact":"用户可选择 hard TODO compliance；示例在当前实现下可能不显示非流式 fallback 内容。","change_inventory":"新增 enforcer、format、state、tools、option 及测试；新增 todoenforcer 示例和文档。","ci_state":"state=OPEN，head=9ee2e8ec，mergeStateStatus=BLOCKED，reviewDecision=REVIEW_REQUIRED，unresolved=0；新 head checks 仍 queued/pending。","cross_module_impact":"agent extension、todo tool、docs/examples 同步变化。","design_assessment":"核心 extension 设计完整，测试覆盖较多；示例渲染存在事件形态判断问题。","inline_comments":[{"body":"This drops assistant text once the enforcer disables streaming for a request with open todos. Render from the event shape instead: use `Delta.Content` when present and fall back to `Message.Content` for non-partial responses, so the hardened demo still prints the final/blocker explanation with `-streaming=true`.\n\n<details><summary>中文<\/summary>\n这里按 CLI 的 `-streaming` 全局开关只读 `Delta.Content`，但 todoenforcer 在有 open todo 时会把单次请求改成非流式；这些事件的文本在 `Message.Content`，示例会把后续 assistant 输出丢掉。建议按事件形态渲染：优先读 delta，非 partial/非流式事件回退到 message content。\n<\/details>","focus":"Example drops non-streaming content after extension disables streaming for one request","line":446,"path":"examples/todoenforcer/main.go","severity":"Major"}],"module_impact":"影响 agent extension 生态和 todo tool 集成。","modules":"agent/extension/todoenforcer、tool/todo、examples/todoenforcer、docs/mkdocs/{en,zh}/tool.md","number":1806,"outcome":"发表 1 条行级评论；作者修复后已验证有效。未 approve/merge，等待 CI 全绿。","problem":"模型可能在 TODO 未完成时提前结束；需要一个 extension 在当前 invocation 中提供 todo_write / blocker 工具并拦截 final response。","problem_framing":"这是 agent behavior guardrail；示例必须准确展示 extension 改写请求形态后 stream/non-stream response 的显示方式。","risk":"修复本身风险低；剩余风险来自新 head CI 未完成。","root_cause":"本轮 finding 指出 examples/todoenforcer 的输出逻辑按 CLI -streaming 全局开关读取 Delta.Content，但 extension 会在有 open TODO 时把单次请求改成非流式。","semantic_changes":"启用 extension 后，open TODO 会阻止 final assistant response，直到完成或声明 blocker。","status":"commented","technical_background":"该 PR 基于 agent extension API 新增 todoenforcer，强制模型在 open TODO 完成或声明 blocker 前不能给 final response。","tests_docs":"新增大量 todoenforcer 单测、示例 README 和中英文 tool docs。","title":"agent/extension/todoenforcer: add hard TODO compliance extension","tradeoffs":"hard enforcement 会改变模型交互路径，需要提供 blocker 作为非终止逃生口；示例要处理动态 stream 模式变化。","url":"https://github.com/trpc-group/trpc-agent-go/pull/1806"},{"alternative_designs":"可以仅在 sandbox 网络层限制出站，或只检查 argv[0]；当前 parser+policy 提供应用层防线，但不能覆盖 allowed command 自身再启动子进程的情况。","api_surface":"新增 WithAllowedCommands/WithDeniedCommands、llmagent WithWorkspaceExecAllowedCommands/DeniedCommands，workspace_exec 参数包含 cwd。","approach":"PR 新增 internal/shellsafe parser、workspace_exec allow/deny option、spawn hardening、llmagent wiring、docs 和安全测试。","attention_points":"作者推送新 head 后，3 条 thread 已 resolved。已验证文档改为 `cwd`，deny/implicit deny 做全 OS case-fold，并补充 Darwin/Linux 相关测试。新 head 的 checks 仍在排队。","author":"bytethm","behavior_impact":"用户启用策略后部分 shell 语法会被拒绝；Darwin 大小写绕过未修前 deny 不可靠。","change_inventory":"新增 shellsafe parser/simple parser/tests；workspace_exec policy enforcement 和 env scrub；llmagent option wiring；docs 大幅扩展。","ci_state":"state=OPEN，head=2bb37244，mergeStateStatus=BLOCKED，mergeable=MERGEABLE，reviewDecision=CHANGES_REQUESTED，unresolved=0；新 head checks queued/in-progress。","cross_module_impact":"codeexecutor local runtime、tool/skill、agent option、docs 同步变化。","design_assessment":"安全方向正确，覆盖面较广；但 Darwin 大小写绕过和文档参数错配会削弱实际防护和用户可用性。","inline_comments":[{"body":"Deny and implicit-deny matching stay case-sensitive on Darwin, so a deny-only policy can be bypassed on the default case-insensitive macOS filesystem with `CURL ...`, and the built-in wrapper deny can be bypassed with `SH -c ...`. Apply case-folded deny/implicit matching on Darwin too, or conservatively case-fold deny paths everywhere.\n\n<details><summary>中文<\/summary>\n这里 deny 和 implicit deny 只在 Windows 做大小写归一；但 macOS 默认大小写不敏感文件系统会把 `CURL` 解析到 `/usr/bin/curl`、`SH` 解析到 `/bin/sh`。这样 `WithDeniedCommands(\"curl\")` 或内置 shell wrapper deny 都能被大写命令绕过。建议在 Darwin 也做大小写折叠，或对 deny 路径统一保守折叠。\n<\/details>","focus":"Darwin case-insensitive filesystem can bypass deny matching","line":258,"path":"internal/shellsafe/parser.go","severity":"Major"},{"body":"`workspace_exec` exposes this as `cwd`, not `working_directory`. Using the documented name is ignored by the tool schema/unmarshal path, so the command still runs from the workspace root after `cd` is denied.\n\n<details><summary>中文<\/summary>\n`workspace_exec` 的实际参数名是 `cwd`，不是 `working_directory`。按文档写 `working_directory` 会被 JSON 反序列化忽略；在 `cd` 被 deny 后，命令仍会从 workspace root 执行。\n<\/details>","focus":"Documented parameter name is ignored by workspace_exec","line":791,"path":"docs/mkdocs/en/codeexecutor.md","severity":"Major"},{"body":"`workspace_exec` exposes this as `cwd`, not `working_directory`. Using the documented name is ignored by the tool schema/unmarshal path, so the command still runs from the workspace root after `cd` is denied.\n\n<details><summary>中文<\/summary>\n`workspace_exec` 的实际参数名是 `cwd`，不是 `working_directory`。按文档写 `working_directory` 会被 JSON 反序列化忽略；在 `cd` 被 deny 后，命令仍会从 workspace root 执行。\n<\/details>","focus":"Documented parameter name is ignored by workspace_exec","line":744,"path":"docs/mkdocs/zh/codeexecutor.md","severity":"Major"}],"module_impact":"影响 workspace_exec 安全边界和 LLMAgent tool 配置。","modules":"internal/shellsafe、tool/workspaceexec、tool/skill、agent/llmagent、codeexecutor/local、docs/mkdocs/{en,zh}/codeexecutor.md","number":1800,"outcome":"发表 3 条行级评论；作者修复后已验证有效。未 approve/merge，等待 CI 全绿。","problem":"无策略的 workspace_exec 会执行任意 shell command；在有内网访问能力的 sandbox 中容易成为 prompt-injection/SSRF 执行面。","problem_framing":"这是 agent tool 执行面的安全策略问题；deny/allow matching 必须考虑平台大小写、shell wrapper、文档参数名和真实运行参数一致性。","risk":"修复本身覆盖本轮问题；剩余风险来自新 head CI 未完成以及 reviewDecision 仍为 CHANGES_REQUESTED，需等 checks 后再重新 approve。","root_cause":"本轮 finding 指出 deny/implicit deny 只在 Windows 做 case folding，但默认 macOS 文件系统大小写不敏感；另有 docs 把实际参数 cwd 写成 working_directory。","semantic_changes":"配置 allow/deny 后，workspace_exec 会先解析命令并拒绝 wrapper、substitution、redirection 等高风险语法；无策略时保留历史 spawn。","status":"commented","technical_background":"该 PR 为 workspace_exec / llmagent 增加 command allow/deny policy，并用 shellsafe parser 拦截常见 shell bypass、wrapper 和环境变量启动向量。","tests_docs":"新增 shellsafe/workspaceexec/llmagent/codeexecutor 测试与中英文 docs。","title":"{tool/workspaceexec, tool/skill, agent/llmagent}: add command allow/deny policy for sandboxed exec","tradeoffs":"手写 parser 有维护成本，且 grammar 是 v1 subset；换来无第三方依赖和明确拒绝高风险 shell 结构。","url":"https://github.com/trpc-group/trpc-agent-go/pull/1800"}],"follow_up":[{"author":"Rememorio","next":"等待新 head 245e2e81 的 CI 全绿；全绿后可重新复核 threads 并考虑 approve/merge。","number":1843,"reason":"本轮 comment 和旧 WineChord thread 已验证 fixed 并 resolve。","title":"agent: add tool result compaction controls","url":"https://github.com/trpc-group/trpc-agent-go/pull/1843"},{"author":"Rememorio","next":"等待 CI 全绿；由原 reviewer 或后续复核确认 fixed threads 后再进入 mycr approve 流程。","number":1859,"reason":"CI 仍大量 pending，且有 Flash-LHR unresolved fixed threads。","title":"memory/tencentdb: add TencentDB Agent Memory integration","url":"https://github.com/trpc-group/trpc-agent-go/pull/1859"},{"author":"Rememorio","next":"等待作者修复/resolve review threads 并让 CI 达到可合入状态。","number":1856,"reason":"pending checks、codecov/patch 失败、Flash-LHR unresolved human review threads 同时存在。","title":"session: add portable event window loading","url":"https://github.com/trpc-group/trpc-agent-go/pull/1856"},{"author":"bytethm","next":"等待 CI 全绿后重新拉 latest comments/thread 状态，再决定是否 approve/merge。","number":1806,"reason":"本轮评论已修复并 resolved；新 head 9ee2e8ec 的检查全部在 queued/pending。","title":"agent/extension/todoenforcer: add hard TODO compliance extension","url":"https://github.com/trpc-group/trpc-agent-go/pull/1806"},{"author":"bytethm","next":"等待 CI 全绿后重新拉 latest comments/thread 状态；确认无新问题后可重新 approve/merge。","number":1800,"reason":"本轮 3 条评论已修复并 resolved；新 head 2bb37244 的 checks 仍 queued/in-progress，reviewDecision 仍 CHANGES_REQUESTED。","title":"{tool/workspaceexec, tool/skill, agent/llmagent}: add command allow/deny policy for sandboxed exec","url":"https://github.com/trpc-group/trpc-agent-go/pull/1800"}],"generated_at":"2026-05-25 20:39:06 Asia/Shanghai","overview":"本轮全量扫描 41 个 PR：3 个已合并，4 个完成 xhigh 复审并发表行级评论，34 个因 draft/WIP/own、CI 未绿、未解决线程、changes requested、merge dirty/conflict 或真实失败检查跳过。\n\n已合并：#1858、#1855、#1852。#1852 本轮完成一次独立 xhigh review，无有效问题，随后 approve LGTM 并 squash merge。\n\n已评论：#1843、#1820、#1806、#1800。#1843 作者推送修复后，已验证并 resolve 两条 WineChord 线程；#1820 最终复核时发现一条旧 WineChord fixed 线程，也已验证并 resolve；#1806、#1800 结束前分别推送新 head 并修复本轮评论，均已验证修复有效。#1843、#1806、#1800 新 head 的 CI 仍 pending，#1820 仍有本轮新发评论未处理，因此未 approve/merge。\n\n最后重新拉取了 open PR、processed PR 的 latest comments/thread 状态，以及 #1859/#1856 这两个起初 pending 的 PR。#1859 仍在 CI 队列且有 Flash-LHR 的 unresolved fixed 线程；#1856 仍有 pending、codecov/patch 失败和未解决 human review 线程。","repo":"trpc-group/trpc-agent-go","skipped_groups":[{"items":[{"author":"Rememorio","ci_state":"head=f319e822，mergeStateStatus=BLOCKED，reviewDecision=REVIEW_REQUIRED。","number":1859,"skip_reason":"大量 go test / external consumer checks 仍 pending；同时还有 Flash-LHR unresolved fixed threads，未进入本轮 approve。","title":"memory/tencentdb: add TencentDB Agent Memory integration","url":"https://github.com/trpc-group/trpc-agent-go/pull/1859"},{"author":"Rememorio","ci_state":"head=4b0dcab1，mergeStateStatus=BLOCKED，reviewDecision=REVIEW_REQUIRED。","number":1856,"skip_reason":"CI 仍 pending，codecov/patch 失败，且有 Flash-LHR unresolved human review threads。","title":"session: add portable event window loading","url":"https://github.com/trpc-group/trpc-agent-go/pull/1856"}],"reason":"CI pending/running or not green at final scan"},{"items":[{"author":"print-happy","number":1857,"skip_reason":"draft PR。","title":"memory/mem0: advance checkpoint after successful ingest","url":"https://github.com/trpc-group/trpc-agent-go/pull/1857"},{"author":"Rememorio","number":1840,"skip_reason":"draft PR。","title":"telemetry: reduce chat trace payload size","url":"https://github.com/trpc-group/trpc-agent-go/pull/1840"},{"author":"WineChord","number":1830,"skip_reason":"own PR，按 mycr 规则跳过。","title":"openclaw: support code-driven runtime profiles","url":"https://github.com/trpc-group/trpc-agent-go/pull/1830"},{"author":"hyprh","number":1778,"skip_reason":"draft PR。","title":"examples: add RLM (Recursive Language Model) demo","url":"https://github.com/trpc-group/trpc-agent-go/pull/1778"},{"author":"liuzengh","number":1710,"skip_reason":"draft PR。","title":"a2a: add input schema","url":"https://github.com/trpc-group/trpc-agent-go/pull/1710"},{"author":"WineChord","number":1698,"skip_reason":"own PR 且标题 WIP。","title":"WIP: taskrun: split background run runtime","url":"https://github.com/trpc-group/trpc-agent-go/pull/1698"},{"author":"bytethm","number":1683,"skip_reason":"draft PR。","title":"tool/workspaceexec: add workspace-scoped file tools sharing workspace_exec state","url":"https://github.com/trpc-group/trpc-agent-go/pull/1683"},{"author":"liuzengh","number":1678,"skip_reason":"draft PR。","title":"agent: centralize invoke_agent telemetry in RunWithPlugins","url":"https://github.com/trpc-group/trpc-agent-go/pull/1678"},{"author":"Rememorio","number":1651,"skip_reason":"draft PR。","title":"evolution: add async skill-extraction pipeline for agent self-evolution","url":"https://github.com/trpc-group/trpc-agent-go/pull/1651"},{"author":"sks","number":1526,"skip_reason":"draft PR。","title":"model: add ModelMaxOutputTokens map and ResolveMaxOutputTokens helper","url":"https://github.com/trpc-group/trpc-agent-go/pull/1526"},{"author":"hyprh","number":1509,"skip_reason":"标题 WIP。","title":"[WIP] session: support concurrent queued execution","url":"https://github.com/trpc-group/trpc-agent-go/pull/1509"},{"author":"hyprh","number":1380,"skip_reason":"标题 WIP，且 mergeStateStatus=DIRTY。","title":"[WIP] fix(agent): always register InstructionProcessor to support run-time WithInstruction","url":"https://github.com/trpc-group/trpc-agent-go/pull/1380"}],"reason":"Draft, WIP, or own PR"},{"items":[{"author":"yu-xin-c","number":1850,"skip_reason":"仅 codecov/patch 为软失败，但仍有 unresolved review thread，不能 approve。","title":"fix(openapi): stringify scalar request params","url":"https://github.com/trpc-group/trpc-agent-go/pull/1850"},{"author":"Kevin091827","number":1842,"skip_reason":"存在 unresolved review thread。","title":"model/gemini: support thinking level and thought signatures","url":"https://github.com/trpc-group/trpc-agent-go/pull/1842"},{"author":"Flash-LHR","number":1839,"skip_reason":"存在 unresolved review thread。","title":"{server/agui, docs}: add distributed cancel","url":"https://github.com/trpc-group/trpc-agent-go/pull/1839"},{"author":"Flash-LHR","number":1815,"skip_reason":"存在 unresolved review thread。","title":"{agent, internal/flow/processor}: add prompt section overrides","url":"https://github.com/trpc-group/trpc-agent-go/pull/1815"},{"author":"liuzengh","number":1768,"skip_reason":"reviewDecision=CHANGES_REQUESTED，且 codecov/patch 非绿。","title":"feat(sandbox): add secure Linux sandbox for code execution based on bubblewrap","url":"https://github.com/trpc-group/trpc-agent-go/pull/1768"},{"author":"hyprh","number":1731,"skip_reason":"reviewDecision=CHANGES_REQUESTED，且 go-apidiff/API breaking blocker 未解决。","title":"knowledge: add GraphRAG code search (reasonable breaking change)","url":"https://github.com/trpc-group/trpc-agent-go/pull/1731"},{"author":"liuzengh","number":1400,"skip_reason":"codecov/go-apidiff 软门禁之外仍有 unresolved API-breaking review thread。","title":"{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content","url":"https://github.com/trpc-group/trpc-agent-go/pull/1400"},{"author":"bytethm","number":1483,"skip_reason":"mergeStateStatus=DIRTY 且存在 unresolved review thread。","title":"tool/subtask: add dynamic agent creation tools","url":"https://github.com/trpc-group/trpc-agent-go/pull/1483"}],"reason":"Unresolved human review or changes requested"},{"items":[{"author":"Fromsko","number":1849,"skip_reason":"存在真实失败检查/mergeability unknown。","title":"fix(openapi): coerce non-string query/header/cookie params to strings","url":"https://github.com/trpc-group/trpc-agent-go/pull/1849"},{"author":"yu-xin-c","number":1847,"skip_reason":"存在真实失败检查/mergeability unknown。","title":"fix(container): parse bind mounts without mode","url":"https://github.com/trpc-group/trpc-agent-go/pull/1847"},{"author":"meichuanyi","number":1826,"skip_reason":"存在真实失败检查/mergeability unknown。","title":"docs: Add FAQ section","url":"https://github.com/trpc-group/trpc-agent-go/pull/1826"},{"author":"yu-xin-c","number":1824,"skip_reason":"存在真实失败检查/mergeability unknown。","title":"docs: clarify OpenAI file content handling","url":"https://github.com/trpc-group/trpc-agent-go/pull/1824"},{"author":"GongNanyue","number":1801,"skip_reason":"存在真实失败检查/mergeability unknown。","title":"docs/mkdocs/zh/fix/agent.md: fix typo","url":"https://github.com/trpc-group/trpc-agent-go/pull/1801"},{"author":"meichuanyi","number":1776,"skip_reason":"存在真实失败检查/mergeability unknown。","title":"docs: add FAQ section","url":"https://github.com/trpc-group/trpc-agent-go/pull/1776"},{"author":"hyprh","number":1764,"skip_reason":"存在真实失败检查/mergeability unknown。","title":"examples: add graph RAG code search demo and viewer","url":"https://github.com/trpc-group/trpc-agent-go/pull/1764"},{"author":"liuzengh","number":1736,"skip_reason":"存在真实失败检查/mergeability unknown。","title":"all: add deferred tool set","url":"https://github.com/trpc-group/trpc-agent-go/pull/1736"},{"author":"fernandezbaptiste","number":1460,"skip_reason":"存在真实失败检查/mergeability unknown。","title":"improve nano-pdf skill description + add skill-review-and-optimize CI","url":"https://github.com/trpc-group/trpc-agent-go/pull/1460"},{"author":"SummerLv","number":1446,"skip_reason":"存在真实失败检查/mergeability unknown。","title":"feat(a2a): add StructuredOutput → DataPart converter for custom event…","url":"https://github.com/trpc-group/trpc-agent-go/pull/1446"},{"author":"hongxiuzhe","number":1183,"skip_reason":"存在真实失败检查/mergeability unknown。","title":"internal/util: add util for streaming parsing of JSON returned by LLM","url":"https://github.com/trpc-group/trpc-agent-go/pull/1183"}],"reason":"Real failing checks, stale failing state, or mergeability unknown with failures"},{"items":[{"author":"Rememorio","number":1817,"skip_reason":"reviewDecision=APPROVED 但 mergeable=CONFLICTING，mergeStateStatus=DIRTY，仍不能合入。","title":"session/mysql: limit GetSession event loading","url":"https://github.com/trpc-group/trpc-agent-go/pull/1817"}],"reason":"Merge conflict or dirty merge state"}],"timeline":[{"label":"复核 #1855、#1858；两者已满足合并条件，merge 命令返回 already merged，最终状态为 WineChord merged。","time":"19:50"},{"label":"完成 #1852 xhigh review，无有效 finding；提交 LGTM approval 并 squash merge。","time":"20:00"},{"label":"在 #1843 发表工具结果名称推断复用 ToolID 的行级评论。","time":"20:07"},{"label":"在 #1820 发表 interrupted assistant accumulator session 级共享导致多响应串扰/丢失的行级评论。","time":"20:14"},{"label":"在 #1806 发表 todoenforcer 示例按 CLI streaming 开关错误读取非流式事件内容的行级评论。","time":"20:23"},{"label":"在 #1800 发表 3 条行级评论：Darwin case-insensitive deny 绕过，以及中英文文档参数名 working_directory/cwd 错配。","time":"20:33"},{"label":"#1843 作者推送修复后，验证 resolver 修复有效，并 resolve 两条已 fixed 的 WineChord review threads。","time":"20:35"},{"label":"最终重新扫描 open PR、CI 和 review threads；没有新增可 approve/merge 候选，生成本报告。","time":"20:39"},{"label":"补充验证 #1820 旧 WineChord fixed thread 已由 source event identity 修复覆盖，并 resolve 该旧线程；本轮新 thread 仍保留 unresolved。","time":"20:44"},{"label":"#1806 推送新 head 9ee2e8ec；验证 todoenforcer 示例已正确 fallback 到 Message.Content，线程已 resolved，但新 CI 全部排队。","time":"20:45"},{"label":"#1800 推送新 head 2bb37244；验证 cwd 文档和 case-fold deny/implicit deny 修复有效，线程已 resolved，但新 CI 仍 pending。","time":"20:47"}],"title":"MyCR Review Report 20260525-203906"};
+const labels = {
+  zh: {
+    title: "MyCR 审核报告",
+    subtitle: "仓库 {repo}，生成时间 {time}。默认展示中文，可切换英文。",
+    statusDistribution: "状态分布",
+    timeline: "执行时间线",
+    all: "全部",
+    approved: "已批准",
+    commented: "已评论",
+    merged: "已合并",
+    skipped: "未审核",
+    blocked: "阻塞",
+    total: "总 PR",
+    reviewed: "已审核",
+    comments: "评论",
+    followups: "需关注",
+    search: "搜索 PR、作者、标题、原因",
+    author: "作者",
+    technicalBackground: "技术背景",
+    problem: "解决的问题",
+    problemFraming: "问题本质与视角",
+    rootCause: "根因判断",
+    approach: "实现方式",
+    alternativeDesigns: "可选设计方案",
+    tradeoffs: "设计取舍",
+    designAssessment: "设计评估",
+    outcome: "审核结果",
+    risk: "剩余风险",
+    ci: "CI / 线程状态",
+    overviewSection: "整体摘要",
+    modules: "涉及模块",
+    apiSurface: "导出 API 变化",
+    changeInventory: "具体变更清单",
+    semanticChanges: "语义变化",
+    moduleImpact: "模块影响",
+    crossModuleImpact: "模块交叉影响",
+    behaviorImpact: "行为与兼容性影响",
+    testsDocs: "测试与文档",
+    attentionPoints: "需要注意",
+    reason: "跳过原因",
+    reviewedSection: "已处理 PR",
+    reviewedHint: "点击卡片查看细节",
+    skippedGroups: "未审核 PR 分类",
+    skippedHint: "按排除原因分组",
+    followUpSection: "后续关注",
+    followUpHint: "接近可处理但仍有阻塞",
+    items: "项",
+    blocker: "阻塞点",
+    inlineComments: "内联评论",
+    focus: "审核重点",
+    severity: "严重级别",
+    expandAll: "展开全部",
+    collapseAll: "收起全部",
+    empty: "当前筛选条件下没有 PR。",
+    footer: "报告文件为自包含 HTML，默认保存在 public/reports 并由 /mycr 站点归档。"
+  },
+  en: {
+    title: "MyCR Review Report",
+    subtitle: "Repository {repo}, generated at {time}. Chinese is the default view; English is available here.",
+    statusDistribution: "Status Distribution",
+    timeline: "Run Timeline",
+    all: "All",
+    approved: "Approved",
+    commented: "Commented",
+    merged: "Merged",
+    skipped: "Not Reviewed",
+    blocked: "Blocked",
+    total: "Total PRs",
+    reviewed: "Reviewed",
+    comments: "Comments",
+    followups: "Follow-ups",
+    search: "Search PR, author, title, or reason",
+    author: "Author",
+    technicalBackground: "Technical Background",
+    problem: "Problem",
+    problemFraming: "Problem Framing",
+    rootCause: "Root Cause",
+    approach: "Implementation",
+    alternativeDesigns: "Alternative Designs",
+    tradeoffs: "Tradeoffs",
+    designAssessment: "Design Assessment",
+    outcome: "Outcome",
+    risk: "Remaining Risk",
+    ci: "CI / Thread State",
+    overviewSection: "Overview",
+    modules: "Touched Modules",
+    apiSurface: "Exported API Changes",
+    changeInventory: "Concrete Change Inventory",
+    semanticChanges: "Semantic Changes",
+    moduleImpact: "Module Impact",
+    crossModuleImpact: "Cross-module Impact",
+    behaviorImpact: "Behavior and Compatibility Impact",
+    testsDocs: "Tests and Docs",
+    attentionPoints: "Attention Points",
+    reason: "Skip Reason",
+    reviewedSection: "Processed PRs",
+    reviewedHint: "Click a card for details",
+    skippedGroups: "Not Reviewed by Reason",
+    skippedHint: "Grouped by exclusion reason",
+    followUpSection: "Follow-up Attention",
+    followUpHint: "Close to ready but still blocked",
+    items: "items",
+    blocker: "Blocker",
+    inlineComments: "Inline Comments",
+    focus: "Review Focus",
+    severity: "Severity",
+    expandAll: "Expand all",
+    collapseAll: "Collapse all",
+    empty: "No PRs match the current filters.",
+    footer: "This self-contained HTML report is saved under public/reports by default and archived by the /mycr site."
+  }
+};
+
+let lang = "zh";
+let filter = "all";
+const statusOrder = ["approved", "commented", "merged", "skipped", "blocked"];
+
+function text(value, fallback = "") {
+  if (value === undefined || value === null || value === "") return fallback;
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return value[lang] || value.zh || value.en || fallback;
+  }
+  return String(value);
+}
+
+function escapeHtml(value) {
+  return text(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function prs() {
+  const groups = reportData.skipped_groups || [];
+  const skipped = groups.flatMap(group =>
+    (group.items || []).map(item => ({
+      ...item,
+      status: item.status || "skipped",
+      skip_reason: item.skip_reason || group.reason
+    }))
+  );
+  return [
+    ...(reportData.approved || []),
+    ...(reportData.commented || []),
+    ...(reportData.blocked || []),
+    ...skipped
+  ];
+}
+
+function skippedGroups() {
+  return reportData.skipped_groups || [];
+}
+
+function counts(items) {
+  const result = Object.fromEntries(statusOrder.map(status => [status, 0]));
+  for (const item of items) {
+    const status = item.status || "skipped";
+    result[status] = (result[status] || 0) + 1;
+  }
+  return result;
+}
+
+function setLanguage(nextLang) {
+  lang = nextLang;
+  document.documentElement.lang = nextLang === "zh" ? "zh-CN" : "en";
+  document.querySelectorAll("[data-lang-button]").forEach(button => {
+    button.classList.toggle("active", button.dataset.langButton === nextLang);
+  });
+  render();
+}
+
+function renderStatic() {
+  document.querySelectorAll("[data-i18n]").forEach(node => {
+    node.textContent = labels[lang][node.dataset.i18n];
+  });
+  const repo = reportData.repo || "trpc-group/trpc-agent-go";
+  const generated = reportData.generated_at || "2026-05-25 20:39:06 Asia/Shanghai";
+  document.getElementById("subtitle").textContent = labels[lang].subtitle
+    .replace("{repo}", repo)
+    .replace("{time}", generated);
+  document.getElementById("search").placeholder = labels[lang].search;
+  document.getElementById("openAll").textContent = labels[lang].expandAll;
+  document.getElementById("closeAll").textContent = labels[lang].collapseAll;
+  document.getElementById("footer").textContent = labels[lang].footer;
+}
+
+function renderMetrics(items) {
+  const totalComments = items.reduce((sum, item) =>
+    sum + ((item.inline_comments || []).length || item.comment_count || 0), 0);
+  const followups = (reportData.follow_up || []).length;
+  const reviewed = items.filter(item =>
+    ["approved", "commented", "merged", "blocked"].includes(item.status)
+  ).length;
+  const metricRows = [
+    [labels[lang].total, items.length],
+    [labels[lang].reviewed, reviewed],
+    [labels[lang].approved, items.filter(item =>
+      ["approved", "merged"].includes(item.status)).length],
+    [labels[lang].comments, totalComments],
+    [labels[lang].followups, followups]
+  ];
+  document.getElementById("metrics").innerHTML = metricRows.map(([label, value]) => `
+    <div class="metric">
+      <div class="value">${value}</div>
+      <div class="label">${escapeHtml(label)}</div>
+    </div>
+  `).join("");
+}
+
+function renderBars(items) {
+  const byStatus = counts(items);
+  const maxCount = Math.max(1, ...Object.values(byStatus));
+  document.getElementById("bars").innerHTML = statusOrder.map(status => {
+    const value = byStatus[status] || 0;
+    const width = Math.max(3, Math.round((value / maxCount) * 100));
+    return `
+      <div class="bar-row">
+        <div class="bar-label">${labels[lang][status]}</div>
+        <div class="bar-track"><div class="bar-fill ${status}" style="width:${width}%"></div></div>
+        <strong>${value}</strong>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderTimeline() {
+  const events = reportData.timeline || [];
+  const container = document.getElementById("timeline");
+  if (!events.length) {
+    container.innerHTML = `<div class="empty">${labels[lang].empty}</div>`;
+    return;
+  }
+  container.innerHTML = events.map(event => `
+    <div class="timeline-item">
+      <div class="time">${escapeHtml(event.time || "")}</div>
+      <div>${escapeHtml(text(event.label || event))}</div>
+    </div>
+  `).join("");
+}
+
+function renderOverview() {
+  const panel = document.getElementById("overviewPanel");
+  const content = document.getElementById("overviewContent");
+  const overview = reportData.overview || reportData.summary;
+  const body = text(overview);
+  if (!body) {
+    panel.style.display = "none";
+    content.textContent = "";
+    return;
+  }
+  panel.style.display = "block";
+  content.textContent = body;
+}
+
+function renderChips() {
+  const chipRows = ["all", ...statusOrder];
+  document.getElementById("chips").innerHTML = chipRows.map(status => `
+    <button type="button" class="chip ${filter === status ? "active" : ""}"
+      data-filter="${status}">${labels[lang][status]}</button>
+  `).join("");
+  document.querySelectorAll("[data-filter]").forEach(button => {
+    button.addEventListener("click", () => {
+      filter = button.dataset.filter;
+      renderCards();
+      renderSkipGroups();
+      renderFollowUp();
+      renderChips();
+    });
+  });
+}
+
+function matchesSearch(item, query) {
+  if (!query) return true;
+  const haystack = [
+    item.number,
+    text(item.title),
+    item.author,
+    text(item.problem),
+    text(item.approach),
+    text(item.outcome),
+    text(item.skip_reason),
+    text(item.group_reason),
+    text(item.risk),
+    text(item.ci_state)
+  ].join(" ").toLowerCase();
+  return haystack.includes(query.toLowerCase());
+}
+
+function field(label, value) {
+  const body = text(value);
+  if (!body) return "";
+  return `<div class="field"><strong>${label}</strong><div class="field-body">${escapeHtml(body)}</div></div>`;
+}
+
+function renderComments(item) {
+  const comments = item.inline_comments || [];
+  if (!comments.length) return "";
+  const rendered = comments.map(comment => `
+    <div class="comment">
+      <strong>${escapeHtml(comment.path || "")}${comment.line ? ":" + escapeHtml(comment.line) : ""}</strong>
+      <div>${escapeHtml(text(comment.body || comment))}</div>
+      ${comment.focus ? `<div><strong>${labels[lang].focus}:</strong> ${escapeHtml(text(comment.focus))}</div>` : ""}
+      ${comment.severity ? `<div><strong>${labels[lang].severity}:</strong> ${escapeHtml(text(comment.severity))}</div>` : ""}
+    </div>
+  `).join("");
+  return `<div class="field" style="grid-column: 1 / -1;">
+    <strong>${labels[lang].inlineComments}</strong>${rendered}
+  </div>`;
+}
+
+function renderCards() {
+  const query = document.getElementById("search").value.trim();
+  const visible = prs().filter(item => (item.status || "skipped") !== "skipped")
+    .filter(item => {
+    const status = item.status || "skipped";
+    return (filter === "all" || status === filter) && matchesSearch(item, query);
+  });
+  const container = document.getElementById("cards");
+  if (!visible.length) {
+    container.innerHTML = `<div class="empty">${labels[lang].empty}</div>`;
+    return;
+  }
+  container.innerHTML = visible.map(item => {
+    const status = item.status || "skipped";
+    const prText = item.number ? `#${item.number}` : "PR";
+    const prLink = item.url
+      ? `<a href="${escapeHtml(item.url)}">${prText}</a>`
+      : prText;
+    return `
+      <article class="card" data-status="${status}">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">${prLink} · ${escapeHtml(text(item.title))}</h3>
+            <div class="meta">${labels[lang].author}: ${escapeHtml(item.author || "")}</div>
+          </div>
+          <span class="badge ${status}">${labels[lang][status] || status}</span>
+        </div>
+        <div class="card-body">
+          <div class="grid">
+            ${field(labels[lang].technicalBackground, item.technical_background)}
+            ${field(labels[lang].problem, item.problem)}
+            ${field(labels[lang].problemFraming, item.problem_framing)}
+            ${field(labels[lang].rootCause, item.root_cause)}
+            ${field(labels[lang].approach, item.approach)}
+            ${field(labels[lang].alternativeDesigns, item.alternative_designs)}
+            ${field(labels[lang].tradeoffs, item.tradeoffs)}
+            ${field(labels[lang].designAssessment, item.design_assessment)}
+            ${field(labels[lang].modules, item.modules)}
+            ${field(labels[lang].apiSurface, item.api_surface)}
+            ${field(labels[lang].changeInventory, item.change_inventory)}
+            ${field(labels[lang].semanticChanges, item.semantic_changes)}
+            ${field(labels[lang].moduleImpact, item.module_impact)}
+            ${field(labels[lang].crossModuleImpact, item.cross_module_impact)}
+            ${field(labels[lang].behaviorImpact, item.behavior_impact)}
+            ${field(labels[lang].testsDocs, item.tests_docs)}
+            ${field(labels[lang].attentionPoints, item.attention_points)}
+            ${field(labels[lang].outcome, item.outcome)}
+            ${field(labels[lang].risk, item.risk)}
+            ${field(labels[lang].ci, item.ci_state)}
+            ${field(labels[lang].reason, item.skip_reason)}
+            ${renderComments(item)}
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("");
+  document.querySelectorAll(".card-head").forEach(head => {
+    head.addEventListener("click", event => {
+      if (event.target.closest("a")) return;
+      head.closest(".card").classList.toggle("open");
+    });
+  });
+}
+
+function renderSkipGroups() {
+  const heading = document.getElementById("skippedHeading");
+  const container = document.getElementById("skipGroups");
+  if (!["all", "skipped"].includes(filter)) {
+    heading.style.display = "none";
+    container.style.display = "none";
+    return;
+  }
+  heading.style.display = "flex";
+  container.style.display = "grid";
+  const query = document.getElementById("search").value.trim();
+  const groups = skippedGroups().map(group => {
+    const reason = group.reason || "";
+    const items = (group.items || []).map(item => ({
+      ...item,
+      status: item.status || "skipped",
+      group_reason: reason,
+      skip_reason: item.skip_reason || reason
+    })).filter(item => matchesSearch(item, query));
+    return { reason, items };
+  }).filter(group => group.items.length > 0);
+  if (!groups.length) {
+    container.innerHTML = `<div class="empty">${labels[lang].empty}</div>`;
+    return;
+  }
+  container.innerHTML = groups.map((group, index) => `
+    <article class="skip-group open">
+      <div class="skip-group-head" data-skip-group="${index}">
+        <h3 class="skip-group-title">${escapeHtml(text(group.reason))}</h3>
+        <span class="skip-group-count">${group.items.length} ${labels[lang].items}</span>
+      </div>
+      <div class="skip-group-body">
+        ${group.items.map(item => {
+          const prText = item.number ? `#${item.number}` : "PR";
+          const prLink = item.url
+            ? `<a href="${escapeHtml(item.url)}">${prText}</a>`
+            : prText;
+          return `
+            <div class="skip-row">
+              <div>
+                <div class="skip-title">${prLink} · ${escapeHtml(text(item.title))}</div>
+                <div class="skip-detail">${labels[lang].author}: ${escapeHtml(item.author || "")}</div>
+              </div>
+              <div>
+                <div><strong>${labels[lang].blocker}:</strong> ${escapeHtml(text(item.skip_reason))}</div>
+                ${item.ci_state ? `<div class="skip-detail">${escapeHtml(text(item.ci_state))}</div>` : ""}
+                ${item.risk ? `<div class="skip-detail">${escapeHtml(text(item.risk))}</div>` : ""}
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </article>
+  `).join("");
+  document.querySelectorAll("[data-skip-group]").forEach(head => {
+    head.addEventListener("click", () => {
+      head.closest(".skip-group").classList.toggle("open");
+    });
+  });
+}
+
+function renderFollowUp() {
+  const heading = document.getElementById("followUpHeading");
+  const container = document.getElementById("followUpCards");
+  if (!["all", "skipped", "blocked"].includes(filter)) {
+    heading.style.display = "none";
+    container.style.display = "none";
+    return;
+  }
+  const query = document.getElementById("search").value.trim().toLowerCase();
+  const items = (reportData.follow_up || []).filter(item => {
+    if (!query) return true;
+    return [
+      item.number,
+      item.author,
+      text(item.title),
+      text(item.reason),
+      text(item.next)
+    ].join(" ").toLowerCase().includes(query);
+  });
+  if (!items.length) {
+    heading.style.display = "none";
+    container.style.display = "none";
+    return;
+  }
+  heading.style.display = "flex";
+  container.style.display = "grid";
+  container.innerHTML = items.map(item => {
+    const prText = item.number ? `#${item.number}` : "PR";
+    const prLink = item.url
+      ? `<a href="${escapeHtml(item.url)}">${prText}</a>`
+      : prText;
+    return `
+      <article class="card open" data-status="blocked">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">${prLink} · ${escapeHtml(text(item.title))}</h3>
+            <div class="meta">${labels[lang].author}: ${escapeHtml(item.author || "")}</div>
+          </div>
+          <span class="badge blocked">${labels[lang].followups}</span>
+        </div>
+        <div class="card-body">
+          <div class="grid">
+            ${field(labels[lang].reason, item.reason)}
+            ${field(labels[lang].outcome, item.next)}
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function render() {
+  const items = prs();
+  renderStatic();
+  renderMetrics(items);
+  renderBars(items);
+  renderTimeline();
+  renderOverview();
+  renderChips();
+  renderCards();
+  renderSkipGroups();
+  renderFollowUp();
+}
+
+document.querySelectorAll("[data-lang-button]").forEach(button => {
+  button.addEventListener("click", () => setLanguage(button.dataset.langButton));
+});
+document.getElementById("search").addEventListener("input", () => {
+  renderCards();
+  renderSkipGroups();
+  renderFollowUp();
+});
+document.getElementById("openAll").addEventListener("click", () => {
+  document.querySelectorAll(".card, .skip-group").forEach(node => {
+    node.classList.add("open");
+  });
+});
+document.getElementById("closeAll").addEventListener("click", () => {
+  document.querySelectorAll(".card, .skip-group").forEach(node => {
+    node.classList.remove("open");
+  });
+});
+render();
+</script>
+</body>
+</html>
