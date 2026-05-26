@@ -302,6 +302,107 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
   margin-top: 10px;
   white-space: pre-wrap;
 }}
+.pr-readout {{
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.42fr);
+  gap: 18px;
+  align-items: start;
+  padding-top: 18px;
+}}
+.pr-story {{
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}}
+.story-block {{
+  border-top: 1px solid #e7edf4;
+  padding-top: 14px;
+}}
+.story-block:first-child {{
+  border-top: 0;
+  padding-top: 0;
+}}
+.story-block.hero-block {{
+  border: 1px solid #dce9e7;
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 15px 16px;
+  background: linear-gradient(180deg, #fbfffe, #f8fbfd);
+}}
+.story-block h4,
+.review-rail h4,
+.comments-panel h4 {{
+  margin: 0 0 9px;
+  color: #17202a;
+  font-size: 14px;
+  letter-spacing: 0;
+}}
+.story-line {{
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr);
+  gap: 12px;
+  margin: 0;
+  padding: 9px 0;
+  border-top: 1px solid #edf2f7;
+  color: #1f2937;
+  line-height: 1.68;
+}}
+.story-line:first-of-type {{
+  border-top: 0;
+  padding-top: 0;
+}}
+.story-label {{
+  color: #536175;
+  font-size: 12px;
+  font-weight: 850;
+}}
+.story-text {{
+  min-width: 0;
+  white-space: pre-wrap;
+}}
+.review-rail {{
+  position: sticky;
+  top: 86px;
+  display: grid;
+  gap: 14px;
+  align-self: start;
+}}
+.fact-list {{
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+}}
+.fact {{
+  border-top: 1px solid #e7edf4;
+  padding-top: 10px;
+}}
+.fact:first-child {{
+  border-top: 0;
+  padding-top: 0;
+}}
+.fact dt {{
+  margin: 0 0 4px;
+  color: #536175;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}}
+.fact dd {{
+  margin: 0;
+  color: #1f2937;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}}
+.comments-panel {{
+  border-top: 1px solid #e7edf4;
+  padding-top: 14px;
+}}
+.comment-list {{
+  display: grid;
+  gap: 10px;
+}}
 .skip-groups {{ display: grid; gap: 14px; margin-top: 12px; }}
 .skip-group {{
   background: var(--panel);
@@ -575,6 +676,46 @@ h1 {{
   border-left-color: var(--accent-2);
   color: #1f2937;
 }}
+.pr-readout {{
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.40fr);
+  gap: 20px;
+}}
+.story-block {{
+  border-top-color: #e2e8f0;
+}}
+.story-block.hero-block {{
+  background: linear-gradient(180deg, #fbfffe, #f7fbfa);
+  border-color: #d5e7e4;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}}
+.story-block h4,
+.review-rail h4,
+.comments-panel h4 {{
+  font-size: 13px;
+  font-weight: 900;
+}}
+.story-line {{
+  grid-template-columns: 116px minmax(0, 1fr);
+  border-top-color: #e9eef5;
+}}
+.story-label {{
+  color: #607086;
+}}
+.review-rail {{
+  border: 1px solid #e3eaf2;
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcfe;
+}}
+.fact {{
+  border-top-color: #e8eef5;
+}}
+.comments-panel {{
+  border-top-color: #e2e8f0;
+}}
+.comment-list {{
+  gap: 12px;
+}}
 .skip-group {{
   box-shadow: var(--shadow);
 }}
@@ -592,6 +733,9 @@ h1 {{
 @media (max-width: 840px) {{
   .topbar, .card-head {{ grid-template-columns: 1fr; display: grid; }}
   .dashboard, .grid, .metrics {{ grid-template-columns: 1fr; }}
+  .pr-readout {{ grid-template-columns: 1fr; }}
+  .review-rail {{ position: static; }}
+  .story-line {{ grid-template-columns: 1fr; gap: 4px; }}
   .timeline-item {{ grid-template-columns: 1fr; }}
   .controls {{ position: static; }}
   .utilities {{ width: 100%; margin-left: 0; }}
@@ -683,6 +827,10 @@ const labels = {{
     outcome: "审核结果",
     risk: "剩余风险",
     ci: "CI / 线程状态",
+    backgroundAndProblem: "背景与问题",
+    solutionAndTradeoffs: "方案与取舍",
+    impactAndEvidence: "影响与证据",
+    reviewSummary: "审查结论",
     overviewSection: "整体摘要",
     modules: "涉及模块",
     apiSurface: "导出 API 变化",
@@ -738,6 +886,10 @@ const labels = {{
     outcome: "Outcome",
     risk: "Remaining Risk",
     ci: "CI / Thread State",
+    backgroundAndProblem: "Background and Problem",
+    solutionAndTradeoffs: "Solution and Tradeoffs",
+    impactAndEvidence: "Impact and Evidence",
+    reviewSummary: "Review Summary",
     overviewSection: "Overview",
     modules: "Touched Modules",
     apiSurface: "Exported API Changes",
@@ -950,6 +1102,50 @@ function field(label, value) {{
   return `<div class="field"><strong>${{label}}</strong><div class="field-body">${{escapeHtml(body)}}</div></div>`;
 }}
 
+function storyLine(label, value) {{
+  const body = text(value);
+  if (!body) return "";
+  return `
+    <p class="story-line">
+      <span class="story-label">${{escapeHtml(label)}}</span>
+      <span class="story-text">${{escapeHtml(body)}}</span>
+    </p>
+  `;
+}}
+
+function storyBlock(title, rows, className = "") {{
+  const body = rows.filter(Boolean).join("");
+  if (!body) return "";
+  const classes = ["story-block", className].filter(Boolean).join(" ");
+  return `<section class="${{classes}}"><h4>${{escapeHtml(title)}}</h4>${{body}}</section>`;
+}}
+
+function factItem(label, value) {{
+  const body = text(value);
+  if (!body) return "";
+  return `
+    <div class="fact">
+      <dt>${{escapeHtml(label)}}</dt>
+      <dd>${{escapeHtml(body)}}</dd>
+    </div>
+  `;
+}}
+
+function renderReviewRail(item) {{
+  const facts = [
+    factItem(labels[lang].outcome, item.outcome),
+    factItem(labels[lang].risk, item.risk),
+    factItem(labels[lang].ci, item.ci_state),
+    factItem(labels[lang].attentionPoints, item.attention_points),
+    factItem(labels[lang].testsDocs, item.tests_docs),
+    factItem(labels[lang].modules, item.modules),
+    factItem(labels[lang].apiSurface, item.api_surface),
+    factItem(labels[lang].reason, item.skip_reason)
+  ].filter(Boolean).join("");
+  if (!facts) return "";
+  return `<aside class="review-rail"><h4>${{labels[lang].reviewSummary}}</h4><dl class="fact-list">${{facts}}</dl></aside>`;
+}}
+
 function renderComments(item) {{
   const comments = item.inline_comments || [];
   if (!comments.length) return "";
@@ -961,9 +1157,36 @@ function renderComments(item) {{
       ${{comment.severity ? `<div><strong>${{labels[lang].severity}}:</strong> ${{escapeHtml(text(comment.severity))}}</div>` : ""}}
     </div>
   `).join("");
-  return `<div class="field" style="grid-column: 1 / -1;">
-    <strong>${{labels[lang].inlineComments}}</strong>${{rendered}}
-  </div>`;
+  return `<section class="comments-panel">
+    <h4>${{labels[lang].inlineComments}}</h4>
+    <div class="comment-list">${{rendered}}</div>
+  </section>`;
+}}
+
+function renderPrReadout(item) {{
+  const story = [
+    storyBlock(labels[lang].backgroundAndProblem, [
+      storyLine(labels[lang].technicalBackground, item.technical_background),
+      storyLine(labels[lang].problem, item.problem),
+      storyLine(labels[lang].problemFraming, item.problem_framing),
+      storyLine(labels[lang].rootCause, item.root_cause)
+    ], "hero-block"),
+    storyBlock(labels[lang].solutionAndTradeoffs, [
+      storyLine(labels[lang].approach, item.approach),
+      storyLine(labels[lang].alternativeDesigns, item.alternative_designs),
+      storyLine(labels[lang].tradeoffs, item.tradeoffs),
+      storyLine(labels[lang].designAssessment, item.design_assessment)
+    ]),
+    storyBlock(labels[lang].impactAndEvidence, [
+      storyLine(labels[lang].changeInventory, item.change_inventory),
+      storyLine(labels[lang].semanticChanges, item.semantic_changes),
+      storyLine(labels[lang].behaviorImpact, item.behavior_impact),
+      storyLine(labels[lang].moduleImpact, item.module_impact),
+      storyLine(labels[lang].crossModuleImpact, item.cross_module_impact)
+    ]),
+    renderComments(item)
+  ].filter(Boolean).join("");
+  return `<div class="pr-readout"><div class="pr-story">${{story}}</div>${{renderReviewRail(item)}}</div>`;
 }}
 
 function renderCards() {{
@@ -994,30 +1217,7 @@ function renderCards() {{
           <span class="badge ${{status}}">${{labels[lang][status] || status}}</span>
         </div>
         <div class="card-body">
-          <div class="grid">
-            ${{field(labels[lang].technicalBackground, item.technical_background)}}
-            ${{field(labels[lang].problem, item.problem)}}
-            ${{field(labels[lang].problemFraming, item.problem_framing)}}
-            ${{field(labels[lang].rootCause, item.root_cause)}}
-            ${{field(labels[lang].approach, item.approach)}}
-            ${{field(labels[lang].alternativeDesigns, item.alternative_designs)}}
-            ${{field(labels[lang].tradeoffs, item.tradeoffs)}}
-            ${{field(labels[lang].designAssessment, item.design_assessment)}}
-            ${{field(labels[lang].modules, item.modules)}}
-            ${{field(labels[lang].apiSurface, item.api_surface)}}
-            ${{field(labels[lang].changeInventory, item.change_inventory)}}
-            ${{field(labels[lang].semanticChanges, item.semantic_changes)}}
-            ${{field(labels[lang].moduleImpact, item.module_impact)}}
-            ${{field(labels[lang].crossModuleImpact, item.cross_module_impact)}}
-            ${{field(labels[lang].behaviorImpact, item.behavior_impact)}}
-            ${{field(labels[lang].testsDocs, item.tests_docs)}}
-            ${{field(labels[lang].attentionPoints, item.attention_points)}}
-            ${{field(labels[lang].outcome, item.outcome)}}
-            ${{field(labels[lang].risk, item.risk)}}
-            ${{field(labels[lang].ci, item.ci_state)}}
-            ${{field(labels[lang].reason, item.skip_reason)}}
-            ${{renderComments(item)}}
-          </div>
+          ${{renderPrReadout(item)}}
         </div>
       </article>
     `;
