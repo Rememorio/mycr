@@ -34,6 +34,13 @@ Required tracked files:
 The source JSON is the durable data model for the archive page. The public JSON
 and HTML files are served as direct artifacts for inspection and sharing.
 
+Skipped PR entries must be auditable. A report may group skipped PRs for
+scanability, but each item still needs a concrete `skip_reason` and should use
+structured `blockers` when the blocker is a discrete fact such as a CI check,
+merge conflict, unresolved human thread, or stale `Changes Requested` state.
+Never use aggregate GitHub states as the whole explanation when the exact
+thread, check, or conflict can be named.
+
 ## Website Contract
 
 The site is a static Astro build with:

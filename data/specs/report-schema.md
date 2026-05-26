@@ -42,5 +42,23 @@ Reviewed entries should include:
 - `ci_state`
 - `inline_comments`
 
+Skipped entries should also include:
+
+- `skip_reason`: the concrete reason this PR was not reviewed in the run.
+- `blockers`: optional array of discrete blocker facts. Prefer this over a
+  broad paragraph when a PR is excluded. Each object may include:
+  - `kind`: `ci`, `human_review`, `bot_review`, `merge_conflict`,
+    `draft_wip`, `own_pr`, `soft_ci`, `not_reached`, or `other`.
+  - `summary`: the exact blocker, such as a check name, conflict state, or
+    unresolved review request.
+  - `reviewer`: reviewer login for human or bot review blockers.
+  - `url`: thread, comment, check, or PR URL.
+  - `path` and `line`: changed file location when relevant.
+  - `latest_response`: latest author response when review state matters.
+  - `verification`: why the blocker is still valid, stale, resolved, or only
+    a soft gate.
+- `readiness_audit`: optional plain-language audit of why a broad GitHub state
+  such as `CHANGES_REQUESTED` does or does not block review.
+
 The report archive page only requires a subset, but richer fields make the
 self-contained HTML report useful without opening GitHub.

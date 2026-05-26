@@ -2,7 +2,7 @@
   "title": "MyCR Review Report",
   "repo": "trpc-group/trpc-agent-go",
   "generated_at": "2026-05-26T11:09:59",
-  "overview": "本次全量 mycr 共重新扫描 open PR，并处理 7 个候选。2 个 PR 审核干净并已 squash merge：1849 修复 OpenAPI 标量参数转换，1806 新增 todoenforcer extension。5 个 PR 收到行级评论：1860 文档示例 import 缺失；1859 TencentDB memory 的并发/游标问题；1856 session_load 描述与 load-only 能力不一致；1843 工具名推断作用域风险；1820 interrupted assistant 持久化顺序和去重风险。其中 1859、1856、1820 作者已推新 commit 并回复 fixed，我已验证对应修复并 resolve threads，但新 head CI 仍在运行，所以没有审批或合并。1860 和 1843 仍有本轮 unresolved comments。未审核 PR 主要因为 draft/WIP/自己发起、未解决人类评审、CI 失败或 pending、merge conflict，以及少量绿色但本轮未排入候选。",
+  "overview": "本次全量 mycr 共重新扫描 open PR，并处理 7 个候选。2 个 PR 审核干净并已 squash merge：1849 修复 OpenAPI 标量参数转换，1806 新增 todoenforcer extension。5 个 PR 收到行级评论：1860 文档示例 import 缺失；1859 TencentDB memory 的并发/游标问题；1856 session_load 描述与 load-only 能力不一致；1843 工具名推断作用域风险；1820 interrupted assistant 持久化顺序和去重风险。其中 1859、1856、1820 作者已推新 commit 并回复 fixed，我已验证对应修复并 resolve threads，但新 head CI 仍在运行，所以没有审批或合并。1860 和 1843 仍有本轮 unresolved comments。未审核 PR 主要因为 draft/WIP/自己发起、CI 失败或 pending、merge conflict，以及本轮未排入候选或需软门禁判断。后续审计发现原“未解决人类评审或 Changes Requested”分组过粗：例如 #1731 的 changes-requested threads 已被作者修复并 resolved，不能再仅凭 aggregate reviewDecision 跳过。",
   "timeline": [
     {
       "time": "start",
@@ -427,27 +427,25 @@
       ]
     },
     {
-      "reason": "未解决的人类评审或 Changes Requested",
+      "reason": "可复核但本轮未排入候选或需软门禁判断",
       "items": [
-        {
-          "number": 1850,
-          "title": "fix(openapi): stringify scalar request params",
-          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1850",
-          "author": "yu-xin-c",
-          "status": "skipped",
-          "skip_reason": "存在人类 review thread、Changes Requested，或需要作者先回应的 API/设计讨论。",
-          "ci_state": "codecov/patch=FAILURE",
-          "risk": ""
-        },
         {
           "number": 1842,
           "title": "model/gemini: support thinking level and thought signatures",
           "url": "https://github.com/trpc-group/trpc-agent-go/pull/1842",
           "author": "Kevin091827",
           "status": "skipped",
-          "skip_reason": "存在人类 review thread、Changes Requested，或需要作者先回应的 API/设计讨论。",
-          "ci_state": "CI 当前为绿色或未发现非绿色检查。",
-          "risk": ""
+          "skip_reason": "未发现仍需作者回应的人类 review thread；CI 绿。本轮未进入候选属于候选排队/规则判定遗漏，后续 mycr 应纳入 CR。",
+          "ci_state": "CI 当前为绿色或未发现非绿色检查；reviewDecision=REVIEW_REQUIRED，mergeable=MERGEABLE。",
+          "risk": "",
+          "readiness_audit": "后续审计未发现未解决的人类 thread；不应归入“未解决人类评审”。",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "没有 live human-review blocker；该 PR 是本轮未排入候选。",
+              "verification": "后续 thread audit 未找到未解决的人类 review thread，CI 绿。"
+            }
+          ]
         },
         {
           "number": 1839,
@@ -455,9 +453,17 @@
           "url": "https://github.com/trpc-group/trpc-agent-go/pull/1839",
           "author": "Flash-LHR",
           "status": "skipped",
-          "skip_reason": "存在人类 review thread、Changes Requested，或需要作者先回应的 API/设计讨论。",
-          "ci_state": "CI 当前为绿色或未发现非绿色检查。",
-          "risk": ""
+          "skip_reason": "未发现仍需作者回应的人类 review thread；CI 绿。本轮未进入候选属于候选排队/规则判定遗漏，后续 mycr 应纳入 CR。",
+          "ci_state": "CI 当前为绿色或未发现非绿色检查；reviewDecision=REVIEW_REQUIRED，mergeable=MERGEABLE。",
+          "risk": "",
+          "readiness_audit": "后续审计未发现未解决的人类 thread；不应归入“未解决人类评审”。",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "没有 live human-review blocker；该 PR 是本轮未排入候选。",
+              "verification": "后续 thread audit 未找到未解决的人类 review thread，CI 绿。"
+            }
+          ]
         },
         {
           "number": 1815,
@@ -465,9 +471,17 @@
           "url": "https://github.com/trpc-group/trpc-agent-go/pull/1815",
           "author": "Flash-LHR",
           "status": "skipped",
-          "skip_reason": "存在人类 review thread、Changes Requested，或需要作者先回应的 API/设计讨论。",
-          "ci_state": "CI 当前为绿色或未发现非绿色检查。",
-          "risk": ""
+          "skip_reason": "未发现仍需作者回应的人类 review thread；CI 绿。本轮未进入候选属于候选排队/规则判定遗漏，后续 mycr 应纳入 CR。",
+          "ci_state": "CI 当前为绿色或未发现非绿色检查；reviewDecision=REVIEW_REQUIRED，mergeable=MERGEABLE。",
+          "risk": "",
+          "readiness_audit": "后续审计未发现未解决的人类 thread；不应归入“未解决人类评审”。",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "没有 live human-review blocker；该 PR 是本轮未排入候选。",
+              "verification": "后续 thread audit 未找到未解决的人类 review thread，CI 绿。"
+            }
+          ]
         },
         {
           "number": 1800,
@@ -475,19 +489,17 @@
           "url": "https://github.com/trpc-group/trpc-agent-go/pull/1800",
           "author": "bytethm",
           "status": "skipped",
-          "skip_reason": "存在人类 review thread、Changes Requested，或需要作者先回应的 API/设计讨论。",
-          "ci_state": "CI 当前为绿色或未发现非绿色检查。",
-          "risk": ""
-        },
-        {
-          "number": 1768,
-          "title": "feat(sandbox): add secure Linux sandbox for code execution based on bubblewrap",
-          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1768",
-          "author": "liuzengh",
-          "status": "skipped",
-          "skip_reason": "存在人类 review thread、Changes Requested，或需要作者先回应的 API/设计讨论。",
-          "ci_state": "codecov/patch=FAILURE",
-          "risk": ""
+          "skip_reason": "此前 reviewDecision 仍显示 CHANGES_REQUESTED，但后续审计未发现 live human-review blocker，且 CI 已绿；后续 mycr 应重新复核并按结果 CR/approve。",
+          "ci_state": "CI 当前为绿色或未发现非绿色检查；reviewDecision=CHANGES_REQUESTED，mergeable=MERGEABLE。",
+          "risk": "",
+          "readiness_audit": "stale CHANGES_REQUESTED 不能作为跳过理由；需要按 thread 逐条确认。",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "没有 live human-review blocker；本轮遗漏了已修复后的重新 CR。",
+              "verification": "后续 thread audit 未找到未解决的人类 review thread，CI 绿。"
+            }
+          ]
         },
         {
           "number": 1731,
@@ -495,9 +507,24 @@
           "url": "https://github.com/trpc-group/trpc-agent-go/pull/1731",
           "author": "hyprh",
           "status": "skipped",
-          "skip_reason": "存在人类 review thread、Changes Requested，或需要作者先回应的 API/设计讨论。",
-          "ci_state": "go-apidiff=FAILURE",
-          "risk": ""
+          "skip_reason": "后续审计确认此前 WineChord changes-requested 线程已由作者回复 done 并 resolved；剩余 go-apidiff=FAILURE 是软门禁，需要检查 API breaking 是否合理，而不是直接按人类评审阻塞跳过。",
+          "ci_state": "go-apidiff=FAILURE；codecov/patch 已成功；reviewDecision=CHANGES_REQUESTED 但未发现 live human-review blocker。",
+          "risk": "",
+          "readiness_audit": "stale CHANGES_REQUESTED 不能作为跳过理由。下一次 mycr 应把该 PR 纳入候选，先审查 go-apidiff/API break 是否符合 reasonable breaking change，再做 CR/approve 决策。",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "summary": "WineChord 在 2026-05-24 的 3 条 CHANGES_REQUESTED threads 已全部 resolved，作者已回复 done；不是当前阻塞点。",
+              "reviewer": "WineChord",
+              "latest_response": "hyprh: done",
+              "verification": "后续审计看到 parser.go:214、age.go:294、age.go:363 对应 threads 均 resolved；不能只看 aggregate reviewDecision。"
+            },
+            {
+              "kind": "soft_ci",
+              "summary": "go-apidiff=FAILURE 仍需人工判断是否为该 PR 标题所说的 reasonable breaking change。",
+              "verification": "按 mycr 软门禁规则，go-apidiff 失败不能自动跳过 review；需要检查具体 API 变化，merge 前必须记录判断。"
+            }
+          ]
         },
         {
           "number": 1400,
@@ -505,15 +532,46 @@
           "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
           "author": "liuzengh",
           "status": "skipped",
-          "skip_reason": "存在人类 review thread、Changes Requested，或需要作者先回应的 API/设计讨论。",
-          "ci_state": "codecov/patch=FAILURE, go-apidiff=FAILURE",
-          "risk": ""
+          "skip_reason": "未发现仍需作者回应的人类 review thread；剩余 codecov/patch 和 go-apidiff 都属于软门禁，需要具体检查，不应归入“未解决人类评审”。",
+          "ci_state": "codecov/patch=FAILURE, go-apidiff=FAILURE；reviewDecision=REVIEW_REQUIRED，mergeable=MERGEABLE。",
+          "risk": "",
+          "readiness_audit": "可进入 CR，但若 review 干净，codecov/patch 非绿仍是 merge hard gate；go-apidiff 需要判断 API break 是否可接受。",
+          "blockers": [
+            {
+              "kind": "soft_ci",
+              "summary": "go-apidiff=FAILURE 需要检查具体 API 变化是否合理。",
+              "verification": "软门禁不自动阻塞 review。"
+            },
+            {
+              "kind": "soft_ci",
+              "summary": "codecov/patch=FAILURE 需要检查 uncovered patch 是否隐藏风险；即使 approve 也不能 merge。",
+              "verification": "codecov/patch 是 review soft gate、merge hard gate。"
+            }
+          ]
         }
       ]
     },
     {
       "reason": "硬 CI 失败或外部必需检查失败",
       "items": [
+        {
+          "number": 1768,
+          "title": "feat(sandbox): add secure Linux sandbox for code execution based on bubblewrap",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1768",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "后续审计未发现 live human-review blocker；当前具体阻塞点是大量 go test / external consumer checks 未成功，reviewDecision=CHANGES_REQUESTED 不是主阻塞点。",
+          "ci_state": "大量 go test 和 check external consumer 检查未成功，例如 codeexecutor/jupyter、knowledge/document/reader/pdf、openclaw、server/evaluation、storage/*、tool/* 等。",
+          "risk": "",
+          "readiness_audit": "不应归入“未解决人类评审”；需等硬 CI 恢复后再进入 CR。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "大量 go test / check external consumer checks 非绿或未完成。",
+              "verification": "这属于硬 CI readiness blocker；修复 CI 前不进入常规 CR。"
+            }
+          ]
+        },
         {
           "number": 1847,
           "title": "fix(container): parse bind mounts without mode",
@@ -600,6 +658,29 @@
       "reason": "Merge conflict 或 mergeability 冲突",
       "items": [
         {
+          "number": 1850,
+          "title": "fix(openapi): stringify scalar request params",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1850",
+          "author": "yu-xin-c",
+          "status": "skipped",
+          "skip_reason": "后续审计未发现 live human-review blocker；当前具体阻塞点是 mergeable=CONFLICTING / mergeStateStatus=DIRTY，且 codecov/patch 非绿。",
+          "ci_state": "mergeable=CONFLICTING, mergeStateStatus=DIRTY, codecov/patch=FAILURE。",
+          "risk": "",
+          "readiness_audit": "不应归入“未解决人类评审”；需要作者先解决冲突，之后再重新审查 codecov/patch 和 diff。",
+          "blockers": [
+            {
+              "kind": "merge_conflict",
+              "summary": "mergeable=CONFLICTING / mergeStateStatus=DIRTY。",
+              "verification": "冲突会让当前 diff 相对 main 不再可靠，需先 rebase/resolve。"
+            },
+            {
+              "kind": "soft_ci",
+              "summary": "codecov/patch=FAILURE。",
+              "verification": "review 可在冲突解决后继续判断，merge 前必须处理或接受覆盖率风险。"
+            }
+          ]
+        },
+        {
           "number": 1817,
           "title": "session/mysql: limit GetSession event loading",
           "url": "https://github.com/trpc-group/trpc-agent-go/pull/1817",
@@ -682,6 +763,54 @@
       "author": "Rememorio",
       "reason": "CI 绿但 ToolName 推断作用域评论未修。",
       "next": "修复后重点看 scoped timeline/branch 工具名推断测试。"
+    },
+    {
+      "number": 1842,
+      "title": "model/gemini: support thinking level and thought signatures",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1842",
+      "author": "Kevin091827",
+      "reason": "未发现仍需作者回应的人类 review thread；CI 绿。本轮未进入候选属于候选排队/规则判定遗漏，后续 mycr 应纳入 CR。",
+      "next": "下一次 mycr 应纳入候选做 xhigh CR；若 review 干净，再按 CI/soft gate 规则决定 approve 或 merge。"
+    },
+    {
+      "number": 1839,
+      "title": "{server/agui, docs}: add distributed cancel",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1839",
+      "author": "Flash-LHR",
+      "reason": "未发现仍需作者回应的人类 review thread；CI 绿。本轮未进入候选属于候选排队/规则判定遗漏，后续 mycr 应纳入 CR。",
+      "next": "下一次 mycr 应纳入候选做 xhigh CR；若 review 干净，再按 CI/soft gate 规则决定 approve 或 merge。"
+    },
+    {
+      "number": 1815,
+      "title": "{agent, internal/flow/processor}: add prompt section overrides",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1815",
+      "author": "Flash-LHR",
+      "reason": "未发现仍需作者回应的人类 review thread；CI 绿。本轮未进入候选属于候选排队/规则判定遗漏，后续 mycr 应纳入 CR。",
+      "next": "下一次 mycr 应纳入候选做 xhigh CR；若 review 干净，再按 CI/soft gate 规则决定 approve 或 merge。"
+    },
+    {
+      "number": 1800,
+      "title": "{tool/workspaceexec, tool/skill, agent/llmagent}: add command allow/deny policy for sandboxed exec",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1800",
+      "author": "bytethm",
+      "reason": "此前 reviewDecision 仍显示 CHANGES_REQUESTED，但后续审计未发现 live human-review blocker，且 CI 已绿；后续 mycr 应重新复核并按结果 CR/approve。",
+      "next": "下一次 mycr 应纳入候选做 xhigh CR；若 review 干净，再按 CI/soft gate 规则决定 approve 或 merge。"
+    },
+    {
+      "number": 1731,
+      "title": "knowledge: add GraphRAG code search (reasonable breaking change)",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1731",
+      "author": "hyprh",
+      "reason": "后续审计确认此前 WineChord changes-requested 线程已由作者回复 done 并 resolved；剩余 go-apidiff=FAILURE 是软门禁，需要检查 API breaking 是否合理，而不是直接按人类评审阻塞跳过。",
+      "next": "下一次 mycr 应审查 go-apidiff/API breaking 是否合理，并基于当前 diff 做 xhigh CR；不要再因 stale CHANGES_REQUESTED 跳过。"
+    },
+    {
+      "number": 1400,
+      "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+      "author": "liuzengh",
+      "reason": "未发现仍需作者回应的人类 review thread；剩余 codecov/patch 和 go-apidiff 都属于软门禁，需要具体检查，不应归入“未解决人类评审”。",
+      "next": "下一次 mycr 应纳入候选做 xhigh CR；若 review 干净，再按 CI/soft gate 规则决定 approve 或 merge。"
     }
   ]
 }

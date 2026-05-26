@@ -35,6 +35,11 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    title, author, labels, draft state, mergeability, requested reviewers, head
    SHA, base branch, review threads, review submissions, commit statuses, and
    pull-request workflow runs.
+   For review threads, keep a thread-level audit, not only the aggregate
+   GitHub `reviewDecision`: thread id or URL, reviewer login, author login,
+   review state, file and line, resolved/outdated state, latest author reply,
+   latest reviewer reply, whether the thread still maps to the current diff,
+   and the concrete reason it is still actionable or no longer actionable.
    For every candidate that will appear in the reviewed-PR section, also build
    a PR-content summary from the PR description, changed files, and diff. This
    summary must describe what the PR itself changes, not what the reviewer did.
@@ -70,6 +75,20 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
      clearly that they fixed the issue or gave an explanation that we judge
      acceptable after checking the current diff; a forgotten GitHub "Resolve"
      click alone must not block review
+   - `reviewDecision=CHANGES_REQUESTED` is not, by itself, a skip reason.
+     Treat it as a signal to run the thread-level audit above. If every
+     actionable human thread has been resolved, is outdated because the changed
+     code moved, or has a clear author `fixed` / `done` / acceptable
+     explanation that is verified against the latest diff, the PR remains
+     eligible for review. Record the stale aggregate state in the report, but
+     do not exclude the PR only because GitHub still displays
+     `CHANGES_REQUESTED`.
+   - A human-review blocker must name the concrete still-actionable thread or
+     review: reviewer login, thread/comment URL, file and line when available,
+     the reviewer request, the latest author response if any, and why that
+     response or the current diff is insufficient. If this evidence cannot be
+     gathered, gather more metadata instead of using a broad reason such as
+     "unresolved review", "Changes Requested", or "API discussion".
    - unresolved comments from bots are not hard blockers by themselves; inspect
      whether they describe a concrete current correctness, compatibility, or
      CI risk, and ignore weak, stale, stylistic, or unreasonable bot comments
@@ -77,7 +96,14 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    - comments previously raised by us, `Flash-LHR`, or on our behalf must be
      verified against the latest head; if fixed, proceed even if the thread was
      not clicked resolved, and resolve our own/on-behalf threads when allowed
-5. For skipped PRs, record the concrete skip reason for the final report.
+5. For skipped PRs, record the concrete skip reason for the final report. The
+   reason must identify the exact gate that blocked review. Use structured
+   `blockers` entries when possible. Do not group PRs under vague combined
+   reasons such as "human review thread, Changes Requested, or API discussion"
+   unless each item also lists the exact thread/comment/check/conflict that is
+   actually blocking it. If a PR is otherwise reviewable but was not processed
+   because of time or candidate ordering, say that plainly as "not reached this
+   run" and put it in follow-up, not in a blocker group.
 6. Process candidates one at a time. Spawn exactly one subagent per candidate
    with reasoning effort `xhigh`. Give it the PR number, repo, diff access
    instructions, and ask for a code-review result only; do not let the subagent
@@ -331,6 +357,18 @@ In the final report:
   clickable PR links. For each PR, include the author, title, concrete blocker,
   and whether the blocker is CI, draft/WIP/own PR state, unresolved human review,
   a still-valid bot finding, or another readiness issue.
+- For each not-reviewed PR, include `blockers` when there is any blocker that
+  can be described as a discrete fact. Each blocker should have `kind`
+  (`ci`, `human_review`, `bot_review`, `merge_conflict`, `draft_wip`,
+  `own_pr`, `soft_ci`, `not_reached`, or `other`), `summary`, and, when
+  applicable, `reviewer`, `url`, `path`, `line`, `latest_response`, and
+  `verification`. A skipped item with `reviewDecision=CHANGES_REQUESTED` but
+  no live human-review blocker must say that explicitly, then list the real
+  remaining gate, such as `go-apidiff` soft-CI inspection, `codecov/patch`
+  merge blocker, CI pending, or "not reached this run".
+- If a skipped group is about human review, each item in that group must name
+  the exact unresolved human thread. If no exact still-actionable human thread
+  is found, the PR does not belong in that group.
 - After the not-reviewed section, call out which not-reviewed PRs may need
   follow-up attention and why, such as flaky/failing CI, unresolved review
   threads from important reviewers, long-stale high-impact changes, or blocked
@@ -384,6 +422,11 @@ In the final report:
   replied `fixed`, `done`, or gave a concrete acceptable explanation, even if
   the GitHub thread is still unresolved. Verify the latest diff before relying
   on the reply.
+- Do not let a stale aggregate `reviewDecision=CHANGES_REQUESTED` hide a
+  reviewable PR. Always enumerate the current human threads. A PR with no
+  still-actionable human thread should remain reviewable when CI is green or
+  only acceptable soft CI remains, even if GitHub still shows
+  `CHANGES_REQUESTED` from an earlier review.
 - Bot review comments, including CodeRabbit-style comments, are advisory. Do
   not let weak, stale, stylistic, or unreasonable bot comments block review.
   Let them block only when our own inspection confirms a current, concrete bug,

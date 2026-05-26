@@ -371,6 +371,30 @@ h1 { margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }
 .skip-row:last-child { border-bottom: 0; }
 .skip-title { font-weight: 750; }
 .skip-detail { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.blocker-list {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.blocker-item {
+  border: 1px solid #e5edf5;
+  border-left: 3px solid var(--warn);
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: #fff;
+}
+.blocker-item a {
+  color: var(--accent);
+  font-weight: 800;
+}
+.blocker-meta {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin-top: 4px;
+}
 .empty {
   border: 1px dashed var(--line);
   border-radius: 8px;
@@ -657,6 +681,9 @@ h1 {
 .skip-row {
   grid-template-columns: minmax(0, 1.15fr) minmax(220px, 0.85fr);
 }
+.blocker-item {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
 .empty {
   background: #fff;
   box-shadow: var(--shadow);
@@ -781,6 +808,19 @@ const labels = {
     followUpHint: "接近可处理但仍有阻塞",
     items: "项",
     blocker: "阻塞点",
+    blockerDetails: "具体阻塞点",
+    readinessAudit: "就绪性审计",
+    blockerKinds: {
+      ci: "CI",
+      human_review: "人类评审",
+      bot_review: "机器人评审",
+      merge_conflict: "合并冲突",
+      draft_wip: "Draft/WIP",
+      own_pr: "自己发起",
+      soft_ci: "软门禁",
+      not_reached: "本轮未处理",
+      other: "其他"
+    },
     inlineComments: "内联评论",
     focus: "审核重点",
     severity: "严重级别",
@@ -840,6 +880,19 @@ const labels = {
     followUpHint: "Close to ready but still blocked",
     items: "items",
     blocker: "Blocker",
+    blockerDetails: "Concrete Blockers",
+    readinessAudit: "Readiness Audit",
+    blockerKinds: {
+      ci: "CI",
+      human_review: "Human Review",
+      bot_review: "Bot Review",
+      merge_conflict: "Merge Conflict",
+      draft_wip: "Draft/WIP",
+      own_pr: "Own PR",
+      soft_ci: "Soft CI",
+      not_reached: "Not Reached",
+      other: "Other"
+    },
     inlineComments: "Inline Comments",
     focus: "Review Focus",
     severity: "Severity",
@@ -1021,16 +1074,63 @@ function matchesSearch(item, query) {
     text(item.outcome),
     text(item.skip_reason),
     text(item.group_reason),
+    text(item.readiness_audit),
+    blockersSearchText(item.blockers),
     text(item.risk),
     text(item.ci_state)
   ].join(" ").toLowerCase();
   return haystack.includes(query.toLowerCase());
 }
 
+function blockersSearchText(blockers) {
+  if (!Array.isArray(blockers)) return "";
+  return blockers.map(blocker => {
+    if (typeof blocker !== "object" || blocker === null) return text(blocker);
+    return [
+      blocker.kind,
+      blocker.summary,
+      blocker.reviewer,
+      blocker.path,
+      blocker.line,
+      blocker.latest_response,
+      blocker.verification,
+      blocker.url
+    ].map(value => text(value)).join(" ");
+  }).join(" ");
+}
+
 function field(label, value) {
   const body = text(value);
   if (!body) return "";
   return `<div class="field"><strong>${label}</strong><div class="field-body">${escapeHtml(body)}</div></div>`;
+}
+
+function renderBlockers(item) {
+  const blockers = Array.isArray(item.blockers) ? item.blockers : [];
+  if (!blockers.length) return "";
+  const rendered = blockers.map(blocker => {
+    const data = typeof blocker === "object" && blocker !== null
+      ? blocker
+      : { summary: blocker };
+    const location = [data.path, data.line ? `:${data.line}` : ""].filter(Boolean).join("");
+    const meta = [
+      data.kind ? blockerKindLabel(data.kind) : "",
+      data.reviewer ? `reviewer: ${text(data.reviewer)}` : "",
+      location,
+      data.latest_response ? `latest: ${text(data.latest_response)}` : "",
+      data.verification ? text(data.verification) : ""
+    ].filter(Boolean).join(" · ");
+    const summary = escapeHtml(data.summary || blocker);
+    const link = data.url
+      ? ` <a href="${escapeHtml(data.url)}">link</a>`
+      : "";
+    return `<li class="blocker-item"><div>${summary}${link}</div>${meta ? `<div class="blocker-meta">${escapeHtml(meta)}</div>` : ""}</li>`;
+  }).join("");
+  return `<div class="skip-detail"><strong>${labels[lang].blockerDetails}:</strong></div><ul class="blocker-list">${rendered}</ul>`;
+}
+
+function blockerKindLabel(kind) {
+  return (labels[lang].blockerKinds || {})[kind] || text(kind);
 }
 
 function storyLine(label, value) {
@@ -1206,6 +1306,8 @@ function renderSkipGroups() {
               </div>
               <div>
                 <div><strong>${labels[lang].blocker}:</strong> ${escapeHtml(text(item.skip_reason))}</div>
+                ${item.readiness_audit ? `<div class="skip-detail"><strong>${labels[lang].readinessAudit}:</strong> ${escapeHtml(text(item.readiness_audit))}</div>` : ""}
+                ${renderBlockers(item)}
                 ${item.ci_state ? `<div class="skip-detail">${escapeHtml(text(item.ci_state))}</div>` : ""}
                 ${item.risk ? `<div class="skip-detail">${escapeHtml(text(item.risk))}</div>` : ""}
               </div>

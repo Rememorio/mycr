@@ -11,6 +11,7 @@ Keep entries concrete enough that a later agent can implement or reject them.
 | 2026-05-26 | Reports | Old reports were only local HTML/JSON files and could not be browsed from the personal site. | Archive JSON/HTML under this repo and expose them through the `/mycr` Astro site. | Done |
 | 2026-05-26 | Paths | The skill used `../../github/trpc-agent-go` and `.vscode/mycr-reports` as hardcoded defaults. | Resolve the target checkout through `MYCR_TARGET_CHECKOUT`, repo-relative fallback, and one documented absolute fallback; write reports to this repo. | Done |
 | 2026-05-26 | Report UI | Expanded PR details were rendered as many vertically stacked field boxes, which made long reports hard to scan. | Group PR details into narrative sections, keep review outcome/risk/CI in a compact side rail, and keep inline comments as a distinct evidence block. | Done |
+| 2026-05-26 | Review gates | MyCR could skip PRs because GitHub still showed `CHANGES_REQUESTED` even after the author fixed and resolved the concrete threads. | Require thread-level blocker audits, forbid aggregate `CHANGES_REQUESTED` as a standalone skip reason, and display structured concrete blockers in reports. | Done |
 
 ## Parking Lot
 
