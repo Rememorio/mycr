@@ -1,0 +1,374 @@
+{
+  "title": "MyCR Review Report 20260526-133156",
+  "repo": "trpc-group/trpc-agent-go",
+  "generated_at": "2026-05-26T13:31:56",
+  "overview": "本轮按更新后的 reviewability ledger 重新扫描 open PR，重点修正“可 CR 但被 stale Changes Requested 或粗 skip reason 掩盖”的问题。实际处理 6 个 PR：PR 1843 经 xhigh review 无发现，已 LGTM 并 squash merge；PR 1820 在本轮评论后作者推新 head 修复，复核通过并已 LGTM，但 codecov/patch 仍失败，所以未合并；PR 1731、PR 1800、PR 1856、PR 1859 均提交行级评论。PR 1817 在审查过程中由作者自行合并，GitHub 锁定导致本轮发现的 TTL 语义风险无法作为行级评论提交，已列入 follow-up。未审核 PR 均进入具体 gate 分组：draft/WIP/own、硬 CI 失败、merge conflict、或具体未回应的人类 review/comment；没有再把 stale Changes Requested 当成单独跳过理由。",
+  "approved": [
+    {
+      "number": 1843,
+      "title": "agent: add tool result compaction controls",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1843",
+      "author": "Rememorio",
+      "status": "merged",
+      "technical_background": "LLMAgent 会把历史事件转换成发给模型的消息。工具结果经常很长，如果完整保留在 prompt 中，会快速耗尽上下文窗口。context compaction 的目标是在不改变 session 原始事件的前提下，只在请求投影阶段压缩历史工具结果。",
+      "problem": "PR 为 prompt-side tool result compaction 增加按工具名和最近事件数量控制的能力，并补充示例与文档，解决大工具结果占用上下文、但用户又需要保留最近交互细节的问题。",
+      "problem_framing": "根因不是 session 存储太大，而是模型请求投影缺少足够细的压缩策略：有些工具结果必须完整保留，有些历史结果只需要占位或截断。",
+      "root_cause": "旧的 compaction 控制粒度不足，无法按工具名和最近请求边界表达“哪些工具可压缩、哪些最近事件保留”。",
+      "approach": "在 LLMAgent options 中接入工具结果 compaction 控制，processor 在构造模型消息时识别工具调用/工具结果关系，按规则压缩历史或 oversized 工具结果；示例展示真实模型请求前后的消息形态。",
+      "alternative_designs": "也可以在 session 写入时压缩，或只依赖 summary。当前方案把压缩限制在 prompt 投影层，保留原始事件，便于审计和后续重放。",
+      "tradeoffs": "投影层压缩兼容性更好，但实现必须准确维护 tool call ID、tool name 和 timeline filter，否则会压错工具结果或破坏模型可解释上下文。",
+      "design_assessment": "本轮复核认为设计合理。作者已修掉此前工具名推断复用 ToolID 的风险，最终 head 不再依赖不可靠的反推名称。",
+      "modules": "agent/llmagent；internal/flow/processor；examples/context_compaction；docs/mkdocs/en|zh/session/summary.md。",
+      "api_surface": "新增/扩展 LLMAgent context compaction options，用户可配置工具结果 token 阈值、最近请求保留数量、oversized tool result 处理等；文档新增对应使用说明。",
+      "change_inventory": "新增 tool result compaction 规则、processor 测试、LLMAgent option 测试、context_compaction 示例和中英文文档。",
+      "semantic_changes": "历史工具结果在发送给模型前可能被占位或截断；session 原始事件不变。最近请求和当前请求可按配置保留完整内容。",
+      "module_impact": "直接影响模型请求构造；间接影响所有使用长工具结果、session summary、context compaction 的 agent。",
+      "cross_module_impact": "与 tool call/result pairing、session timeline filter、LLMAgent option wiring、示例和文档协同。",
+      "behavior_impact": "启用后，大型历史工具输出不会继续完整挤占上下文；模型仍能看到必要的工具调用结构和最近结果。",
+      "tests_docs": "子审查关注 compaction 顺序、recent-event 保护、tool ID/name 传播、provider-facing message shape；相关测试和 docs 覆盖充分。",
+      "attention_points": "后续仍需观察不同 provider 对压缩占位消息的容忍度。",
+      "outcome": "xhigh 子审查无 findings；最终复核 CI 全绿、无 unresolved threads；已提交 LGTM，并由 WineChord squash merge。",
+      "risk": "剩余风险低，主要在复杂多工具并发场景下继续观察。",
+      "ci_state": "最终复核所有 checks 绿色；head f4a380d9；mergedAt 2026-05-26T05:09:22Z。"
+    },
+    {
+      "number": 1820,
+      "title": "runner: preserve interrupted assistant text",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1820",
+      "author": "Rememorio",
+      "status": "approved",
+      "technical_background": "Runner 会把模型流式输出转换成事件并写入 session。取消或超时发生在 final assistant event 前时，用户已经看到的文本可能只存在于流式 delta 中；如果不合成最终 assistant message，下一轮上下文会丢失这段可见回答。",
+      "problem": "PR 让 interrupted streamed run 在取消后仍能把已可见的 assistant 文本合成为非 partial 事件写入 session，同时避免把 raw partial chunks、tool-call-only 或 reasoning-only delta 直接写入历史。",
+      "problem_framing": "根因是用户可见输出和 session 持久化边界不一致：流式 UI 已展示文本，但 session 只认 final assistant response。取消时没有 final event，就会造成下一轮上下文缺口。",
+      "root_cause": "旧 runner 没有专门的 interrupted assistant accumulator，也没有在取消后的独立 persist context 中收尾写入。",
+      "approach": "新增 interrupted assistant accumulator，按 request/invocation/lineage 缓冲 assistant content；取消后用 bounded persist context 合成 event；作者后续修复为按 lineage 去重并通过 handleEventPersistence 写入，以保留 summary enqueue 等副作用。",
+      "alternative_designs": "也可以持久化所有 partial delta，或完全不保存取消输出。当前方案只保存用户可见的最终合成文本，噪音更少，也更贴近 session 语义。",
+      "tradeoffs": "合成事件需要谨慎去重和处理 lineage；好处是下轮上下文与用户实际看到的内容一致。",
+      "design_assessment": "本轮初审发现 lineage 去重和 summary enqueue 两个问题，作者推新 head 后已修复。当前设计可接受，但 codecov/patch 仍未绿。",
+      "modules": "runner/runner.go；runner/runner_test.go；agent/invocation.go；docs/mkdocs/en|zh/runner.md。",
+      "api_surface": "新增/调整 runner run option 行为：可 opt-in 持久化 interrupted assistant。文档说明取消后可保留可见 assistant 文本。",
+      "change_inventory": "新增 interrupted assistant buffer、lineage key、去重 helper、取消后持久化路径和大量 runner 测试。",
+      "semantic_changes": "启用后，取消的流式 assistant 文本可能作为非 partial assistant event 进入 session；不启用时保留旧行为。",
+      "module_impact": "直接影响 runner 事件生命周期和 session persistence；间接影响 session summary、graph/routed child invocation、后续对话上下文。",
+      "cross_module_impact": "与 agent invocation lineage、session service AppendEvent、summary enqueue、stream filter 和文档协同。",
+      "behavior_impact": "用户取消长回答后，下一轮仍能看到已经输出的 assistant 内容，而不是像回答从未发生。",
+      "tests_docs": "作者补充 runner 覆盖；本轮复核新 head 确认 lineage prior maps 和 handleEventPersistence 修复已落地。",
+      "attention_points": "codecov/patch 仍失败，说明 patch 覆盖率门禁未满足；按规则可 approve 但不能 merge。",
+      "outcome": "本轮先发 2 条行级评论；作者推新 head c1d61e8d 修复后，threads 不再是当前 unresolved；已提交 LGTM，但因 codecov/patch 非绿未合并。",
+      "risk": "主要残留风险是 patch coverage 未达门禁，需作者补测试或等待 Codecov 状态恢复后再合并。",
+      "ci_state": "最终复核除 codecov/patch=FAILURE 外均绿色；mergeable=MERGEABLE；reviewDecision=APPROVED。",
+      "inline_comments": [
+        {
+          "path": "runner/runner.go",
+          "line": 1450,
+          "severity": "P1",
+          "focus": "lineage-scoped dedupe",
+          "body": "These prior-response maps are collected for the whole session, while the interrupted buffers are now keyed by lineage. If a sibling branch has already persisted the same provider response ID or same request/invocation/content signature, this branch can be skipped even though its accumulator key is different; please scope the prior-event dedupe to the same lineage fields used by `interruptedAssistantLineageKey`.\n<details><summary>中文</summary>\n这里的已持久化 response map 是按整个 session 收集的，但 interrupted buffer 已经按 lineage 分桶。如果兄弟分支已经持久化过相同 provider response ID 或相同 request/invocation/content signature，这个分支会被跳过，即使它的 accumulator key 实际不同；建议把 prior-event 去重也限定到 `interruptedAssistantLineageKey` 使用的同一组 lineage 字段。\n</details>"
+        },
+        {
+          "path": "runner/runner.go",
+          "line": 1785,
+          "severity": "P1",
+          "focus": "summary side effects",
+          "body": "Interrupted assistant events are appended directly, so they bypass the normal `handleEventPersistence` side effects. In particular, a long cancelled assistant response can be persisted without `EnqueueSummaryJob`, leaving session summaries stale compared with normal final assistant messages; please persist through the same helper or duplicate the summarization enqueue after a successful append.\n<details><summary>中文</summary>\n中断合成的 assistant event 现在直接 append，绕过了普通 `handleEventPersistence` 的副作用。尤其是较长的取消回复会被写入 session，但不会触发 `EnqueueSummaryJob`，导致 session summary 相比普通最终 assistant 消息保持陈旧；建议走同一个持久化 helper，或在 append 成功后补齐 summary enqueue。\n</details>"
+        }
+      ]
+    }
+  ],
+  "commented": [
+    {
+      "number": 1731,
+      "title": "knowledge: add GraphRAG code search (reasonable breaking change)",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1731",
+      "author": "hyprh",
+      "status": "commented",
+      "technical_background": "GraphRAG 把代码符号、文件、调用关系等建成图，再结合向量检索让 agent 先找到相关代码节点，再沿调用/依赖边扩展上下文。AGE graphstore 是 PostgreSQL + Apache AGE 的图查询后端。",
+      "problem": "PR 新增 graph-native knowledge 接口、RepoSource 的 Go AST 图读取、AGE graphstore、代码图搜索/遍历/路径工具，并把代码搜索从纯文档检索扩展为图结构检索。",
+      "problem_framing": "传统 RAG 只能按文本相似度召回片段，难以回答“这个函数被谁调用、两个符号怎么关联”这类结构化问题。根因是代码关系没有被建模为可查询图。",
+      "root_cause": "现有 Knowledge/Source 以文档为中心，缺少 GraphSource、GraphKnowledge、graphstore.Store 这样的图抽象。",
+      "approach": "新增 `knowledge/graph` 数据模型、`knowledge/source.GraphSource`、`knowledge.GraphKnowledge`、AGE store、RepoSource.ReadGraph 和 graph tools；go-apidiff 显示大量新增 API，同时删除了 golang reader 子模块的导出 `New` 和 `Reader`。",
+      "alternative_designs": "也可以先做独立 examples，不引入导出 graph API；或保持 golang reader 旧 API 兼容并在下一版迁移。当前方案一次性建立完整 graph stack，能力强但 API/发布风险更高。",
+      "tradeoffs": "完整 graph API 便于工具组合，但 nested module 版本和 go-apidiff 破坏性变更需要严格处理；AGE 查询还要保证路径排序稳定。",
+      "design_assessment": "方向有价值，但本轮发现两个必须修复的兼容性/正确性问题：nested module 依赖 root v0.2.0 会让外部消费者编译失败；AGE 变长路径 LIMIT 未排序会让图遍历和 path 结果不稳定。",
+      "modules": "knowledge/graph；knowledge/graphstore/age；knowledge/source/repo；knowledge/tool；knowledge/document/reader/golang；docs/mkdocs knowledge docs。",
+      "api_surface": "新增 GraphKnowledge、BuiltinGraphKnowledge、GraphSource、graph.Node/Edge/Path、graphstore.Store、图遍历/路径工具等；go-apidiff 报告 `knowledge/document/reader/golang.New` 与 `Reader` 被删除，属于破坏性变更。",
+      "change_inventory": "新增 graph data model、AGE store、RepoSource.ReadGraph、code graph search/traverse/find_paths tools、测试和文档；拆分或调整 codeast/golang reader 子模块。",
+      "semantic_changes": "搜索结果可返回 graph node ID 并支持后续 traversal；路径查询和遍历会通过 AGE Cypher 执行。",
+      "module_impact": "直接影响 knowledge、source、tool、graphstore 和 Go reader 子模块；外部消费者受 nested module 版本影响。",
+      "cross_module_impact": "与 vectorstore/embedder、repo source、tool schema、docs、examples、AGE/PostgreSQL 连接均有关。",
+      "behavior_impact": "agent 可以从代码搜索进入图遍历，回答调用链和路径关系；但未排序 LIMIT 会导致结果不稳定。",
+      "tests_docs": "PR 添加大量单测、AGE sqlmock 测试和文档；仍需补外部 nested module 消费者场景和路径排序回归。",
+      "attention_points": "go-apidiff 仍失败；这不是 stale Changes Requested blocker，而是真实软门禁/兼容性风险。",
+      "outcome": "本轮没有因 aggregate CHANGES_REQUESTED 跳过，已完成 xhigh review 并提交 4 条行级评论；未 approve、未合并。",
+      "risk": "外部 `go get` nested module 可能失败；GraphRAG path/traverse 结果可能不稳定或漏掉更短路径。",
+      "ci_state": "最终复核只有 go-apidiff=FAILURE；open human blockers 无，unresolved CodeRabbit threads 被记录为 bot advisory；本轮新增 WineChord threads 未解决。",
+      "inline_comments": [
+        {
+          "path": "knowledge/graphstore/age/go.mod",
+          "line": 12,
+          "severity": "P1",
+          "focus": "nested module version compatibility",
+          "body": "These nested modules require the root module at `v0.2.0`, but external consumers do not see the local `replace` directives. The AGE store imports new packages such as `knowledge/graph` and `knowledge/graphstore`, and the Go reader imports the new codeast APIs, so `go get` of either submodule will resolve a root version that does not contain the symbols this PR depends on; please require a root version that contains these APIs or avoid publishing the split submodules until the release versions are consistent."
+        },
+        {
+          "path": "knowledge/document/reader/golang/go.mod",
+          "line": 9,
+          "severity": "P1",
+          "focus": "nested module version compatibility",
+          "body": "These nested modules require the root module at `v0.2.0`, but external consumers do not see the local `replace` directives. The AGE store imports new packages such as `knowledge/graph` and `knowledge/graphstore`, and the Go reader imports the new codeast APIs, so `go get` of either submodule will resolve a root version that does not contain the symbols this PR depends on; please require a root version that contains these APIs or avoid publishing the split submodules until the release versions are consistent."
+        },
+        {
+          "path": "knowledge/graphstore/age/age.go",
+          "line": 294,
+          "severity": "P1",
+          "focus": "graph traversal stability",
+          "body": "This `LIMIT` is applied to unordered variable-length path matches. AGE/Postgres can return any matching paths first, so `MaxNodes` may omit nearer nodes and the same query can produce unstable traversal context; please order by path distance before limiting, for example aggregate/min `length(p)` per node and apply the limit after that ordering."
+        },
+        {
+          "path": "knowledge/graphstore/age/age.go",
+          "line": 428,
+          "severity": "P1",
+          "focus": "path search stability",
+          "body": "Path search also limits unordered variable-length matches, so `MaxPaths` can return a longer path while omitting a shorter/direct one. For GraphRAG callers this makes “find paths” semantics unstable; please order paths by `length(p)` before applying the `LIMIT`, e.g. `WITH p ORDER BY length(p) LIMIT ... RETURN ...`."
+        }
+      ]
+    },
+    {
+      "number": 1800,
+      "title": "{tool/workspaceexec, tool/skill, agent/llmagent}: add command allow/deny policy for sandboxed exec",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1800",
+      "author": "bytethm",
+      "status": "commented",
+      "technical_background": "workspace_exec 会把模型请求转成 shell 命令执行。allow/deny policy 是安全边界：它必须识别 shell 语法、环境变量、PATH 和 wrapper，避免模型或输入通过 shell 特性绕过命令限制。",
+      "problem": "PR 为 workspace_exec、skill_run 和 LLMAgent 增加命令 allow/deny policy，降低 sandboxed exec 被 prompt injection 或 wrapper 命令绕过的风险。",
+      "problem_framing": "问题不是简单的命令名单过滤，而是 shell 会解释 assignment、PATH、builtin、wrapper 和环境变量；安全边界必须覆盖“最终 shell 实际执行什么”。",
+      "root_cause": "旧 workspace_exec 基本依赖 shell 执行，没有一层可配置且保守的 command policy。",
+      "approach": "新增 internal/shellsafe parser/policy，workspace_exec policy mode 改用更保守的 shell 启动方式并清理环境；LLMAgent option 和 skill_run 透传 allow/deny 配置。",
+      "alternative_designs": "更彻底的方案是不经 shell 直接 exec argv；也可以只在容器/网络层做隔离。当前方案保留 shell 可用性，但必须非常谨慎地封堵绕过形态。",
+      "tradeoffs": "兼容 shell 字符串调用较易落地，但安全边界复杂；相比直接 argv 执行更容易漏掉 shell 语义。",
+      "design_assessment": "方向合理，但本轮仍发现 3 个边界绕过/过宽问题，不能 approve。",
+      "modules": "internal/shellsafe；tool/workspaceexec；tool/skill；agent/llmagent；codeexecutor/local；docs/mkdocs/en|zh/codeexecutor.md。",
+      "api_surface": "新增 workspace exec allowed/denied commands 相关 options 和文档化行为；skill_run/LLMAgent 可配置命令策略。",
+      "change_inventory": "新增 shellsafe parser、policy tests、workspace_exec policy enforcement、env scrub、agent option wiring、docs。",
+      "semantic_changes": "policy active 时，部分 shell wrapper、危险语法、startup env 和 PATH 行为会被拒绝或清理。",
+      "module_impact": "影响所有启用 workspace_exec/skill_run policy 的 agent 和示例。",
+      "cross_module_impact": "与 codeexecutor/local CleanEnv、shellsafe parser、LLMAgent options、skill_run 工具声明协同。",
+      "behavior_impact": "合法 allowlisted 命令可继续执行；wrapper/assignment/env 绕过应被拒绝。",
+      "tests_docs": "已有大量测试；本轮要求补 `=` env key、`NAME+=VALUE`、Darwin case-sensitive allow 的回归。",
+      "attention_points": "CI 全绿但 review threads 未解决，不可 merge。",
+      "outcome": "提交 3 条行级评论；未 approve、未合并。",
+      "risk": "当前 policy 仍可能被环境变量 key、assignment 语法或 case-sensitive Darwin workspace 绕过。",
+      "ci_state": "最终复核 CI 绿色；mergeable=MERGEABLE；本轮 3 个 WineChord threads unresolved。",
+      "inline_comments": [
+        {
+          "path": "tool/workspaceexec/workspace_exec.go",
+          "line": 739,
+          "severity": "P1",
+          "focus": "environment hardening bypass",
+          "body": "The policy scrub checks the raw JSON key, but the local runtime later serializes entries as `key=value`; a caller can send a key like `PATH=.` so the final env string is parsed as a real `PATH` entry. Please reject env keys containing `=` before copying them, otherwise policy mode can still inherit caller-controlled PATH/LD_* behavior through `CleanEnv`."
+        },
+        {
+          "path": "internal/shellsafe/parser_simple.go",
+          "line": 575,
+          "severity": "P1",
+          "focus": "shell assignment parsing",
+          "body": "`NAME+=value` is also treated as a leading assignment by the shells this path executes through, but `isLeadingAssignment` returns false as soon as it sees `+`. That lets `X+=1 curl http://x` pass policy as a command named `X+=1` while the shell still runs `curl`, so please reject the `NAME+=VALUE` form too."
+        },
+        {
+          "path": "internal/shellsafe/parser.go",
+          "line": 348,
+          "severity": "P2",
+          "focus": "allowlist case sensitivity",
+          "body": "Allow matching is case-folded for every Darwin workspace based only on `GOOS`, but APFS can be case-sensitive. On those workspaces `WithAllowedCommands(\"./safe\")` also admits `./SAFE`, which may be a different file; keep pathful allow entries exact-case unless the workspace filesystem has been positively detected as case-insensitive."
+        }
+      ]
+    },
+    {
+      "number": 1856,
+      "title": "session: add portable event window loading",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1856",
+      "author": "Rememorio",
+      "status": "commented",
+      "technical_background": "session_load 需要围绕某个事件加载前后少量上下文。WindowService 的关键不是“能返回窗口”，而是必须避免为一个小窗口扫描和反序列化整个长 session。",
+      "problem": "PR 为 inmemory、sqlite、mysql、postgres、redis、clickhouse 等 session backend 增加共享 event window 语义，并按 backend capability 注入 session_load 工具。",
+      "problem_framing": "用户需要从长 session 中精确恢复局部上下文；根因是原 session recall/search 能力和 exact window loading 没有统一抽象。",
+      "root_cause": "各 backend 缺少 portable WindowService；tool injection 对 load-only/search-only 能力区分不足。",
+      "approach": "新增 session/internal/window 共享裁剪逻辑，各 backend 实现 GetEventWindow，LLMAgent/processor 根据能力提供 on-demand session tools。",
+      "alternative_designs": "可以只支持有索引的 MySQL/pgvector；当前方案覆盖面广，但每个 backend 都必须真正 bounded，否则能力看似统一、性能却不统一。",
+      "tradeoffs": "多 backend 一次性接入提升一致性，但增加实现质量要求，特别是 Redis 和 SQL backend 的排序键/anchor 查询。",
+      "design_assessment": "抽象方向合理；但 Redis、SQLite、Postgres、ClickHouse 当前仍全量读取后裁剪，违背小窗口工具的性能和可靠性目标。",
+      "modules": "session/internal/window；session/inmemory/sqlite/mysql/postgres/redis/clickhouse；internal/session/tool/recall；agent/llmagent；processor docs。",
+      "api_surface": "新增/实现 session.WindowService 和 EventWindowRequest/Entry 相关能力；session_load 工具提示按 backend capability 暴露。",
+      "change_inventory": "新增多个 backend window.go 和测试；更新 recall load tool 类型和 prompt guidance。",
+      "semantic_changes": "支持通过 anchor event ID 加载 before/after 窗口；backend 无搜索能力时也能提供 load-only session recovery。",
+      "module_impact": "直接影响 session backend 和 on-demand session tool 注入；间接影响长上下文恢复体验。",
+      "cross_module_impact": "LLMAgent prompt、processor on-demand overview、recall tools、session stores 和 docs 共同变化。",
+      "behavior_impact": "用户可要求按事件 ID 精确拉取局部上下文；但部分 backend 当前会因全量扫描导致大 session 仍慢或失败。",
+      "tests_docs": "覆盖共享 window 行为和多 backend 基本路径；需要补 bounded query 和坏行窗口外不影响的回归。",
+      "attention_points": "CI 全绿但本轮窗口性能/可靠性 comments 未解决。",
+      "outcome": "提交 4 条行级评论；未 approve、未合并。",
+      "risk": "Redis 和部分 SQL backend 的 session_load 仍可能扫描无界历史，甚至因窗口外坏行失败。",
+      "ci_state": "最终复核 CI 绿色；mergeable=MERGEABLE；4 个 WineChord threads unresolved。",
+      "inline_comments": [
+        {
+          "path": "session/redis/window.go",
+          "line": 50,
+          "severity": "P1",
+          "focus": "unbounded Redis window load",
+          "body": "This still loads the Redis session through `getSessionInternal` before trimming the requested window, and the Redis event paths load the full history before `EventNum` is applied. A small `session_load` can therefore transfer and unmarshal an unbounded Redis session; please add a Redis-specific bounded lookup around the anchor instead of relying on `EventNum` after the full read."
+        },
+        {
+          "path": "session/sqlite/window.go",
+          "line": 84,
+          "severity": "P1",
+          "focus": "unbounded SQL window load",
+          "body": "These SQL-backed window loaders fetch and unmarshal every event after `sessionCreatedAt`, then apply the tiny `Before`/`After` window in memory. That makes a small `session_load` behave like a full-session scan and can fail on an unrelated malformed row outside the requested window; please locate the anchor first and fetch bounded before/after neighbor batches with the backend ordering key."
+        },
+        {
+          "path": "session/postgres/window.go",
+          "line": 91,
+          "severity": "P1",
+          "focus": "unbounded SQL window load",
+          "body": "These SQL-backed window loaders fetch and unmarshal every event after `sessionCreatedAt`, then apply the tiny `Before`/`After` window in memory. That makes a small `session_load` behave like a full-session scan and can fail on an unrelated malformed row outside the requested window; please locate the anchor first and fetch bounded before/after neighbor batches with the backend ordering key."
+        },
+        {
+          "path": "session/clickhouse/window.go",
+          "line": 87,
+          "severity": "P1",
+          "focus": "unbounded SQL window load",
+          "body": "These SQL-backed window loaders fetch and unmarshal every event after `sessionCreatedAt`, then apply the tiny `Before`/`After` window in memory. That makes a small `session_load` behave like a full-session scan and can fail on an unrelated malformed row outside the requested window; please locate the anchor first and fetch bounded before/after neighbor batches with the backend ordering key."
+        }
+      ]
+    },
+    {
+      "number": 1859,
+      "title": "memory/tencentdb: add TencentDB Agent Memory integration",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1859",
+      "author": "Rememorio",
+      "status": "commented",
+      "technical_background": "Agent Memory 会从 session 对话中抽取长期记忆，并在后续 run 前召回。TencentDB adapter 同时涉及异步 capture、session end flush、cursor/checkpoint 和工具搜索，因此顺序和幂等非常关键。",
+      "problem": "PR 新增 TencentDB Agent Memory adapter：通过 session.Ingestor 捕获对话，通过 Runner plugin 注入 recall context，并暴露 TencentDB 原生搜索工具。",
+      "problem_framing": "用户需要把跨 session 的记忆接入外部网关；根因是现有 memory backend 没有 TencentDB gateway 的 capture/search/end-session 适配层。",
+      "root_cause": "缺少封装 gateway API、异步捕获队列、session 扫描 cursor 和 toolset 的 memory/tencentdb 包。",
+      "approach": "新增 client、service、worker、session_scan、recall、tools、types 和 example；capture 通过队列异步执行，并按 session 尝试串行。",
+      "alternative_designs": "可以同步 capture 后再返回 runner，或要求外部 gateway 自行去重。当前异步方案降低 run 延迟，但必须保证 EndSession 和 cursor 持久化正确。",
+      "tradeoffs": "异步 capture 提升吞吐和响应速度，但带来 flush-before-capture、重复 capture、失败重试和状态持久化复杂度。",
+      "design_assessment": "接口方向合理，但本轮发现 capture/end 顺序和 cursor 持久化两个 correctness blocker，不能 approve。",
+      "modules": "memory/tencentdb；examples/memory/tencentdb；docs/mkdocs/en|zh/memory.md。",
+      "api_surface": "新增 memory/tencentdb package、服务配置 options、Runner plugin、TencentDB memory tools 和示例文档。",
+      "change_inventory": "新增 gateway client、异步 worker、session transcript scanner、recall injection、tools、测试和文档。",
+      "semantic_changes": "运行结束后对话可异步 capture 到 TencentDB；后续 run 可注入召回记忆或通过工具查询。",
+      "module_impact": "直接影响使用 TencentDB Agent Memory 的 runner；间接影响 session ingestion lifecycle 和 memory recall 上下文。",
+      "cross_module_impact": "与 session.Ingestor、Runner plugin、memory tools、example 和 docs 协同。",
+      "behavior_impact": "用户能接入 TencentDB 记忆网关，但当前实现可能在 EndSession 前丢最新 capture 或重复发送旧 transcript。",
+      "tests_docs": "已有 adapter 单元测试和示例；需要补 EndSession 等待 capture、clone/reload session cursor 的测试。",
+      "attention_points": "CI 全绿但本轮 comments 未解决。",
+      "outcome": "提交 2 条行级评论；未 approve、未合并。",
+      "risk": "最新 turn 可能在 gateway flush 前未 capture；cursor 不持久化可能导致重复记忆。",
+      "ci_state": "最终复核 CI 绿色；mergeable=MERGEABLE；2 个 WineChord threads unresolved。",
+      "inline_comments": [
+        {
+          "path": "memory/tencentdb/service.go",
+          "line": 126,
+          "severity": "P1",
+          "focus": "capture/end ordering",
+          "body": "`EndSession` calls the gateway immediately, but `IngestSession` only enqueues capture work and serializes it later. A caller can end or start a new session before the queued capture for the last turn drains, so `/session/end` can flush the sidecar before the newest transcript is captured; please wait for, or enqueue behind, the same per-session `serialTail` chain before calling the gateway."
+        },
+        {
+          "path": "memory/tencentdb/service.go",
+          "line": 233,
+          "severity": "P1",
+          "focus": "capture cursor persistence",
+          "body": "The capture cursor is read from `sess.State` and written back only to this transient `*session.Session` after a successful async capture. On normal multi-turn runs the next turn may receive a cloned/reloaded session without that mutation, so the adapter can re-scan and resend already captured messages with freshly synthesized timestamps; please persist the cursor through the session store or keep a successful service-level checkpoint keyed by session."
+        }
+      ]
+    }
+  ],
+  "blocked": [],
+  "skipped_groups": [
+    {
+      "reason": "Draft/WIP/自己发起，暂不审核",
+      "items": [
+        {"number": 1857, "title": "memory/mem0: advance checkpoint after successful ingest", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1857", "author": "print-happy", "status": "skipped", "skip_reason": "draft PR。", "blockers": [{"kind": "draft_wip", "summary": "isDraft=true"}], "ci_state": "不作为 review gate。"},
+        {"number": 1840, "title": "telemetry: reduce chat trace payload size", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1840", "author": "Rememorio", "status": "skipped", "skip_reason": "draft PR。", "blockers": [{"kind": "draft_wip", "summary": "isDraft=true"}], "ci_state": "未进一步复核。"},
+        {"number": 1830, "title": "openclaw: support code-driven runtime profiles", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1830", "author": "WineChord", "status": "skipped", "skip_reason": "当前 reviewer 自己发起。", "blockers": [{"kind": "own_pr", "summary": "author=WineChord"}], "ci_state": "不审核自己的 PR。"},
+        {"number": 1778, "title": "examples: add RLM (Recursive Language Model) demo", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1778", "author": "hyprh", "status": "skipped", "skip_reason": "draft PR。", "blockers": [{"kind": "draft_wip", "summary": "isDraft=true"}], "ci_state": "旧 CI 有失败，不作为本轮 review gate。"},
+        {"number": 1710, "title": "a2a: add input schema", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1710", "author": "liuzengh", "status": "skipped", "skip_reason": "draft PR。", "blockers": [{"kind": "draft_wip", "summary": "isDraft=true"}], "ci_state": "未进一步复核。"},
+        {"number": 1698, "title": "WIP: taskrun: split background run runtime", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1698", "author": "WineChord", "status": "skipped", "skip_reason": "标题含 WIP 且作者是当前 reviewer。", "blockers": [{"kind": "draft_wip", "summary": "title contains WIP"}, {"kind": "own_pr", "summary": "author=WineChord"}], "ci_state": "不审核。"},
+        {"number": 1683, "title": "tool/workspaceexec: add workspace-scoped file tools sharing workspace_exec state", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1683", "author": "bytethm", "status": "skipped", "skip_reason": "draft PR。", "blockers": [{"kind": "draft_wip", "summary": "isDraft=true"}], "ci_state": "还有 codecov/patch、lint 失败。"},
+        {"number": 1678, "title": "agent: centralize invoke_agent telemetry in RunWithPlugins", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1678", "author": "liuzengh", "status": "skipped", "skip_reason": "draft PR。", "blockers": [{"kind": "draft_wip", "summary": "isDraft=true"}], "ci_state": "多项 module test 失败。"},
+        {"number": 1651, "title": "evolution: add async skill-extraction pipeline for agent self-evolution", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1651", "author": "Rememorio", "status": "skipped", "skip_reason": "draft PR。", "blockers": [{"kind": "draft_wip", "summary": "isDraft=true"}], "ci_state": "未进一步复核。"},
+        {"number": 1526, "title": "model: add ModelMaxOutputTokens map and ResolveMaxOutputTokens helper", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1526", "author": "sks", "status": "skipped", "skip_reason": "draft PR。", "blockers": [{"kind": "draft_wip", "summary": "isDraft=true"}], "ci_state": "codecov/patch=FAILURE。"},
+        {"number": 1509, "title": "[WIP] session: support concurrent queued execution", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1509", "author": "hyprh", "status": "skipped", "skip_reason": "标题含 WIP。", "blockers": [{"kind": "draft_wip", "summary": "title contains [WIP]"}], "ci_state": "mergeable=CONFLICTING。"},
+        {"number": 1380, "title": "[WIP] fix(agent): always register InstructionProcessor to support run-time WithInstruction", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1380", "author": "hyprh", "status": "skipped", "skip_reason": "标题含 WIP。", "blockers": [{"kind": "draft_wip", "summary": "title contains [WIP]"}], "ci_state": "mergeable=CONFLICTING。"}
+      ]
+    },
+    {
+      "reason": "硬 CI 或外部必需检查失败",
+      "items": [
+        {"number": 1183, "title": "internal/util: add util for streaming parsing of JSON returned by LLM", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1183", "author": "hongxiuzhe", "status": "skipped", "skip_reason": "硬 CI 未绿。", "blockers": [{"kind": "ci", "summary": "lint=FAILURE"}, {"kind": "ci", "summary": "CLAAssistant=FAILURE"}, {"kind": "ci", "summary": "codecov/patch=FAILURE"}], "ci_state": "lint、CLA、codecov 均非绿。"},
+        {"number": 1460, "title": "improve nano-pdf skill description + add skill-review-and-optimize CI", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1460", "author": "fernandezbaptiste", "status": "skipped", "skip_reason": "外部扫描失败。", "blockers": [{"kind": "ci", "summary": "GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE"}], "ci_state": "外部必需检查失败。"},
+        {"number": 1764, "title": "examples: add graph RAG code search demo and viewer", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1764", "author": "hyprh", "status": "skipped", "skip_reason": "示例构建/检查失败。", "blockers": [{"kind": "ci", "summary": "check examples build script (1/4)=FAILURE"}, {"kind": "ci", "summary": "check examples (1/4)=FAILURE"}], "ci_state": "硬 CI 失败。"},
+        {"number": 1776, "title": "docs: add FAQ section", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1776", "author": "meichuanyi", "status": "skipped", "skip_reason": "硬 CI 与 CLA 未绿。", "blockers": [{"kind": "ci", "summary": "go test (tool/claudecode/go.mod)=FAILURE"}, {"kind": "ci", "summary": "CLAAssistant=FAILURE"}], "ci_state": "coverage skipped。"},
+        {"number": 1801, "title": "docs/mkdocs/zh/fix/agent.md: fix typo", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1801", "author": "GongNanyue", "status": "skipped", "skip_reason": "硬 CI 与 CLA 未绿。", "blockers": [{"kind": "ci", "summary": "go test (openclaw/go.mod)=FAILURE"}, {"kind": "ci", "summary": "CLAAssistant=FAILURE"}], "ci_state": "coverage skipped。"},
+        {"number": 1824, "title": "docs: clarify OpenAI file content handling", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1824", "author": "yu-xin-c", "status": "skipped", "skip_reason": "硬 CI 未绿。", "blockers": [{"kind": "ci", "summary": "go test (go.mod)=FAILURE"}], "ci_state": "coverage skipped。"},
+        {"number": 1826, "title": "docs: Add FAQ section", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1826", "author": "meichuanyi", "status": "skipped", "skip_reason": "CLA 未通过。", "blockers": [{"kind": "ci", "summary": "CLAAssistant=FAILURE"}], "ci_state": "外部 CLA blocker。"},
+        {"number": 1847, "title": "fix(container): parse bind mounts without mode", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1847", "author": "yu-xin-c", "status": "skipped", "skip_reason": "硬 CI 未绿。", "blockers": [{"kind": "ci", "summary": "check external consumer (tool/wikipedia/go.mod)=FAILURE"}, {"kind": "ci", "summary": "check examples build script (4/4)=FAILURE"}], "ci_state": "硬 CI 失败。"}
+      ]
+    },
+    {
+      "reason": "Merge conflict 或 mergeability 冲突",
+      "items": [
+        {"number": 1446, "title": "feat(a2a): add StructuredOutput → DataPart converter for custom event…", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1446", "author": "SummerLv", "status": "skipped", "skip_reason": "mergeable=CONFLICTING。", "blockers": [{"kind": "merge_conflict", "summary": "GitHub reports mergeable=CONFLICTING"}], "ci_state": "未进入 review。"},
+        {"number": 1483, "title": "tool/subtask: add dynamic agent creation tools", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1483", "author": "bytethm", "status": "skipped", "skip_reason": "mergeable=CONFLICTING。", "blockers": [{"kind": "merge_conflict", "summary": "GitHub reports mergeable=CONFLICTING"}], "ci_state": "未进入 review。"},
+        {"number": 1736, "title": "all: add deferred tool set", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1736", "author": "liuzengh", "status": "skipped", "skip_reason": "mergeable=CONFLICTING。", "blockers": [{"kind": "merge_conflict", "summary": "GitHub reports mergeable=CONFLICTING"}], "ci_state": "未进入 review。"},
+        {"number": 1850, "title": "fix(openapi): stringify scalar request params", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1850", "author": "yu-xin-c", "status": "skipped", "skip_reason": "mergeable=CONFLICTING，且同类修复 PR 1849 已合入。", "blockers": [{"kind": "merge_conflict", "summary": "GitHub reports mergeable=CONFLICTING"}], "ci_state": "未进入 review。"}
+      ]
+    },
+    {
+      "reason": "存在具体未解决的人类 review/comment 或仍需作者回应",
+      "items": [
+        {"number": 1400, "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400", "author": "liuzengh", "status": "skipped", "skip_reason": "公开 artifact.Service 直接新增 Head 方法会破坏自定义实现，Flash-LHR thread 未回应。", "blockers": [{"kind": "human_review", "reviewer": "Flash-LHR", "path": "artifact/service.go", "line": 53, "summary": "给公开 interface 加 Head 会让现有自定义实现编译失败，需改扩展接口或迁移方案。", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400#discussion_r2922076748"}], "ci_state": "同时 codecov/patch、go-apidiff 失败。"},
+        {"number": 1768, "title": "feat(sandbox): add secure Linux sandbox for code execution based on bubblewrap", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1768", "author": "liuzengh", "status": "skipped", "skip_reason": "仍有 liuzengh 提出的后台异步进程/TTY 语义问题未回应，且 codecov/patch 非绿。", "blockers": [{"kind": "human_review", "reviewer": "liuzengh", "path": "codeexecutor/sandbox/docs/README.md", "line": 1, "summary": "询问 sandbox 内异步进程跨工具调用通信/检查是否支持，当前未看到作者回应。", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1768#discussion_r3273649864"}, {"kind": "soft_ci", "summary": "codecov/patch=FAILURE"}], "ci_state": "codecov/patch 失败。"},
+        {"number": 1815, "title": "{agent, internal/flow/processor}: add prompt section overrides", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1815", "author": "Flash-LHR", "status": "skipped", "skip_reason": "WineChord 关于 skills guidance 仍追加默认文本的 thread 未回应。", "blockers": [{"kind": "human_review", "reviewer": "WineChord", "path": "internal/flow/processor/skills.go", "line": 802, "summary": "request renderer 省略 Available skills 时仍追加默认 skill tooling guidance，可能指向不存在的 catalog。", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1815#discussion_r3270804324"}], "ci_state": "CI 绿色但 human thread 未解决。"},
+        {"number": 1839, "title": "{server/agui, docs}: add distributed cancel", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1839", "author": "Flash-LHR", "status": "skipped", "skip_reason": "两个 WineChord threads 未回应。", "blockers": [{"kind": "human_review", "reviewer": "WineChord", "path": "server/agui/agui.go", "line": 62, "summary": "distributed cancel 需要非空 AppName，否则 session service 会拒绝。", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1839#discussion_r3286975845"}, {"kind": "human_review", "reviewer": "WineChord", "path": "server/agui/runner/cancel.go", "line": 216, "summary": "cancel polling 不应反复 GetSession 加载完整 session，应使用 state-only marker read。", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1839#discussion_r3286975853"}], "ci_state": "CI 绿色但 human threads 未解决。"},
+        {"number": 1842, "title": "model/gemini: support thinking level and thought signatures", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1842", "author": "Kevin091827", "status": "skipped", "skip_reason": "Flash-LHR 关于 ThinkingLevel patch merge 的 thread 未回应；另有 CodeRabbit blank ThinkingLevel thread。", "blockers": [{"kind": "human_review", "reviewer": "Flash-LHR", "path": "model/request.go", "line": 447, "summary": "`WithCallGenerationConfigPatch` 会把仅含 ThinkingLevel 的 patch 当空值丢弃。", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1842#discussion_r3286656495"}, {"kind": "bot_review", "reviewer": "coderabbitai", "path": "model/gemini/gemini.go", "line": 695, "summary": "blank ThinkingLevel 应按 unset 处理后再应用优先级。"}], "ci_state": "CI 绿色但 review blockers 未解决。"},
+        {"number": 1860, "title": "docs: add prompt template guide", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1860", "author": "yu-xin-c", "status": "skipped", "skip_reason": "上轮 WineChord comments 仍未回应，复制文档示例会缺少 time import。", "blockers": [{"kind": "human_review", "reviewer": "WineChord", "path": "docs/mkdocs/en/prompt.md", "line": 184, "summary": "示例使用 time.Minute 但 import block 缺少 time。", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1860#discussion_r3300781693"}, {"kind": "human_review", "reviewer": "WineChord", "path": "docs/mkdocs/zh/prompt.md", "line": 178, "summary": "中文示例同样缺少 time import。", "url": "https://github.com/trpc-group/trpc-agent-go/pull/1860#discussion_r3300781694"}, {"kind": "bot_review", "reviewer": "coderabbitai", "path": "docs/mkdocs/zh/prompt.md", "line": 15, "summary": "中文 agent link 缺少 anchor fragment。"}], "ci_state": "CI 绿色但 comments 未回应。"}
+      ]
+    }
+  ],
+  "follow_up": [
+    {
+      "number": 1817,
+      "title": "session/mysql: limit GetSession event loading",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1817",
+      "author": "Rememorio",
+      "status": "blocked",
+      "reason": "本轮审查过程中作者自行 merge，GitHub 返回 Issue is locked，无法提交新发现的行级评论。",
+      "risk": "显式 WithEventTime 已回退到 full-list，但 sessionTTL 也会隐式触发 event.Timestamp 过滤；当前 limited path 在 TTL 场景仍可能先按 DB created_at LIMIT，再按 event.Timestamp 过滤，延迟旧事件可能占掉窗口。",
+      "ci_state": "PR 1817 已于 2026-05-26T04:50:30 由 Rememorio 合并。建议后续补 follow-up PR 或 issue。"
+    },
+    {
+      "number": 1820,
+      "title": "runner: preserve interrupted assistant text",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1820",
+      "author": "Rememorio",
+      "status": "approved",
+      "reason": "已 LGTM，但 codecov/patch 仍非绿，按 MyCR 规则不能 merge。",
+      "risk": "等待 patch coverage 或 Codecov 状态恢复；merge 前需再次确认 head 未变。",
+      "ci_state": "codecov/patch=FAILURE；其余 checks 绿色。"
+    }
+  ],
+  "timeline": [
+    {"time": "12:30", "label": "更新 canonical mycr skill：新增 reviewability ledger 和二次可审核性复核规则。"},
+    {"time": "12:35", "label": "全量扫描 open PR、CI、mergeability、review threads；将 PR 1731 从 stale Changes Requested 误跳过场景中拉回候选。"},
+    {"time": "12:44", "label": "PR 1800 xhigh review 后提交 3 条 workspace_exec/shellsafe 安全边界评论。"},
+    {"time": "12:50", "label": "PR 1817 审查时发现 TTL 语义风险，但作者在评论提交前合并，GitHub 锁定导致无法发 review。"},
+    {"time": "13:00", "label": "PR 1820 提交 2 条 runner interrupted persistence 评论；误触一次空 review，已改成 superseded 说明。"},
+    {"time": "13:09", "label": "PR 1843 xhigh review 无 findings，提交 LGTM 并 squash merge。"},
+    {"time": "13:16", "label": "PR 1859 提交 2 条 TencentDB memory capture/cursor 评论。"},
+    {"time": "13:17", "label": "PR 1856 提交 4 条 session window bounded loading 评论。"},
+    {"time": "13:28", "label": "PR 1731 在仅 go-apidiff 软门禁且无活人 review blocker 的情况下完成 CR，提交 4 条 GraphRAG/API/AGE 评论。"},
+    {"time": "13:31", "label": "最终复核 processed PR：PR 1820 作者已修复本轮 threads，CI 只剩 codecov/patch，提交 LGTM 但不 merge。"}
+  ]
+}

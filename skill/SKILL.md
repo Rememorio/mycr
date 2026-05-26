@@ -49,6 +49,11 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    impact, docs/examples/tests added, and any design tradeoffs visible from the
    diff. Gather enough source detail to let the final report stand alone as an
    engineering brief; do not rely on vague title-level summaries.
+   Maintain a run-level reviewability ledger for every open PR. Each PR must
+   end the scan in exactly one auditable bucket: processed, eligible candidate,
+   intentionally not reached, or blocked by a concrete gate. Do not allow an
+   open PR to disappear from the run because of candidate ordering, stale
+   aggregate review state, vague soft-CI uncertainty, or a broad skip group.
 4. Keep only PRs that satisfy every gate:
    - state is open
    - author is not the authenticated reviewer
@@ -96,6 +101,13 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    - comments previously raised by us, `Flash-LHR`, or on our behalf must be
      verified against the latest head; if fixed, proceed even if the thread was
      not clicked resolved, and resolve our own/on-behalf threads when allowed
+   - after the first gate pass, run a second pass over all non-draft, non-WIP,
+     non-own PRs. Any PR with green CI or only acceptable soft-CI failures, no
+     merge conflict, and no verified live blocker must be either reviewed in
+     this run or listed as `not_reached` with a concrete reason why capacity or
+     ordering stopped it. It must not be hidden under CI, human review,
+     `Changes Requested`, or "needs discussion" unless the exact current
+     blocker has been named and verified.
 5. For skipped PRs, record the concrete skip reason for the final report. The
    reason must identify the exact gate that blocked review. Use structured
    `blockers` entries when possible. Do not group PRs under vague combined
@@ -104,6 +116,12 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    actually blocking it. If a PR is otherwise reviewable but was not processed
    because of time or candidate ordering, say that plainly as "not reached this
    run" and put it in follow-up, not in a blocker group.
+   Before processing candidates and again before writing the report, compare
+   the reviewability ledger with the processed list. If a PR looks reviewable
+   but was not processed, promote it into the candidate queue when practical;
+   otherwise report it as `not_reached` and include the specific reason it was
+   deferred. The report must make this visible enough that the user can spot
+   missed CR opportunities immediately.
 6. Process candidates one at a time. Spawn exactly one subagent per candidate
    with reasoning effort `xhigh`. Give it the PR number, repo, diff access
    instructions, and ask for a code-review result only; do not let the subagent
