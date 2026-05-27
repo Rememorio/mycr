@@ -1,0 +1,802 @@
+{
+  "title": "MyCR Review Report 20260527-110700",
+  "repo": "trpc-group/trpc-agent-go",
+  "generated_at": "2026-05-27T11:07:00+08:00",
+  "overview": "本轮先更新了 repo 托管的 MyCR skill，使 WineChord 自己提交的 PR 进入 own-PR maintenance 路径：同样做严格审计，但有效问题直接 checkout 到 PR 分支修复并推送，不自评、不自赞同、不自合并。已确认安装目录中的 mycr skill 是 bootstrap，会加载 repo 内 canonical skill，因此 Codex 后续能识别并使用本次更新。随后执行全量 MyCR：外部 PR #1868 已 LGTM 并 squash merge；#1824 和 #1800 收到行级评论，其中 #1800 作者已修复本轮评论但新 head CI 仍在排队；WineChord 自己的 #1876/#1875/#1872/#1871/#1870/#1869/#1867 已按维护路径审计，其中 6 个分支直接推送修复或确认无需修复，#1875 与 #1869 当前全绿，其余等待 GitHub CI 矩阵。#1874/#1866 仍有具体 unresolved bot/human 线程，#1847 作者已更新但等待新 CI，#1877 本地复核无发现但等待 CI。",
+  "skill_evolution": {
+    "status": "completed",
+    "summary": "MyCR canonical skill 增加 own-PR maintenance 路径，并让报告 schema、renderer 和 dashboard 识别 maintained/direct_fixes/self_review_policy。",
+    "commits": [
+      {
+        "repo": "mycr",
+        "branch": "main",
+        "commit": "6f7e832",
+        "message": "mycr: handle own pr maintenance",
+        "pushed": true
+      }
+    ],
+    "validation": [
+      "python3 -m py_compile scripts/render_mycr_report.py",
+      "npm run verify",
+      "browser smoke check for /mycr dashboard and maintained filter",
+      "installed bootstrap skill checked: it delegates to the canonical repo skill"
+    ]
+  },
+  "approved": [
+    {
+      "number": 1868,
+      "title": "evaluation/workflow/promptiter: preserve empty allowed gradients",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1868",
+      "author": "Flash-LHR",
+      "status": "merged",
+      "technical_background": "promptiter 的 workflow 会反复让模型基于梯度/反馈改写 prompt。这里的关键概念是“空字符串也可以是用户有意给出的梯度”，它和缺失值不同：缺失表示没有提供，空字符串表示提供了一个内容为空但仍应被保留的位置。",
+      "problem": "旧逻辑容易把 empty allowed gradients 当成无意义值丢掉，导致 prompt iteration 的输入边界和用户配置不一致。",
+      "approach": "PR 保留空梯度在配置与执行路径中的语义，避免把空字符串误当成未提供。",
+      "design_assessment": "变更面集中，语义清楚，CI 全绿，未发现当前 diff 引入的兼容性或正确性问题。",
+      "modules": "evaluation/workflow/promptiter",
+      "tests_docs": "GitHub CI/status rollup 全绿；review threads 无 unresolved blocker。",
+      "outcome": "提交 approve review，正文为 LGTM；随后使用 squash merge 合入 main。",
+      "risk": "低。主要风险是 prompt iteration 输入语义变化，但该变化正是 PR 目标且已由测试覆盖。",
+      "ci_state": "mergedAt=2026-05-27T02:23:51Z；merge commit bd5eb7c2bfe3e8ed010a6831df55814813be8a2d。",
+      "inline_comments": []
+    }
+  ],
+  "commented": [
+    {
+      "number": 1824,
+      "title": "docs: clarify OpenAI file content handling",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1824",
+      "author": "yu-xin-c",
+      "status": "commented",
+      "technical_background": "codeexecutor 文档需要解释 OpenAI file content parts 的暴露边界。初学者可以把一次模型请求理解成一组 message parts：普通文本、文件名提示、文件内容片段等会分别进入 provider。只省略 file content parts 并不等于整个请求对 provider 隐身。",
+      "problem": "文档 wording 容易让用户误以为 `WithOmitFileContentParts(true)` 是完整 provider privacy boundary。实际它只省略文件内容 part，普通 message text 和文件名提示仍可能进入 provider。",
+      "approach": "在英文文档 changed line 上提交行级评论，要求收窄措辞，并同步中文段落，避免用户把该 option 当成完整隐私隔离。",
+      "design_assessment": "这是文档准确性问题，不需要代码修复；但对用户理解安全边界重要，应该在合入前改清楚。",
+      "modules": "docs/mkdocs/en/codeexecutor.md；docs/mkdocs/zh/codeexecutor.md",
+      "tests_docs": "CI 当前全绿；阻塞点是文档 review thread。",
+      "outcome": "已提交 review 4368856347；当前仍有 1 个 unresolved thread。",
+      "risk": "中。错误文档会让用户高估 provider 隐私边界。",
+      "ci_state": "150 checks pass，pending=0，failed=0；等待作者处理文档评论。",
+      "inline_comments": [
+        {
+          "path": "docs/mkdocs/en/codeexecutor.md",
+          "line": 175,
+          "severity": "P2",
+          "focus": "privacy boundary wording",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1824#discussion_r3307972024",
+          "body": "`WithOmitFileContentParts(true)` only omits file content parts; normal message text and file-name hints may still be visible to the provider. Please narrow this wording, and mirror the clarification in the Chinese paragraph, so users do not treat this option as a full provider privacy boundary."
+        }
+      ]
+    },
+    {
+      "number": 1800,
+      "title": "{tool/workspaceexec, tool/skill, agent/llmagent}: add command allow/deny policy for sandboxed exec",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1800",
+      "author": "bytethm",
+      "status": "commented",
+      "technical_background": "workspace_exec 是 agent 暴露给模型的工作区命令执行工具。命令 allow/deny 策略的第一层原则是先用 shell 子集 parser 把命令拆成可理解的 argv/pipeline，再拒绝危险命令、shell wrapper 和会修改 shell 状态的 builtin。这个边界要成立，parser 语义、环境变量、PATH、backend 是否继承环境、是否仍经 shell 字符串启动，都必须一致。",
+      "problem": "PR 要降低 prompt injection 场景下模型执行 `curl`、`wget`、`nc` 等命令带来的 SSRF/外联风险。前几轮已经修掉 CleanEnv、env key、case-fold、assignment 等问题；本轮最新 head 还留下两个细节：变量修改 builtin 没有完全隐式拒绝，以及双引号内反斜杠处理比 POSIX shell 更宽松。",
+      "approach": "提交 2 条行级评论：一条要求把 `read`、`getopts`、shell-backed `printf -v`、`let` 等变量修改 builtin 纳入 implicit deny；另一条要求双引号 lexer 只在 POSIX 规定的字符前移除反斜杠，否则保留或拒绝。作者随后在 head `12597166` 修复并补测试。",
+      "design_assessment": "作者修复方向正确：implicit deny 扩展到 `printf/read/getopts/let/mapfile/readarray`，`lexDoubleQuoted` 改为 POSIX 行为，并补了具体 bypass 回归。当前 review threads 已全部 resolved；aggregate `CHANGES_REQUESTED` 是历史状态残留。由于 head 在评论后移动，MyCR 不在 CI pending 时 approve/merge。",
+      "modules": "internal/shellsafe；internal/envscrub；tool/workspaceexec；codeexecutor；agent/llmagent；tool/skill；docs/mkdocs/en|zh/codeexecutor.md",
+      "tests_docs": "在临时 worktree 复核了相关包：internal/shellsafe、internal/envscrub、tool/workspaceexec、codeexecutor/e2b、workspaceio、agent/llmagent、tool/skill 通过；codeexecutor/local 的 Python hello-world 在整组并发中出现一次本机 `signal: killed`，单项复跑通过；git diff --check 通过。",
+      "outcome": "本轮提交 review 4368873752。作者已回复 fixed 并更新 head，当前 unresolved thread count=0；等待 CI 矩阵完成后再决定 approve/merge。",
+      "risk": "当前代码层面未发现新的 blocker；剩余风险来自 GitHub CI 尚未完成。命令策略仍是 v1 shell 子集，不等价于完整 sandbox，应继续依赖网络 egress sandbox 作为主防线。",
+      "ci_state": "latest head=12597166811a70eb90acd448ef5c0bd2573378b5；failed=0，pending=130，pass=23；mergeable=MERGEABLE，reviewDecision 仍显示 CHANGES_REQUESTED 但 thread audit 为 0 unresolved。",
+      "inline_comments": [
+        {
+          "path": "internal/shellsafe/parser.go",
+          "line": 158,
+          "severity": "P1",
+          "focus": "state-mutating shell builtins",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1800#discussion_r3307988013",
+          "body": "The implicit deny set still lets state-mutating builtins such as `read`, `getopts`, and shell-backed `printf -v` run before a later allowed command. In deny-only policy mode, `printf -v PATH ./work/bin; git` can change command resolution before `git` runs, so please deny these variable-mutating builtins or stop executing checked segments through a shell."
+        },
+        {
+          "path": "internal/shellsafe/parser_simple.go",
+          "line": null,
+          "severity": "P1",
+          "focus": "POSIX double-quoted backslash semantics",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1800#discussion_r3307988014",
+          "body": "Double-quoted backslashes are only removed by POSIX shell before `$`, backtick, `\"`, `\\`, or newline, but the parser removes them before every byte. Please preserve or reject non-special backslashes inside double quotes."
+        }
+      ]
+    }
+  ],
+  "maintained": [
+    {
+      "self_review_policy": "该 PR 作者是 WineChord。本轮按 own-PR maintenance 路径处理：只做质量审计、直接修分支、推送 commit 和复核 CI/thread；没有给自己的 PR 发 review comment、没有提交 LGTM/approve、没有 merge。",
+      "technical_background": "Own PR 维护路径把作者自己的 PR 当作待交付分支，而不是第三方 review 对象。判断标准仍然和外部 PR 一样：先理解模块职责和数据流，再检查兼容性、错误处理、测试覆盖与 CI；区别是发现问题后直接在 PR 分支上修复，避免自己给自己发 review comment 或 approve。",
+      "number": 1876,
+      "title": "{agent/taskrun, openclaw}: support worktree-isolated subagents",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1876",
+      "author": "WineChord",
+      "status": "maintained",
+      "problem": "PR 让 subagent/taskrun 在独立 worktree 中运行，避免子任务改动污染主 checkout。审计发现 finalize 后 metadata 仍可能记录旧 worktree path/branch，且 tool/claudecode 测试里的 fake rg 脚本在 CI 上可能被执行时仍处于写入状态。",
+      "approach": "直接在 PR 分支修 metadata 写回 final path/branch，并改测试 helper 先关闭文件再 chmod/执行，避免 text file busy。",
+      "design_assessment": "直接修复后，metadata 能表达真实最终工作树；测试 helper 不再依赖平台对正在写入脚本的执行容忍度。",
+      "modules": "openclaw/internal/subagentrun；tool/claudecode",
+      "tests_docs": "openclaw/internal/subagentrun 测试通过；tool/claudecode 目标回归连续 20 次通过。完整 tool/claudecode 模块在本机仍被既有 `/bin/true` 平台假设影响，未作为本 PR 新问题处理。",
+      "outcome": "已直接推送 2 个修复 commit；未自评。",
+      "risk": "低到中，等待 GitHub CI 全矩阵完成。",
+      "ci_state": "latest head=3d3dc1ff80cc6eafa0e1757c7d243193cd7a53eb；failed=0，pending=137，pass=16。",
+      "direct_fixes": [
+        {
+          "branch": "subagent_worktree_isolation",
+          "commit": "93f2d83d",
+          "summary": "persist finalized worktree metadata",
+          "files": [
+            "openclaw/internal/subagentrun/worktree.go",
+            "openclaw/internal/subagentrun/service_test.go"
+          ],
+          "tests": [
+            "go test ./internal/subagentrun inside openclaw module"
+          ],
+          "ci_state": "pushed; initial CI exposed unrelated test helper race"
+        },
+        {
+          "branch": "subagent_worktree_isolation",
+          "commit": "3d3dc1ff",
+          "summary": "close fake rg scripts before exec",
+          "files": [
+            "tool/claudecode/claudecode_test.go"
+          ],
+          "tests": [
+            "go test ./... -run TestGrepHelpersCoverRemainingFallbackAndRipgrepBranches -count=20 inside tool/claudecode module"
+          ],
+          "ci_state": "pushed; CI pending"
+        }
+      ]
+    },
+    {
+      "self_review_policy": "该 PR 作者是 WineChord。本轮按 own-PR maintenance 路径处理：只做质量审计、直接修分支、推送 commit 和复核 CI/thread；没有给自己的 PR 发 review comment、没有提交 LGTM/approve、没有 merge。",
+      "technical_background": "Own PR 维护路径把作者自己的 PR 当作待交付分支，而不是第三方 review 对象。判断标准仍然和外部 PR 一样：先理解模块职责和数据流，再检查兼容性、错误处理、测试覆盖与 CI；区别是发现问题后直接在 PR 分支上修复，避免自己给自己发 review comment 或 approve。",
+      "number": 1875,
+      "title": "{session, internal/flow, openclaw}: track summary boundaries",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1875",
+      "author": "WineChord",
+      "status": "maintained",
+      "problem": "summary boundary 是会话压缩后的事件分界。审计发现 LastEventID 与 recall current_hidden 过滤边界可能不一致，导致压缩后工具回忆或隐藏事件判断越过摘要边界。",
+      "approach": "直接修 session history 的 LastEventID 处理，并让 recall current_hidden 尊重 summary event boundary。",
+      "design_assessment": "修复后，压缩摘要和 recall 可见性使用同一个边界语义，降低会话历史被重复或越界读取的风险。",
+      "modules": "openclaw/conversation；internal/session/tool/recall",
+      "tests_docs": "go test ./internal/session/tool/recall；go test ./conversation inside openclaw module。",
+      "outcome": "已直接推送修复 commit；当前 CI 全绿；未自评。",
+      "risk": "低。",
+      "ci_state": "latest head=29bc01b2558af147fc8fe8b98d15c06e9d5f7cd7；failed=0，pending=0，pass=150。",
+      "direct_fixes": [
+        {
+          "branch": "context_compact_boundary",
+          "commit": "29bc01b2",
+          "summary": "honor summary event boundaries",
+          "files": [
+            "openclaw/conversation/history.go",
+            "internal/session/tool/recall"
+          ],
+          "tests": [
+            "go test ./internal/session/tool/recall",
+            "go test ./conversation inside openclaw module"
+          ],
+          "ci_state": "pushed; CI green"
+        }
+      ]
+    },
+    {
+      "self_review_policy": "该 PR 作者是 WineChord。本轮按 own-PR maintenance 路径处理：只做质量审计、直接修分支、推送 commit 和复核 CI/thread；没有给自己的 PR 发 review comment、没有提交 LGTM/approve、没有 merge。",
+      "technical_background": "Own PR 维护路径把作者自己的 PR 当作待交付分支，而不是第三方 review 对象。判断标准仍然和外部 PR 一样：先理解模块职责和数据流，再检查兼容性、错误处理、测试覆盖与 CI；区别是发现问题后直接在 PR 分支上修复，避免自己给自己发 review comment 或 approve。",
+      "number": 1872,
+      "title": "agent/taskrun: expose run progress and transcripts",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1872",
+      "author": "WineChord",
+      "status": "maintained",
+      "problem": "taskrun transcript/progress 暴露子任务运行状态。审计发现读取 transcript 时，如果 child session 已被删除或查不到，后续代码可能对 nil child 解引用。",
+      "approach": "直接在 GetSession 后处理 nil child，返回 ErrRunNotFound，并在现有 taskrun 测试文件里补回归。",
+      "design_assessment": "错误路径变成显式 not found，符合 transcript 查询语义，也不会影响正常运行路径。",
+      "modules": "tool/taskrun",
+      "tests_docs": "go test ./tool/taskrun；git diff --check。",
+      "outcome": "已直接推送修复 commit；未自评。",
+      "risk": "低，等待最后 coverage check。",
+      "ci_state": "latest head=8effee61f47ec75cdac5fa970aa768aee581e1c1；failed=0，pending=1，pass=148。",
+      "direct_fixes": [
+        {
+          "branch": "taskrun_progress_transcript",
+          "commit": "8effee61",
+          "summary": "handle missing transcript session",
+          "files": [
+            "tool/taskrun/tool.go",
+            "tool/taskrun/tool_test.go"
+          ],
+          "tests": [
+            "go test ./tool/taskrun",
+            "git diff --check"
+          ],
+          "ci_state": "pushed; coverage pending"
+        }
+      ]
+    },
+    {
+      "self_review_policy": "该 PR 作者是 WineChord。本轮按 own-PR maintenance 路径处理：只做质量审计、直接修分支、推送 commit 和复核 CI/thread；没有给自己的 PR 发 review comment、没有提交 LGTM/approve、没有 merge。",
+      "technical_background": "Own PR 维护路径把作者自己的 PR 当作待交付分支，而不是第三方 review 对象。判断标准仍然和外部 PR 一样：先理解模块职责和数据流，再检查兼容性、错误处理、测试覆盖与 CI；区别是发现问题后直接在 PR 分支上修复，避免自己给自己发 review comment 或 approve。",
+      "number": 1871,
+      "title": "docs: clarify AgentTool context visibility",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1871",
+      "author": "WineChord",
+      "status": "maintained",
+      "problem": "文档提到未定义的 `taskrun` 概念，初学者会误以为当前 AgentTool 文档已经暴露了同名工具或 API。",
+      "approach": "直接把中英文文档改成“separate application run / 独立应用运行流程”，避免引用不存在的工具名。",
+      "design_assessment": "仅文档语义修正，降低误导。",
+      "modules": "docs/mkdocs/en/tool.md；docs/mkdocs/zh/tool.md",
+      "tests_docs": "git diff --check。",
+      "outcome": "已直接推送文档修复；未自评。",
+      "risk": "低，等待 CI。",
+      "ci_state": "latest head=0bfc097acf88e25c6b3db739e1fa3140b0459f02；failed=0，pending=66，pass=82。",
+      "direct_fixes": [
+        {
+          "branch": "docs_agenttool_context",
+          "commit": "0bfc097a",
+          "summary": "avoid undefined taskrun guidance",
+          "files": [
+            "docs/mkdocs/en/tool.md",
+            "docs/mkdocs/zh/tool.md"
+          ],
+          "tests": [
+            "git diff --check"
+          ],
+          "ci_state": "pushed; CI pending"
+        }
+      ]
+    },
+    {
+      "self_review_policy": "该 PR 作者是 WineChord。本轮按 own-PR maintenance 路径处理：只做质量审计、直接修分支、推送 commit 和复核 CI/thread；没有给自己的 PR 发 review comment、没有提交 LGTM/approve、没有 merge。",
+      "technical_background": "Own PR 维护路径把作者自己的 PR 当作待交付分支，而不是第三方 review 对象。判断标准仍然和外部 PR 一样：先理解模块职责和数据流，再检查兼容性、错误处理、测试覆盖与 CI；区别是发现问题后直接在 PR 分支上修复，避免自己给自己发 review comment 或 approve。",
+      "number": 1870,
+      "title": "{agent, docs}: add lazy agent guidance",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1870",
+      "author": "WineChord",
+      "status": "maintained",
+      "problem": "PR 引入 lazy agent guidance 时把 exported `runner.AgentFactory` 降成 alias/形态变化，可能破坏外部文档和 API 可读性。",
+      "approach": "直接恢复 `runner.AgentFactory` 为具名 exported function type，并保持参数换行符合 Go 风格。",
+      "design_assessment": "保留公开类型名能让 API 文档、用户代码和 compile-time 类型提示更稳定。",
+      "modules": "runner；agent；tool/agent；tool/transfer；docs",
+      "tests_docs": "go test ./agent ./runner ./tool/agent ./tool/transfer；git diff --check。",
+      "outcome": "已直接推送修复 commit；未自评。",
+      "risk": "低，等待 CI。",
+      "ci_state": "latest head=a3abaf756f0b32bf5d050f3e26e1e90bb9554dd5；failed=0，pending=115，pass=33。",
+      "direct_fixes": [
+        {
+          "branch": "agent_lazy_helper",
+          "commit": "a3abaf75",
+          "summary": "preserve AgentFactory type",
+          "files": [
+            "runner"
+          ],
+          "tests": [
+            "go test ./agent ./runner ./tool/agent ./tool/transfer",
+            "git diff --check"
+          ],
+          "ci_state": "pushed; CI pending"
+        }
+      ]
+    },
+    {
+      "self_review_policy": "该 PR 作者是 WineChord。本轮按 own-PR maintenance 路径处理：只做质量审计、直接修分支、推送 commit 和复核 CI/thread；没有给自己的 PR 发 review comment、没有提交 LGTM/approve、没有 merge。",
+      "technical_background": "Own PR 维护路径把作者自己的 PR 当作待交付分支，而不是第三方 review 对象。判断标准仍然和外部 PR 一样：先理解模块职责和数据流，再检查兼容性、错误处理、测试覆盖与 CI；区别是发现问题后直接在 PR 分支上修复，避免自己给自己发 review comment 或 approve。",
+      "number": 1869,
+      "title": "docs: clarify taskrun delegation usage",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1869",
+      "author": "WineChord",
+      "status": "maintained",
+      "problem": "PR 只调整 taskrun delegation 文档，审计重点是概念是否准确、是否引用未实现 API、是否让用户误解子任务生命周期。",
+      "approach": "复核 diff 和 thread，没有发现需要直接修改的问题。",
+      "design_assessment": "文档变更范围清楚，当前无 unresolved threads，CI 全绿。",
+      "modules": "docs around taskrun delegation",
+      "tests_docs": "GitHub CI 全绿；本轮无代码改动。",
+      "outcome": "确认无需直接修复；未自评。",
+      "risk": "低。",
+      "ci_state": "latest head=d397a99aab5623a319ceaba64ff5c1555d423866；failed=0，pending=0，pass=150。",
+      "direct_fixes": []
+    },
+    {
+      "self_review_policy": "该 PR 作者是 WineChord。本轮按 own-PR maintenance 路径处理：只做质量审计、直接修分支、推送 commit 和复核 CI/thread；没有给自己的 PR 发 review comment、没有提交 LGTM/approve、没有 merge。",
+      "technical_background": "Own PR 维护路径把作者自己的 PR 当作待交付分支，而不是第三方 review 对象。判断标准仍然和外部 PR 一样：先理解模块职责和数据流，再检查兼容性、错误处理、测试覆盖与 CI；区别是发现问题后直接在 PR 分支上修复，避免自己给自己发 review comment 或 approve。",
+      "number": 1867,
+      "title": "{tool, agent}: add tool permission policy",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1867",
+      "author": "WineChord",
+      "status": "maintained",
+      "problem": "PR 增加 tool permission policy。审计发现 graph ToolsNode 路径未执行权限策略，后续 CI 又暴露 golangci-lint v2 配置不兼容，以及新增分支让核心函数复杂度超过阈值。",
+      "approach": "先在 graph runTool 路径补权限检查和回归测试；后续直接迁移 golangci-lint 配置到 v2，并把重试调用分支抽成 `callToolWithRetry`，把复杂度降回阈值。",
+      "design_assessment": "权限策略现在覆盖 graph 工具执行路径；lint 配置与 GitHub action 使用的 latest golangci-lint 对齐；复杂度修复不改变行为。",
+      "modules": "graph；tool；agent；internal/tool；internal/flow/processor；.golangci.yml",
+      "tests_docs": "go test ./graph ./tool ./agent ./internal/tool ./internal/flow/processor；GOOS=linux golangci-lint run --timeout=10m；git diff --check。`golangci-lint config verify` 因外部 schema 下载超时未完成，但实际 lint run 通过。",
+      "outcome": "已直接推送 2 个修复 commit；未自评。",
+      "risk": "中，最新 push 后 CI 刚开始排队。",
+      "ci_state": "latest head=08d13929b19a24c151ff6c199e650119c3e86dd2；failed=0，pending=23，pass=1。",
+      "direct_fixes": [
+        {
+          "branch": "tool_permission_policy",
+          "commit": "f2ad4f9f",
+          "summary": "honor tool permission policy in graph execution",
+          "files": [
+            "graph/state_graph.go",
+            "graph/state_graph_test.go"
+          ],
+          "tests": [
+            "go test ./graph ./tool ./agent ./internal/tool ./internal/flow/processor"
+          ],
+          "ci_state": "pushed; later CI exposed lint/config issue"
+        },
+        {
+          "branch": "tool_permission_policy",
+          "commit": "08d13929",
+          "summary": "support golangci-lint v2 and reduce complexity",
+          "files": [
+            ".golangci.yml",
+            "graph/state_graph.go"
+          ],
+          "tests": [
+            "GOOS=linux golangci-lint run --timeout=10m",
+            "go test ./graph ./tool ./agent ./internal/tool ./internal/flow/processor",
+            "git diff --check"
+          ],
+          "ci_state": "pushed; CI pending"
+        }
+      ]
+    }
+  ],
+  "blocked": [
+    {
+      "number": 1874,
+      "title": "codeexecutor/e2b: add WithStableWorkspace option for deterministic workspace paths",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1874",
+      "author": "nicklaus-dev",
+      "status": "blocked",
+      "skip_reason": "CI 全绿，但仍有 2 个当前 diff 上的 CodeRabbit unresolved comments，其中一个指出 deterministic workspace path 可能因 sanitized exec ID 冲突而复用错误 workspace。该问题是实际 correctness risk，未重复评论，等待作者处理。",
+      "blockers": [
+        {
+          "kind": "bot_review",
+          "summary": "stable workspace path can collide across different exec IDs after sanitization",
+          "reviewer": "coderabbitai",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1874#discussion_r3305161283",
+          "path": "codeexecutor/e2b/workspace_runtime.go",
+          "line": 117,
+          "verification": "`a/b` 与 `a?b` 这类不同 execution ID 可能 sanitize 到同一 token，稳定路径会碰撞。"
+        },
+        {
+          "kind": "bot_review",
+          "summary": "missing collision regression test for sanitized exec IDs",
+          "reviewer": "coderabbitai",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1874#discussion_r3305161273",
+          "path": "codeexecutor/e2b/workspace_runtime_test.go",
+          "line": 340,
+          "verification": "测试覆盖 stable-vs-unstable，但未覆盖不同 raw ID sanitize 后相同的边界。"
+        }
+      ],
+      "ci_state": "failed=0，pending=0，pass=149。",
+      "risk": "中。稳定工作区路径如果碰撞，会让两个逻辑执行共享同一 E2B workspace。"
+    },
+    {
+      "number": 1866,
+      "title": "agent/extension/toolpipe: add shell-like result filter extension",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1866",
+      "author": "bytethm",
+      "status": "blocked",
+      "skip_reason": "PR 已更新但仍有 unresolved review threads；其中 human thread 已 outdated，主要当前 blocker 是 examples/toolpipe/go.mod 上两个 dependency-version bot comments，且 CI 仍在排队。",
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "declaredCallableTool made non-streaming tools satisfy StreamableTool; thread is now outdated but unresolved",
+          "reviewer": "Flash-LHR",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1866#discussion_r3303388925",
+          "path": "agent/extension/toolpipe/wrapped_tool.go",
+          "verification": "当前线程 outdated，下一轮应基于新 diff 再确认是否已真正修复。"
+        },
+        {
+          "kind": "bot_review",
+          "summary": "examples/toolpipe go.mod dependency-version issue",
+          "reviewer": "coderabbitai",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1866#discussion_r3303400154",
+          "path": "examples/toolpipe/go.mod",
+          "line": 42,
+          "verification": "当前 diff 上仍 unresolved。"
+        },
+        {
+          "kind": "bot_review",
+          "summary": "examples/toolpipe go.mod grpc dependency issue",
+          "reviewer": "coderabbitai",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1866#discussion_r3303400160",
+          "path": "examples/toolpipe/go.mod",
+          "line": 53,
+          "verification": "当前 diff 上仍 unresolved。"
+        }
+      ],
+      "ci_state": "failed=0，pending=22，pass=2。",
+      "risk": "中。tool wrapper streamability 与 example module dependency 都会影响可用性。"
+    }
+  ],
+  "skipped_groups": [
+    {
+      "reason": "Draft PR，按 MyCR gate 不进入 review/merge",
+      "items": [
+        {
+          "number": 1865,
+          "title": "session: recover compacted tool results",
+          "author": "Rememorio",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1865",
+          "skip_reason": "draft=true"
+        },
+        {
+          "number": 1857,
+          "title": "memory/mem0: advance checkpoint after successful ingest",
+          "author": "print-happy",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1857",
+          "skip_reason": "draft=true"
+        },
+        {
+          "number": 1840,
+          "title": "telemetry: reduce chat trace payload size",
+          "author": "Rememorio",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1840",
+          "skip_reason": "draft=true"
+        },
+        {
+          "number": 1778,
+          "title": "examples: add RLM (Recursive Language Model) demo",
+          "author": "hyprh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1778",
+          "skip_reason": "draft=true"
+        },
+        {
+          "number": 1710,
+          "title": "a2a: add input schema",
+          "author": "liuzengh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1710",
+          "skip_reason": "draft=true"
+        },
+        {
+          "number": 1683,
+          "title": "tool/workspaceexec: add workspace-scoped file tools sharing workspace_exec state",
+          "author": "bytethm",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1683",
+          "skip_reason": "draft=true and mergeable=CONFLICTING"
+        },
+        {
+          "number": 1678,
+          "title": "agent: centralize invoke_agent telemetry in RunWithPlugins",
+          "author": "liuzengh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1678",
+          "skip_reason": "draft=true and mergeable=CONFLICTING"
+        },
+        {
+          "number": 1651,
+          "title": "evolution: add async skill-extraction pipeline for agent self-evolution",
+          "author": "Rememorio",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1651",
+          "skip_reason": "draft=true and mergeable=CONFLICTING"
+        },
+        {
+          "number": 1526,
+          "title": "model: add ModelMaxOutputTokens map and ResolveMaxOutputTokens helper",
+          "author": "sks",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1526",
+          "skip_reason": "draft=true"
+        }
+      ]
+    },
+    {
+      "reason": "WIP title 或 merge conflict，当前不进入 review",
+      "items": [
+        {
+          "number": 1509,
+          "title": "[WIP] session: support concurrent queued execution",
+          "author": "hyprh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1509",
+          "skip_reason": "title contains WIP and mergeable=CONFLICTING"
+        },
+        {
+          "number": 1380,
+          "title": "[WIP] fix(agent): always register InstructionProcessor to support run-time WithInstruction",
+          "author": "hyprh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1380",
+          "skip_reason": "title contains WIP and mergeable=CONFLICTING"
+        },
+        {
+          "number": 1736,
+          "title": "all: add deferred tool set",
+          "author": "liuzengh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1736",
+          "skip_reason": "mergeable=CONFLICTING"
+        },
+        {
+          "number": 1483,
+          "title": "tool/subtask: add dynamic agent creation tools",
+          "author": "bytethm",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1483",
+          "skip_reason": "mergeable=CONFLICTING and unresolved review history"
+        },
+        {
+          "number": 1446,
+          "title": "feat(a2a): add StructuredOutput -> DataPart converter for custom event",
+          "author": "SummerLv",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1446",
+          "skip_reason": "mergeable=CONFLICTING plus non-green checks from previous ledger"
+        }
+      ]
+    },
+    {
+      "reason": "外部 PR 当前 head CI pending，未达到 approve/merge gate",
+      "items": [
+        {
+          "number": 1877,
+          "title": "telemetry: add workflow elapsed metrics",
+          "author": "liuzengh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1877",
+          "skip_reason": "本地复核无发现，但 GitHub CI pending=124；不在 CI pending 时 approve/merge。",
+          "ci_state": "local targeted tests for graph/internal/telemetry/telemetry/metric passed; git diff --check passed."
+        },
+        {
+          "number": 1847,
+          "title": "fix(container): parse bind mounts without mode",
+          "author": "yu-xin-c",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1847",
+          "skip_reason": "作者已在 af49a550 更新并使原 human thread outdated；新 head CI pending=21，需等 CI 绿后再最终 review。",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "summary": "previous bind-source thread now outdated with author fixed response",
+              "reviewer": "Flash-LHR",
+              "url": "https://github.com/trpc-group/trpc-agent-go/pull/1847#discussion_r3308088146",
+              "path": "codeexecutor/container/workspace_runtime.go",
+              "verification": "不再作为当前 diff blocker，但 head moved 后必须等 CI。"
+            }
+          ]
+        },
+        {
+          "number": 1800,
+          "title": "{tool/workspaceexec, tool/skill, agent/llmagent}: add command allow/deny policy for sandboxed exec",
+          "author": "bytethm",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1800",
+          "skip_reason": "本轮评论已被作者修复，unresolved=0；但 head moved，CI pending=130，不 approve/merge。"
+        }
+      ]
+    },
+    {
+      "reason": "仍有 review/CI blocker 或本轮未达到处理优先级",
+      "items": [
+        {
+          "number": 1860,
+          "title": "docs: add prompt template guide",
+          "author": "yu-xin-c",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1860",
+          "skip_reason": "ledger 中仍有 2 个 unresolved human review threads；本轮未重新展开到可 approve 状态。"
+        },
+        {
+          "number": 1859,
+          "title": "memory/tencentdb: add TencentDB Agent Memory integration",
+          "author": "Rememorio",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1859",
+          "skip_reason": "ledger 中仍有 2 个 unresolved human review threads。"
+        },
+        {
+          "number": 1856,
+          "title": "session: add portable event window loading",
+          "author": "Rememorio",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1856",
+          "skip_reason": "ledger 中仍有 3 个 unresolved human review threads。"
+        },
+        {
+          "number": 1842,
+          "title": "model/gemini: support thinking level and thought signatures",
+          "author": "Kevin091827",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1842",
+          "skip_reason": "ledger 中有人类与 bot review blocker。"
+        },
+        {
+          "number": 1839,
+          "title": "{server/agui, docs}: add distributed cancel",
+          "author": "Flash-LHR",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1839",
+          "skip_reason": "ledger 中仍有 2 个 unresolved review threads。"
+        },
+        {
+          "number": 1826,
+          "title": "docs: Add FAQ section",
+          "author": "meichuanyi",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1826",
+          "skip_reason": "non-green hard CI from previous ledger, including CLA-related blocker。"
+        },
+        {
+          "number": 1815,
+          "title": "{agent, internal/flow/processor}: add prompt section overrides",
+          "author": "Flash-LHR",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1815",
+          "skip_reason": "ledger 中仍有 1 个 unresolved review thread。"
+        },
+        {
+          "number": 1801,
+          "title": "docs/mkdocs/zh/fix/agent.md: fix typo",
+          "author": "GongNanyue",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1801",
+          "skip_reason": "hard CI/check blockers from previous ledger。"
+        },
+        {
+          "number": 1776,
+          "title": "docs: add FAQ section",
+          "author": "meichuanyi",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1776",
+          "skip_reason": "hard CI/check blockers from previous ledger。"
+        },
+        {
+          "number": 1768,
+          "title": "feat(sandbox): add secure Linux sandbox for code execution based on bubblewrap",
+          "author": "liuzengh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1768",
+          "skip_reason": "reviewDecision=CHANGES_REQUESTED with unresolved human review threads。"
+        },
+        {
+          "number": 1764,
+          "title": "examples: add graph RAG code search demo and viewer",
+          "author": "hyprh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1764",
+          "skip_reason": "examples/check failures from previous ledger。"
+        },
+        {
+          "number": 1731,
+          "title": "knowledge: add GraphRAG code search (reasonable breaking change)",
+          "author": "hyprh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1731",
+          "skip_reason": "go-apidiff plus multiple unresolved human/bot threads。"
+        },
+        {
+          "number": 1460,
+          "title": "improve nano-pdf skill description + add skill-review-and-optimize CI",
+          "author": "fernandezbaptiste",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1460",
+          "skip_reason": "CodeCC scan/check blocker from previous ledger。"
+        },
+        {
+          "number": 1400,
+          "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+          "author": "liuzengh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+          "skip_reason": "soft CI plus unresolved human thread; not processed this run。"
+        },
+        {
+          "number": 1183,
+          "title": "internal/util: add util for streaming parsing of JSON returned by LLM",
+          "author": "hongxiuzhe",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1183",
+          "skip_reason": "codecov/lint/CLA plus multiple unresolved review threads from ledger。"
+        }
+      ]
+    }
+  ],
+  "follow_up": [
+    {
+      "number": 1876,
+      "title": "{agent/taskrun, openclaw}: support worktree-isolated subagents",
+      "author": "WineChord",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1876",
+      "reason": "own PR 已直接修复并推送，CI 矩阵仍在排队。",
+      "next": "等 failed=0 且 pending=0 后再最终确认；不自 approve/merge。"
+    },
+    {
+      "number": 1867,
+      "title": "{tool, agent}: add tool permission policy",
+      "author": "WineChord",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1867",
+      "reason": "最新 push 修复 lint v2 和复杂度，CI 刚开始跑。",
+      "next": "等 CI 完成；若 lint 或 test 再失败，继续直接修分支。"
+    },
+    {
+      "number": 1872,
+      "title": "agent/taskrun: expose run progress and transcripts",
+      "author": "WineChord",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1872",
+      "reason": "只剩 coverage pending。",
+      "next": "等 coverage 完成后再最终确认。"
+    },
+    {
+      "number": 1871,
+      "title": "docs: clarify AgentTool context visibility",
+      "author": "WineChord",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1871",
+      "reason": "文档修复已推送，CI pending。",
+      "next": "等 CI 完成。"
+    },
+    {
+      "number": 1870,
+      "title": "{agent, docs}: add lazy agent guidance",
+      "author": "WineChord",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1870",
+      "reason": "API 类型修复已推送，CI pending。",
+      "next": "等 CI 完成。"
+    },
+    {
+      "number": 1800,
+      "title": "{tool/workspaceexec, tool/skill, agent/llmagent}: add command allow/deny policy for sandboxed exec",
+      "author": "bytethm",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1800",
+      "reason": "作者已修复本轮评论且 unresolved=0，但新 head CI pending。",
+      "next": "CI 绿后重新拉 threads/checks；若仍无问题，可 approve/merge。"
+    },
+    {
+      "number": 1877,
+      "title": "telemetry: add workflow elapsed metrics",
+      "author": "liuzengh",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1877",
+      "reason": "本地复核和 targeted tests 无发现，但 GitHub CI pending。",
+      "next": "CI 绿后可进入 approve/merge 判断。"
+    },
+    {
+      "number": 1847,
+      "title": "fix(container): parse bind mounts without mode",
+      "author": "yu-xin-c",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1847",
+      "reason": "作者已更新修复 bind source thread，新 head CI pending。",
+      "next": "CI 绿后复核最新 diff 和 outdated thread，再决定 approve/merge。"
+    },
+    {
+      "number": 1874,
+      "title": "codeexecutor/e2b: add WithStableWorkspace option for deterministic workspace paths",
+      "author": "nicklaus-dev",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1874",
+      "reason": "CI 绿但 deterministic path collision blocker 仍 unresolved。",
+      "next": "等作者修复 collision 或给出充分解释。"
+    },
+    {
+      "number": 1824,
+      "title": "docs: clarify OpenAI file content handling",
+      "author": "yu-xin-c",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1824",
+      "reason": "CI 绿但本轮文档边界评论仍 unresolved。",
+      "next": "等作者收窄 EN/ZH wording。"
+    }
+  ],
+  "timeline": [
+    {
+      "time": "09:05",
+      "text": "读取 repo 托管 MyCR skill 与用户指令，确认安装目录 skill 为 bootstrap，canonical 逻辑在 mycr repo。"
+    },
+    {
+      "time": "09:20",
+      "text": "更新 `skill/SKILL.md`，新增 own-PR maintenance 路径：自己 PR 不跳过、不自评、不自合并，发现问题直接修分支。"
+    },
+    {
+      "time": "09:40",
+      "text": "同步 report schema、renderer、dashboard、evolution backlog，让 `maintained`、`direct_fixes` 和 `self_review_policy` 可见。"
+    },
+    {
+      "time": "09:55",
+      "text": "验证 MyCR repo：Python compile、npm verify、浏览器 smoke check；提交并 push `mycr: handle own pr maintenance`。"
+    },
+    {
+      "time": "10:05",
+      "text": "外部 PR #1868 全绿无 blocker，提交 `LGTM` approve 并 squash merge，merge commit bd5eb7c。"
+    },
+    {
+      "time": "10:10",
+      "text": "外部 PR #1824 提交文档隐私边界行级评论；#1800 提交 shellsafe 安全边界评论。"
+    },
+    {
+      "time": "10:20",
+      "text": "#1800 作者更新 head 修复本轮评论；本地复核相关包和 diff，通过后因 CI pending 暂不 approve/merge。"
+    },
+    {
+      "time": "10:25",
+      "text": "Own PR #1876/#1875/#1872/#1871/#1870/#1867 分别 checkout 到独立 worktree 并直接修复；#1869 复核无须改动。"
+    },
+    {
+      "time": "10:45",
+      "text": "#1867 新 CI 暴露 lint fail；本地复现 golangci-lint v2 配置问题和 gocyclo=21，直接迁移配置并拆函数，push `08d13929`。"
+    },
+    {
+      "time": "10:58",
+      "text": "最终拉取 processed PR 最新 checks/threads：#1875/#1869 绿；#1800/#1847/#1877 和多条 own PR 等待 CI；#1874/#1866 保留具体 blocker。"
+    },
+    {
+      "time": "11:07",
+      "text": "生成本次结构化 MyCR 报告，准备归档到 dashboard。"
+    }
+  ]
+}
