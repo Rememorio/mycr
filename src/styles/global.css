@@ -1,17 +1,22 @@
 :root {
   color-scheme: light;
-  --bg: #f5f7fa;
+  --bg: #f4f7fb;
   --surface: #ffffff;
   --surface-soft: #f9fbfd;
   --ink: #17202a;
   --muted: #667085;
   --line: #d7dee8;
   --teal: #0f766e;
+  --teal-soft: #e7f6f3;
   --green: #17803d;
   --orange: #b45f06;
   --blue: #245fbd;
   --red: #b42318;
-  --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+  --shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+  --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
 
 * {
@@ -24,7 +29,10 @@ html {
 
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(15, 118, 110, 0.16), transparent 28rem),
+    radial-gradient(circle at 92% 8%, rgba(36, 95, 189, 0.10), transparent 24rem),
+    linear-gradient(180deg, #fbfcff 0%, var(--bg) 34rem);
   color: var(--ink);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -51,7 +59,7 @@ input {
 .page-shell {
   width: min(1500px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 28px 0 64px;
+  padding: 32px 0 72px;
 }
 
 .archive-layout {
@@ -70,10 +78,11 @@ input {
   top: 18px;
   max-height: calc(100vh - 36px);
   overflow: hidden;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(215, 222, 232, 0.82);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
 }
 
 .report-nav-head {
@@ -100,7 +109,7 @@ input {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: #e8f5f2;
+  background: var(--teal-soft);
   color: var(--teal);
   font-weight: 900;
 }
@@ -117,7 +126,7 @@ input {
   display: grid;
   gap: 4px;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 10px;
   color: var(--ink);
   text-decoration: none;
@@ -128,13 +137,13 @@ input {
 }
 
 .report-jump:hover {
-  background: var(--surface-soft);
+  background: #f7fbfa;
   border-color: #cbd5e1;
   color: var(--ink);
 }
 
 .report-jump.active {
-  background: #eef7f5;
+  background: var(--teal-soft);
   border-color: rgba(15, 118, 110, 0.38);
   box-shadow: inset 3px 0 0 var(--teal);
 }
@@ -164,10 +173,10 @@ input {
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
   gap: 24px;
   align-items: end;
-  padding: 12px 0 24px;
+  padding: 10px 0 26px;
 }
 
 .eyebrow {
@@ -188,14 +197,17 @@ p {
 
 h1 {
   margin: 0;
-  font-size: 3rem;
+  max-width: 760px;
+  font-size: clamp(2.6rem, 5vw, 4.9rem);
   line-height: 1.05;
+  letter-spacing: -0.055em;
 }
 
 .hero-copy {
   max-width: 760px;
   margin: 14px 0 0;
   color: #475467;
+  font-size: 1.05rem;
 }
 
 .hero-meta {
@@ -207,15 +219,27 @@ h1 {
 .hero-meta div,
 .metric,
 .report-card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(215, 222, 232, 0.86);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow);
 }
 
 .hero-meta div {
   min-height: 90px;
   padding: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-meta div::after {
+  position: absolute;
+  inset: auto -18px -28px auto;
+  width: 80px;
+  height: 80px;
+  border-radius: 999px;
+  background: rgba(15, 118, 110, 0.08);
+  content: "";
 }
 
 .hero-meta span {
@@ -243,6 +267,7 @@ h1 {
   min-height: 104px;
   padding: 16px;
   border-left: 4px solid var(--teal);
+  box-shadow: var(--shadow-soft);
 }
 
 .metric span {
@@ -293,8 +318,9 @@ h1 {
   padding: 12px;
   background: rgba(245, 247, 250, 0.92);
   border: 1px solid rgba(215, 222, 232, 0.92);
-  border-radius: 8px;
-  backdrop-filter: blur(12px);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(16px);
 }
 
 .search-box {
@@ -314,7 +340,7 @@ h1 {
   width: 100%;
   min-height: 42px;
   border: 1px solid #cbd5e1;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 9px 12px;
   background: white;
   color: var(--ink);
@@ -359,12 +385,14 @@ h1 {
 
 .report-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   scroll-margin-top: 92px;
   transition:
     border-color 160ms ease,
-    box-shadow 160ms ease;
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .report-card[hidden] {
@@ -376,8 +404,14 @@ h1 {
   box-shadow: 0 16px 42px rgba(15, 118, 110, 0.14);
 }
 
+.report-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 54px rgba(15, 23, 42, 0.12);
+}
+
 .report-main {
-  padding: 20px;
+  min-width: 0;
+  padding: 22px;
 }
 
 .report-heading {
@@ -394,8 +428,9 @@ h1 {
 
 .report-heading h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.34rem;
   line-height: 1.25;
+  letter-spacing: -0.018em;
 }
 
 .report-title-link {
@@ -420,6 +455,7 @@ h1 {
 .overview {
   margin: 14px 0 0;
   color: #344054;
+  overflow-wrap: anywhere;
 }
 
 .quick-prs {
@@ -452,6 +488,9 @@ h1 {
 
 .quick-pr-title {
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .quick-pr-meta {
@@ -506,6 +545,7 @@ h1 {
   cursor: pointer;
   color: var(--teal);
   font-weight: 850;
+  list-style-position: outside;
 }
 
 .detail-grid {
@@ -532,7 +572,7 @@ h1 {
 .timeline li,
 .skip-groups li {
   border: 1px solid #e5ebf2;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 10px;
   background: var(--surface-soft);
 }
@@ -547,6 +587,7 @@ h1 {
 
 .timeline p {
   margin: 4px 0 0;
+  overflow-wrap: anywhere;
 }
 
 .skip-groups li {
@@ -569,7 +610,8 @@ h1 {
   align-content: start;
   gap: 14px;
   padding: 20px;
-  background: #f8fafc;
+  background:
+    linear-gradient(180deg, #f9fbfd, #f3f7fb);
   border-left: 1px solid var(--line);
 }
 
@@ -611,7 +653,7 @@ h1 {
 .result-grid div {
   min-height: 72px;
   border: 1px solid #e5ebf2;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 10px;
   background: #ffffff;
 }

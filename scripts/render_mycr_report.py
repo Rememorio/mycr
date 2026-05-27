@@ -77,25 +77,33 @@ def render_html(data: dict[str, Any]) -> str:
 <style>
 :root {{
   color-scheme: light;
-  --bg: #f7f8fb;
-  --panel: #ffffff;
+  --bg: #f4f7fb;
+  --panel: rgba(255, 255, 255, 0.94);
   --ink: #19202a;
   --muted: #667085;
   --line: #d8dee8;
   --accent: #116466;
+  --accent-soft: #e8f7f4;
   --accent-2: #d17a22;
   --ok: #188038;
   --warn: #b45309;
   --bad: #b42318;
   --info: #1d4ed8;
-  --shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+  --soft: #f8fafc;
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+  --shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+  --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 22px 54px rgba(15, 23, 42, 0.12);
 }}
 * {{ box-sizing: border-box; }}
 body {{
   margin: 0;
   background:
-    linear-gradient(180deg, rgba(17, 100, 102, 0.08), transparent 340px),
-    var(--bg);
+    radial-gradient(circle at 12% 0%, rgba(17, 100, 102, 0.16), transparent 28rem),
+    radial-gradient(circle at 88% 5%, rgba(29, 78, 216, 0.10), transparent 24rem),
+    linear-gradient(180deg, #fbfcff 0%, var(--bg) 34rem);
   color: var(--ink);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
@@ -110,7 +118,12 @@ a {{ color: var(--accent); text-decoration-thickness: 1px; }}
   gap: 18px;
   margin-bottom: 20px;
 }}
-h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
+h1 {{
+  margin: 0 0 8px;
+  font-size: clamp(34px, 5vw, 64px);
+  line-height: 1.04;
+  letter-spacing: -0.055em;
+}}
 .subtitle {{ color: var(--muted); max-width: 760px; margin: 0; }}
 .toggle {{
   display: inline-flex;
@@ -140,9 +153,9 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
 .metric {{
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 16px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-soft);
 }}
 .metric .value {{ font-size: 32px; line-height: 1; font-weight: 800; }}
 .metric .label {{ color: var(--muted); margin-top: 7px; font-size: 13px; }}
@@ -150,12 +163,12 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
   gap: 16px;
-  align-items: stretch;
+  align-items: start;
 }}
 .panel {{
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow);
   padding: 16px;
 }}
@@ -232,7 +245,7 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
   background: var(--panel);
   border: 1px solid var(--line);
   border-left: 5px solid var(--accent);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow);
   overflow: hidden;
 }}
@@ -246,7 +259,7 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 16px;
-  padding: 16px;
+  padding: 18px;
   cursor: pointer;
 }}
 .card-title {{ margin: 0; font-size: 17px; overflow-wrap: anywhere; }}
@@ -375,7 +388,7 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
   min-width: 0;
   border: 1px solid #e5edf5;
   border-left: 4px solid var(--accent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 12px;
   background: linear-gradient(180deg, #fff, #fbfcfe);
 }}
@@ -403,7 +416,7 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
 .card-body {{
   display: none;
   border-top: 1px solid #edf0f5;
-  padding: 0 16px 16px;
+  padding: 0 18px 18px;
 }}
 .card.open .card-body {{ display: block; }}
 .grid {{
@@ -415,7 +428,7 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
 .field {{
   border: 1px solid #edf0f5;
   background: #fbfcfe;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 12px;
 }}
 .field strong {{
@@ -437,7 +450,7 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
   border-left: 3px solid var(--accent-2);
   padding: 10px 12px;
   background: #fffaf2;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   margin-top: 10px;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
@@ -465,7 +478,7 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
 .story-block.hero-block {{
   border: 1px solid #dce9e7;
   border-left: 4px solid var(--accent);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 15px 16px;
   background: linear-gradient(180deg, #fbfffe, #f8fbfd);
 }}
@@ -512,7 +525,7 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
   gap: 6px;
   border: 1px solid #e5edf5;
   border-left: 4px solid var(--accent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 12px;
   background: #fff;
 }}
@@ -609,7 +622,7 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
 .skip-group {{
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow);
   overflow: hidden;
 }}
@@ -652,7 +665,7 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
 .blocker-item {{
   border: 1px solid #e5edf5;
   border-left: 3px solid var(--warn);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 9px 10px;
   background: #fff;
 }}
@@ -679,26 +692,7 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
   font-size: 12px;
   margin-top: 22px;
 }}
-:root {{
-  --bg: #f4f6f8;
-  --panel: #ffffff;
-  --ink: #111827;
-  --muted: #657386;
-  --line: #dce3ec;
-  --accent: #0f766e;
-  --accent-2: #b45309;
-  --ok: #167a3a;
-  --warn: #a16207;
-  --bad: #b42318;
-  --info: #2563eb;
-  --soft: #f8fafc;
-  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --shadow-lg: 0 18px 48px rgba(15, 23, 42, 0.10);
-}}
 body {{
-  background:
-    linear-gradient(180deg, rgba(15, 118, 110, 0.10), rgba(244, 246, 248, 0) 300px),
-    var(--bg);
   font-size: 14px;
 }}
 a:hover {{ color: #0a5d57; }}
@@ -706,16 +700,12 @@ a:hover {{ color: #0a5d57; }}
 .topbar {{
   align-items: center;
   background:
-    linear-gradient(135deg, rgba(15, 118, 110, 0.06), rgba(37, 99, 235, 0.04)),
+    linear-gradient(135deg, var(--accent-soft), rgba(37, 99, 235, 0.04)),
     var(--panel);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   padding: 22px 24px;
   box-shadow: var(--shadow-lg);
-}}
-h1 {{
-  font-size: clamp(30px, 4vw, 48px);
-  letter-spacing: 0;
 }}
 .subtitle {{ max-width: 860px; font-size: 14px; }}
 .toggle {{ box-shadow: none; }}
@@ -729,7 +719,6 @@ h1 {{
   position: relative;
   overflow: hidden;
   padding: 14px 16px;
-  box-shadow: var(--shadow);
 }}
 .metric::before {{
   content: "";

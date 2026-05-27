@@ -46,12 +46,17 @@ thread, check, or conflict can be named.
 Self-contained HTML reports must be readable in a narrow editor preview as well
 as a normal browser:
 
+- The report should feel like a polished review dashboard, not a dumped table.
+  Use clear hierarchy, calm status color, generous spacing, rounded surfaces,
+  and compact scan rows before exposing long-form detail.
 - PR detail cards are collapsed by default. The collapsed row must still show a
   short outcome/problem summary so users can scan without opening every card.
 - Expanding a card must not create horizontal overflow. Long PR titles, paths,
   SHA values, commands, and CI strings must wrap inside their cards.
 - Dense review facts may be grouped visually, but they should not be placed in a
   sticky side rail that becomes the dominant content in narrow previews.
+- Dashboard panels should size to their content. A short status panel must not be
+  stretched to match a long timeline panel and leave a large blank white block.
 - "Expand all" and "Collapse all" controls must keep each card's visible toggle
   label and `aria-expanded` state in sync.
 
@@ -64,6 +69,15 @@ The site is a static Astro build with:
 - filters for merged, approved, commented, skipped, and follow-up runs
 - links to each self-contained HTML report and raw JSON
 - no dependency on runtime APIs
+
+The archive page should share the same visual system as generated reports:
+
+- Latest and historical runs should scan as product cards with clear primary
+  actions and status counts.
+- Navigation, search, filters, and cards must wrap gracefully in narrow editor
+  previews without horizontal scrolling.
+- Timeline entries should read both `label` and `text` fields so older reports
+  do not render blank details.
 
 ## Skill Contract
 

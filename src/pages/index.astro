@@ -379,7 +379,7 @@ const statusMetrics = [
                               {report.timeline.map((item) => (
                                 <li>
                                   <span>{item.time}</span>
-                                  <p>{item.label}</p>
+                                  <p>{item.label || item.text}</p>
                                 </li>
                               ))}
                             </ol>
