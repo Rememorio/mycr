@@ -1,0 +1,1810 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyCR Review Report 20260527-182350</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f7f8fb;
+  --panel: #ffffff;
+  --ink: #19202a;
+  --muted: #667085;
+  --line: #d8dee8;
+  --accent: #116466;
+  --accent-2: #d17a22;
+  --ok: #188038;
+  --warn: #b45309;
+  --bad: #b42318;
+  --info: #1d4ed8;
+  --shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background:
+    linear-gradient(180deg, rgba(17, 100, 102, 0.08), transparent 340px),
+    var(--bg);
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  line-height: 1.5;
+}
+a { color: var(--accent); text-decoration-thickness: 1px; }
+.shell { max-width: 1180px; margin: 0 auto; padding: 28px 18px 56px; }
+.topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+h1 { margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }
+.subtitle { color: var(--muted); max-width: 760px; margin: 0; }
+.toggle {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 999px;
+  padding: 3px;
+  box-shadow: var(--shadow);
+  flex: none;
+}
+.toggle button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 8px 13px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.toggle button.active { background: var(--accent); color: white; }
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+.metric {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.metric .value { font-size: 32px; line-height: 1; font-weight: 800; }
+.metric .label { color: var(--muted); margin-top: 7px; font-size: 13px; }
+.dashboard {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 16px;
+  align-items: stretch;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+.panel h2 { margin: 0 0 12px; font-size: 18px; }
+.bars { display: grid; gap: 12px; }
+.bar-row {
+  display: grid;
+  grid-template-columns: 122px 1fr 36px;
+  gap: 10px;
+  align-items: center;
+}
+.bar-label { color: var(--muted); font-size: 13px; }
+.bar-track {
+  height: 12px;
+  background: #eef2f7;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.bar-fill { height: 100%; border-radius: 999px; background: var(--accent); }
+.bar-fill.approved, .bar-fill.merged { background: var(--ok); }
+.bar-fill.commented { background: var(--accent-2); }
+.bar-fill.maintained { background: var(--accent); }
+.bar-fill.skipped { background: var(--info); }
+.bar-fill.blocked { background: var(--bad); }
+.timeline { display: grid; gap: 10px; }
+.timeline-item {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #edf0f5;
+}
+.timeline-item:last-child { border-bottom: 0; }
+.time { color: var(--muted); font-size: 13px; }
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 18px 0 12px;
+}
+.search {
+  flex: 1 1 280px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  background: white;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 8px 11px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.chip.active { background: var(--ink); color: white; border-color: var(--ink); }
+.cards { display: grid; gap: 12px; }
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 22px 0 12px;
+}
+.section-heading h2 { margin: 0; font-size: 20px; }
+.section-heading .hint { color: var(--muted); font-size: 13px; }
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.card[data-status="approved"],
+.card[data-status="merged"] { border-left-color: var(--ok); }
+.card[data-status="commented"] { border-left-color: var(--accent-2); }
+.card[data-status="maintained"] { border-left-color: var(--accent); }
+.card[data-status="skipped"] { border-left-color: var(--info); }
+.card[data-status="blocked"] { border-left-color: var(--bad); }
+.card-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  padding: 16px;
+  cursor: pointer;
+}
+.card-title { margin: 0; font-size: 17px; }
+.meta { color: var(--muted); font-size: 13px; margin-top: 5px; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  background: #eef2f7;
+}
+.badge.approved, .badge.merged { color: var(--ok); background: #e7f5ec; }
+.badge.commented { color: var(--warn); background: #fff4e5; }
+.badge.maintained { color: var(--accent); background: #e6fffb; }
+.badge.skipped { color: var(--info); background: #eaf1ff; }
+.badge.blocked { color: var(--bad); background: #fff0ee; }
+.read-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.read-pill.critical {
+  color: #9f1239;
+  background: #fff1f2;
+  border-color: #fecdd3;
+}
+.read-pill.focus {
+  color: #92400e;
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+.read-pill.skim {
+  color: #166534;
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+}
+.read-pill.follow {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+.headline-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.advice-reason {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: italic;
+}
+.reading-guide {
+  margin-top: 16px;
+}
+.guide-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.guide-head h2 { margin: 0; }
+.guide-head span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.guide-card {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid #e5edf5;
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 12px;
+  background: linear-gradient(180deg, #fff, #fbfcfe);
+}
+.guide-card.critical { border-left-color: #e11d48; }
+.guide-card.focus { border-left-color: #d97706; }
+.guide-card.skim { border-left-color: #16a34a; }
+.guide-card.follow { border-left-color: #2563eb; }
+.guide-card a {
+  color: var(--ink);
+  font-weight: 900;
+  text-decoration: none;
+}
+.guide-card a:hover { color: var(--accent); }
+.guide-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.guide-reason {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.card-body {
+  display: none;
+  border-top: 1px solid #edf0f5;
+  padding: 0 16px 16px;
+}
+.card.open .card-body { display: block; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.field {
+  border: 1px solid #edf0f5;
+  background: #fbfcfe;
+  border-radius: 8px;
+  padding: 12px;
+}
+.field strong {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+.field-body {
+  white-space: pre-wrap;
+}
+.overview-content {
+  white-space: pre-wrap;
+  color: var(--ink);
+}
+.comment {
+  border-left: 3px solid var(--accent-2);
+  padding: 10px 12px;
+  background: #fffaf2;
+  border-radius: 6px;
+  margin-top: 10px;
+  white-space: pre-wrap;
+}
+.pr-readout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.42fr);
+  gap: 18px;
+  align-items: start;
+  padding-top: 18px;
+}
+.pr-story {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.story-block {
+  border-top: 1px solid #e7edf4;
+  padding-top: 14px;
+}
+.story-block:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.story-block.hero-block {
+  border: 1px solid #dce9e7;
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 15px 16px;
+  background: linear-gradient(180deg, #fbfffe, #f8fbfd);
+}
+.story-block h4,
+.review-rail h4,
+.comments-panel h4 {
+  margin: 0 0 9px;
+  color: #17202a;
+  font-size: 14px;
+  letter-spacing: 0;
+}
+.story-line {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr);
+  gap: 12px;
+  margin: 0;
+  padding: 9px 0;
+  border-top: 1px solid #edf2f7;
+  color: #1f2937;
+  line-height: 1.68;
+}
+.story-line:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+.story-label {
+  color: #536175;
+  font-size: 12px;
+  font-weight: 850;
+}
+.story-text {
+  min-width: 0;
+  white-space: pre-wrap;
+}
+.review-rail {
+  position: sticky;
+  top: 86px;
+  display: grid;
+  gap: 14px;
+  align-self: start;
+}
+.reading-callout {
+  display: grid;
+  gap: 6px;
+  border: 1px solid #e5edf5;
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+.reading-callout.critical {
+  border-left-color: #e11d48;
+  background: linear-gradient(180deg, #fff7f8, #fff);
+}
+.reading-callout.focus {
+  border-left-color: #d97706;
+  background: linear-gradient(180deg, #fffbeb, #fff);
+}
+.reading-callout.skim {
+  border-left-color: #16a34a;
+  background: linear-gradient(180deg, #f0fdf4, #fff);
+}
+.reading-callout.follow {
+  border-left-color: #2563eb;
+  background: linear-gradient(180deg, #eff6ff, #fff);
+}
+.reading-callout strong {
+  font-size: 13px;
+}
+.reading-callout span {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.5;
+}
+.story-text mark,
+.fact dd mark,
+.field-body mark,
+.overview-content mark,
+.comment mark,
+.skip-detail mark {
+  border-radius: 5px;
+  padding: 0 4px;
+  font-weight: 850;
+}
+.mark-good {
+  color: #166534;
+  background: #dcfce7;
+}
+.mark-warn {
+  color: #92400e;
+  background: #fef3c7;
+}
+.mark-bad {
+  color: #9f1239;
+  background: #ffe4e6;
+}
+.mark-info {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+.fact-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+}
+.fact {
+  border-top: 1px solid #e7edf4;
+  padding-top: 10px;
+}
+.fact:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.fact dt {
+  margin: 0 0 4px;
+  color: #536175;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+.fact dd {
+  margin: 0;
+  color: #1f2937;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.comments-panel {
+  border-top: 1px solid #e7edf4;
+  padding-top: 14px;
+}
+.comment-list {
+  display: grid;
+  gap: 10px;
+}
+.skip-groups { display: grid; gap: 14px; margin-top: 12px; }
+.skip-group {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.skip-group-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  padding: 15px 16px;
+  cursor: pointer;
+  background: #fbfcfe;
+}
+.skip-group-title { margin: 0; font-size: 16px; }
+.skip-group-count {
+  color: var(--info);
+  background: #eaf1ff;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-weight: 800;
+  font-size: 12px;
+}
+.skip-group-body { display: none; border-top: 1px solid #edf0f5; }
+.skip-group.open .skip-group-body { display: block; }
+.skip-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 0.7fr);
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid #edf0f5;
+}
+.skip-row:last-child { border-bottom: 0; }
+.skip-title { font-weight: 750; }
+.skip-detail { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.blocker-list {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.blocker-item {
+  border: 1px solid #e5edf5;
+  border-left: 3px solid var(--warn);
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: #fff;
+}
+.blocker-item a {
+  color: var(--accent);
+  font-weight: 800;
+}
+.blocker-meta {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin-top: 4px;
+}
+.empty {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 22px;
+  color: var(--muted);
+  text-align: center;
+  background: rgba(255, 255, 255, 0.68);
+}
+.footer {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 22px;
+}
+:root {
+  --bg: #f4f6f8;
+  --panel: #ffffff;
+  --ink: #111827;
+  --muted: #657386;
+  --line: #dce3ec;
+  --accent: #0f766e;
+  --accent-2: #b45309;
+  --ok: #167a3a;
+  --warn: #a16207;
+  --bad: #b42318;
+  --info: #2563eb;
+  --soft: #f8fafc;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 18px 48px rgba(15, 23, 42, 0.10);
+}
+body {
+  background:
+    linear-gradient(180deg, rgba(15, 118, 110, 0.10), rgba(244, 246, 248, 0) 300px),
+    var(--bg);
+  font-size: 14px;
+}
+a:hover { color: #0a5d57; }
+.shell { max-width: 1280px; padding: 24px 20px 64px; }
+.topbar {
+  align-items: center;
+  background:
+    linear-gradient(135deg, rgba(15, 118, 110, 0.06), rgba(37, 99, 235, 0.04)),
+    var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 22px 24px;
+  box-shadow: var(--shadow-lg);
+}
+h1 {
+  font-size: clamp(30px, 4vw, 48px);
+  letter-spacing: 0;
+}
+.subtitle { max-width: 860px; font-size: 14px; }
+.toggle { box-shadow: none; }
+.toggle button { padding: 7px 12px; }
+.metrics {
+  grid-template-columns: repeat(5, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+.metric {
+  position: relative;
+  overflow: hidden;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+.metric::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--accent);
+}
+.metric .value { font-size: 30px; }
+.metric .label {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.dashboard {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+}
+.panel {
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+.panel h2 {
+  font-size: 15px;
+  letter-spacing: 0;
+}
+.bar-row {
+  grid-template-columns: 112px 1fr 32px;
+  padding: 4px 0;
+}
+.bar-label { font-weight: 700; }
+.bar-track { height: 9px; background: #edf2f7; }
+.timeline-item {
+  grid-template-columns: 74px 1fr;
+  padding: 9px 0;
+}
+.time {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+.overview-content {
+  background: var(--soft);
+  border: 1px solid #e7edf4;
+  border-radius: 8px;
+  padding: 14px;
+}
+.controls {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(244, 246, 248, 0.88);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(220, 227, 236, 0.86);
+  border-radius: 8px;
+  padding: 10px;
+  margin: 18px 0 14px;
+  box-shadow: var(--shadow);
+}
+.search {
+  min-height: 40px;
+  border-color: #cfd8e3;
+  box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.02);
+}
+.search:focus {
+  outline: 2px solid rgba(15, 118, 110, 0.22);
+  border-color: var(--accent);
+}
+.chips { align-items: center; }
+.chip, .utility-button {
+  min-height: 34px;
+  border: 1px solid #cfd8e3;
+  background: #fff;
+  border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 750;
+  padding: 7px 11px;
+}
+.chip:hover, .utility-button:hover { border-color: #9aa8bb; }
+.chip.active {
+  background: #15202b;
+  border-color: #15202b;
+  color: #fff;
+}
+.utilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+.utility-button {
+  color: var(--muted);
+  font-size: 12px;
+}
+.section-heading {
+  margin: 24px 0 12px;
+  padding-top: 2px;
+}
+.section-heading h2 { font-size: 18px; }
+.cards { gap: 14px; }
+.card {
+  border-left: 0;
+  box-shadow: var(--shadow);
+  transition: box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease;
+}
+.card:hover {
+  border-color: #c8d2df;
+  box-shadow: var(--shadow-lg);
+}
+.card-head {
+  align-items: center;
+  background: linear-gradient(180deg, #fff, #fbfcfe);
+  border-left: 4px solid var(--accent);
+}
+.card[data-status="approved"] .card-head,
+.card[data-status="merged"] .card-head { border-left-color: var(--ok); }
+.card[data-status="commented"] .card-head { border-left-color: var(--accent-2); }
+.card[data-status="maintained"] .card-head { border-left-color: var(--accent); }
+.card[data-status="skipped"] .card-head { border-left-color: var(--info); }
+.card[data-status="blocked"] .card-head { border-left-color: var(--bad); }
+.card.priority-critical .card-head {
+  background: linear-gradient(180deg, #fff7f8, #fff);
+}
+.card.priority-focus .card-head {
+  background: linear-gradient(180deg, #fffbeb, #fff);
+}
+.card.priority-follow .card-head {
+  background: linear-gradient(180deg, #eff6ff, #fff);
+}
+.card-title {
+  font-size: 16px;
+  line-height: 1.42;
+}
+.meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 7px;
+}
+.badge {
+  gap: 7px;
+  min-width: 0;
+  padding: 6px 11px;
+  text-transform: none;
+  white-space: nowrap;
+}
+.badge::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.card-body {
+  background: #fff;
+  padding: 0 18px 18px;
+}
+.grid {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.field {
+  background: #fbfcfe;
+  border-color: #e6ecf3;
+  padding: 13px 14px;
+}
+.field strong {
+  color: #536175;
+  font-size: 11px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+.field-body {
+  color: #1f2937;
+  line-height: 1.62;
+}
+.comment {
+  background: #fff8ed;
+  border-left-color: var(--accent-2);
+  color: #1f2937;
+}
+.pr-readout {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.40fr);
+  gap: 20px;
+}
+.story-block {
+  border-top-color: #e2e8f0;
+}
+.story-block.hero-block {
+  background: linear-gradient(180deg, #fbfffe, #f7fbfa);
+  border-color: #d5e7e4;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+.story-block h4,
+.review-rail h4,
+.comments-panel h4 {
+  font-size: 13px;
+  font-weight: 900;
+}
+.story-line {
+  grid-template-columns: 116px minmax(0, 1fr);
+  border-top-color: #e9eef5;
+}
+.story-label {
+  color: #607086;
+}
+.review-rail {
+  border: 1px solid #e3eaf2;
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcfe;
+}
+.fact {
+  border-top-color: #e8eef5;
+}
+.comments-panel {
+  border-top-color: #e2e8f0;
+}
+.comment-list {
+  gap: 12px;
+}
+.skip-group {
+  box-shadow: var(--shadow);
+}
+.skip-group-head {
+  align-items: center;
+  background: linear-gradient(180deg, #fff, #fbfcfe);
+}
+.skip-row {
+  grid-template-columns: minmax(0, 1.15fr) minmax(220px, 0.85fr);
+}
+.blocker-item {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+.empty {
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+@media (max-width: 840px) {
+  .topbar, .card-head { grid-template-columns: 1fr; display: grid; }
+  .dashboard, .grid, .metrics { grid-template-columns: 1fr; }
+  .guide-grid { grid-template-columns: 1fr; }
+  .headline-row { align-items: flex-start; flex-direction: column; }
+  .pr-readout { grid-template-columns: 1fr; }
+  .review-rail { position: static; }
+  .story-line { grid-template-columns: 1fr; gap: 4px; }
+  .timeline-item { grid-template-columns: 1fr; }
+  .controls { position: static; }
+  .utilities { width: 100%; margin-left: 0; }
+  .utility-button { flex: 1 1 auto; }
+  .skip-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <div>
+      <h1 data-i18n="title">MyCR 审核报告</h1>
+      <p class="subtitle" id="subtitle"></p>
+    </div>
+    <div class="toggle" aria-label="Language">
+      <button type="button" data-lang-button="zh" class="active">中文</button>
+      <button type="button" data-lang-button="en">EN</button>
+    </div>
+  </div>
+  <section class="metrics" id="metrics"></section>
+  <section class="dashboard">
+    <div class="panel">
+      <h2 data-i18n="statusDistribution">状态分布</h2>
+      <div class="bars" id="bars"></div>
+    </div>
+    <div class="panel">
+      <h2 data-i18n="timeline">执行时间线</h2>
+      <div class="timeline" id="timeline"></div>
+    </div>
+  </section>
+  <section class="panel" id="overviewPanel" style="display: none; margin-top: 16px;">
+    <h2 data-i18n="overviewSection">整体摘要</h2>
+    <div class="overview-content" id="overviewContent"></div>
+  </section>
+  <section class="panel reading-guide" id="readingGuidePanel" style="display: none;">
+    <div class="guide-head">
+      <h2 data-i18n="readingGuide">阅读建议</h2>
+      <span data-i18n="readingGuideHint">先看高风险和高影响 PR</span>
+    </div>
+    <div class="guide-grid" id="readingGuide"></div>
+  </section>
+  <section class="controls">
+    <input class="search" id="search" type="search">
+    <div class="chips" id="chips"></div>
+    <div class="utilities">
+      <button type="button" class="utility-button" id="openAll"></button>
+      <button type="button" class="utility-button" id="closeAll"></button>
+    </div>
+  </section>
+  <section class="section-heading">
+    <h2 data-i18n="reviewedSection">已处理 PR</h2>
+    <div class="hint" data-i18n="reviewedHint">点击卡片查看细节</div>
+  </section>
+  <main class="cards" id="cards"></main>
+  <section class="section-heading" id="skippedHeading">
+    <h2 data-i18n="skippedGroups">未审核 PR 分类</h2>
+    <div class="hint" data-i18n="skippedHint">按排除原因分组</div>
+  </section>
+  <section class="skip-groups" id="skipGroups"></section>
+  <section class="section-heading" id="followUpHeading">
+    <h2 data-i18n="followUpSection">后续关注</h2>
+    <div class="hint" data-i18n="followUpHint">接近可处理但仍有阻塞</div>
+  </section>
+  <section class="cards" id="followUpCards"></section>
+  <div class="footer" id="footer"></div>
+</div>
+<script>
+const reportData = {"approved":[{"approach":"PR 在 policy mode 下清理 caller-controlled 环境，再重建受控 skill path；非 policy 路径保持原有兼容行为。","author":"bytethm","ci_state":"mergedAt=2026-05-27T10:14:48Z；head=678ded4a18165bbbba77df3eaeb6d60299529c2c。","design_assessment":"变更集中在 llmagent option 与 skill run 工具边界，测试覆盖 allow/deny policy 行为。复核未发现新的兼容性或安全绕过。","inline_comments":[],"modules":"agent/llmagent/option.go；tool/skill/run.go","number":1878,"outcome":"提交 LGTM approving review，并使用 squash merge 合入 main。","problem":"如果 policy mode 保留调用者环境，模型仍可能通过污染 PATH 或 shell/linker 相关变量绕过策略，执行并非预期的二进制或行为。","risk":"低。剩余风险主要是外部调用方依赖 policy mode 下继承环境；但该收紧正是安全目标。","status":"merged","technical_background":"skill_run policy mode 会把模型可触发的命令执行约束在允许策略内。这里的安全边界不仅是命令本身，还包括调用者传入的 PATH、SHELL、LD_* 等环境变量，因为这些变量可能改变二进制解析、动态链接或 shell 行为。","tests_docs":"GitHub checks 150/150 通过；focused diff review 通过。","title":"{tool/skill, agent/llmagent}: scrub caller env in policy mode to close skill_run PATH bypass","url":"https://github.com/trpc-group/trpc-agent-go/pull/1878"},{"approach":"PR 新增英文和中文 prompt template guide，并补齐文档导航。","author":"yu-xin-c","ci_state":"mergedAt=2026-05-27T10:14:53Z；head=9038aa018ce81672e6485674c1e9dbca0c27bd7f。","design_assessment":"文档-only 变更，不改变运行时代码；链接和锚点在 diff 中可追踪，未发现错误指引。","inline_comments":[],"modules":"docs/mkdocs/en；docs/mkdocs/zh；mkdocs navigation","number":1860,"outcome":"提交 LGTM approving review，并使用 squash merge 合入 main。","problem":"现有文档缺少系统化 prompt template 指南，用户需要从示例和 API 注释中反推用法。","risk":"低。主要风险是文档后续随 API 演进漂移。","status":"merged","technical_background":"Prompt template guide 是面向用户的文档入口，解释模板变量、占位符和中英文导航之间的对应关系。","tests_docs":"GitHub checks 148/148 通过；docs-build 通过。","title":"docs: add prompt template guide","url":"https://github.com/trpc-group/trpc-agent-go/pull/1860"},{"approach":"PR 在 Gemini generation config patching 与响应转换中加入 thinking level precedence 和 thought signature round trip。","author":"Kevin091827","ci_state":"mergedAt=2026-05-27T10:14:59Z；head=aeed69ad05bbad304cf9002688047cce5ab2646e。","design_assessment":"实现限定在 Gemini provider 内，保留 ThinkingTokens fallback，未污染其他 provider。","inline_comments":[],"modules":"model/gemini","number":1842,"outcome":"提交 LGTM approving review，并使用 squash merge 合入 main。","problem":"缺少 thinking level 和 thought signature 支持时，Gemini 的高阶推理配置和签名回传无法完整表达。","risk":"低到中。主要风险是 Gemini API 对 ThinkingLevel 字符串的后续解释变化。","status":"merged","technical_background":"Gemini provider 的 thinking level 与 thought signatures 用于控制推理预算并在多轮调用中保留 provider 要求的签名字段。它属于 provider-specific contract，需要在通用 model abstraction 与 Gemini API 之间保持兼容。","tests_docs":"GitHub checks 150/150 通过；provider-specific tests 覆盖签名和 thinking level。","title":"model/gemini: support thinking level and thought signatures","url":"https://github.com/trpc-group/trpc-agent-go/pull/1842"},{"approach":"PR 增加 request-scoped skill overview 与 workspace_exec guidance override，并在 processor 层做 header normalization 和 duplicate suppression。","author":"Flash-LHR","ci_state":"mergedAt=2026-05-27T10:15:05Z；head=411b55d63e90ebe4d40e5c12dcdeb124a76f0039。","design_assessment":"功能 opt-in，默认 prompt 行为不变；测试覆盖重复抑制和 header 规范化。","inline_comments":[],"modules":"agent；internal/flow/processor","number":1815,"outcome":"提交 LGTM approving review，并使用 squash merge 合入 main。","problem":"没有 section-level override 时，调用方只能整体替换 instruction，难以只调整某个 prompt 段落。","risk":"低。主要风险来自调用方自定义 prompt 格式，但默认路径不受影响。","status":"merged","technical_background":"Agent request prompt 会由多个 section 组成，包括 skill overview、workspace_exec guidance 等。Section override 允许调用方替换某些段落，同时保留默认 agent prompt 组织方式。","tests_docs":"GitHub checks 150/150 通过；processor tests 覆盖关键行为。","title":"{agent, internal/flow/processor}: add prompt section overrides","url":"https://github.com/trpc-group/trpc-agent-go/pull/1815"},{"approach":"PR 保护当前与 recent tool results，不让 force-clean 规则越过 recent boundary； oversized truncation 仍独立处理。","author":"Rememorio","ci_state":"mergedAt=2026-05-27T10:15:11Z；head=e9cc84c0049d8d3d89e7192d0de6185127907e99。","design_assessment":"行为边界清楚，测试覆盖 force-clean 与 recent 保护交互。","inline_comments":[],"modules":"session compaction","number":1879,"outcome":"提交 LGTM approving review，并使用 squash merge 合入 main。","problem":"ForceCleanToolNames 如果过早清掉当前或最近工具结果，可能破坏正在进行的调用链和用户可见上下文。","risk":"低。剩余风险是自定义 SkipRecentFunc 语义差异。","status":"merged","technical_background":"Context compaction 会清理历史 tool results 以控制上下文大小，但当前轮或最近轮的 tool results 仍可能被后续模型步骤引用。","tests_docs":"GitHub checks 150/150 通过；focused tests 覆盖保护逻辑。","title":"session: protect recent force-clean results","url":"https://github.com/trpc-group/trpc-agent-go/pull/1879"},{"approach":"PR 增加分布式 cancel option、marker 生命周期、polling watcher 和 cleanup，并补充文档。","author":"Flash-LHR","ci_state":"mergedAt=2026-05-27T10:15:17Z；head=15e0d5e691720846f157b566fde4fd9129247745。","design_assessment":"功能 opt-in，要求共享 SessionService，保留本地 cancel 行为；失败和延迟语义符合 best-effort 分布式取消预期。","inline_comments":[],"modules":"server/agui；docs","number":1839,"outcome":"提交 LGTM approving review，并使用 squash merge 合入 main。","problem":"本地 cancel 不能覆盖多实例部署，导致用户发出的取消请求可能无法中断实际运行所在实例。","risk":"低到中。主要风险是共享存储延迟导致取消生效滞后。","status":"merged","technical_background":"AG-UI server 的 cancel 需要跨实例传播：一个实例接收取消请求，另一个实例可能正在执行 session。Distributed cancel 依赖共享 SessionService 中的 marker 与 watcher 轮询来实现 best-effort 取消。","tests_docs":"GitHub checks 150/150 通过；tests 覆盖 marker lifecycle 与 watcher 行为。","title":"{server/agui, docs}: add distributed cancel","url":"https://github.com/trpc-group/trpc-agent-go/pull/1839"}],"blocked":[{"approach":"准备在 artifact/service.go line 53 提交行级评论，建议新增更窄的可选 HeadService 接口并在调用点 type assertion，或拆成明确 documented breaking release。","author":"liuzengh","ci_state":"head=2e5bf368ac088be0a8c83a9858a5352e2ab80418；go-apidiff 与 codecov/patch non-green。","design_assessment":"这是具体兼容性 blocker。尝试通过 GitHub review API 提交行级评论时返回 HTTP 422 Issue is locked，因此未能落到 PR 上。","inline_comments":[{"body":"Adding `Head` directly to the exported `artifact.Service` interface is a compile-time breaking change for every external implementation, which matches the current `go-apidiff` failure. Keep the existing interface stable by introducing a narrower optional interface such as `HeadService` and type-asserting at call sites, or explicitly split this into a documented breaking release.","focus":"exported interface breaking change","line":53,"path":"artifact/service.go","severity":"P1","url":""}],"modules":"artifact/service.go","number":1400,"outcome":"未 approve/merge；记录为 blocked comment delivery。","problem":"PR 直接在 artifact.Service 接口上新增 Head 方法，导致所有外部实现都必须新增方法，当前 go-apidiff 失败正对应这个破坏性变更。","risk":"高。公开接口 breaking change 会影响所有外部 artifact.Service 实现。","status":"blocked","technical_background":"artifact.Service 是导出的公共接口，外部实现方会在编译期依赖它的完整方法集。向接口直接新增方法是 Go 生态典型 breaking change。","tests_docs":"CI soft-fail：go-apidiff x3 与 codecov/patch 失败；评论提交被 Issue is locked 阻止。","title":"{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content","url":"https://github.com/trpc-group/trpc-agent-go/pull/1400"}],"commented":[{"approach":"在 toolpipe.go 提交行级评论，要求空配置时 Prompt() 返回空字符串。作者随后更新 head，当前 diff 已加入 len(allowedOps)==0 和 len(allowedNames)==0 && predicate==nil 的空返回。","author":"bytethm","ci_state":"current head=55439c4a056ee38f87242ba3ca4f963f572a602f；codecov/patch failed；已 approve，未 merge。","design_assessment":"当前 head 已修复所提问题，并保持 extension-only 架构。最新检查只剩 codecov/patch soft-fail；该失败不暴露本轮复核到的具体正确性 blocker，但按 MyCR 规则仍是 merge hard gate。","inline_comments":[{"body":"`Prompt()` still returns a non-empty toolpipe prompt when neither `WithToolNames` nor `WithToolScope` is configured, while runtime `beforeModel` wraps no tools and injects nothing. Please return `\"\"` for `len(names) == 0 && p.cfg.predicate == nil` so callers who embed this helper do not get a stale `result_filter` contract.","focus":"Prompt helper contract mismatch","line":226,"path":"agent/extension/toolpipe/toolpipe.go","severity":"P2","url":"https://github.com/trpc-group/trpc-agent-go/pull/1866#discussion_r3309982835"}],"modules":"agent/extension/toolpipe；framework callbacks","number":1866,"outcome":"已提交行级评论；作者修复后复核通过并提交 LGTM approval。因 codecov/patch 非绿，本轮未 merge。","problem":"用户特别关注该 PR 是否真的不侵入 llmAgent。复核确认主设计符合 callback-only 方向；但旧 head 上 Prompt() helper 在未配置 WithToolNames/WithToolScope 时仍返回非空提示词，与运行时 beforeModel 不 wrap 工具也不注入提示词的行为不一致。","risk":"低到中。功能使用 shell-like parser 和 jq/grep/head/tail 白名单，安全面主要在 filter expression parser 与输出截断边界；当前未发现 llmAgent 侵入。","status":"approved","technical_background":"toolpipe 是 agent-scoped extension，通过 callback 给指定工具动态增加 result_filter 参数。模型可以写 grep/head/tail/jq 风格的 pipeline，extension 在 BeforeTool 中剥离参数，在 AfterTool 中过滤结果，从而实现类 shell output filtering，而不改 llmAgent 主执行链。","tests_docs":"本地旧 head 在 agent/extension/toolpipe 中 go test ./... 通过；当前 head GitHub checks 仍有 coverage queued。","title":"agent/extension/toolpipe: add shell-like result filter extension","url":"https://github.com/trpc-group/trpc-agent-go/pull/1866"},{"approach":"在 memory/tencentdb/tools.go 提交行级评论，建议始终从 currentSession(ctx) 派生 session key，或只允许受信任服务端配置覆盖。","author":"Rememorio","ci_state":"head=79bb2066e73c91bf95bac2256a61454e7f9d835f；checks green；未 approve/merge。","design_assessment":"CI 全绿，但这是明确的数据隔离风险，不能 approve。","inline_comments":[{"body":"Do not let the model choose an arbitrary `session_key` for `tdai_conversation_search`: this bypasses the current invocation scope and can expose another user's/session's conversation history if the key is guessed. Always derive the session key from `currentSession(ctx)`, or restrict overrides to trusted server-side configuration rather than tool input.","focus":"model-controlled session_key","line":133,"path":"memory/tencentdb/tools.go","severity":"P1","url":"https://github.com/trpc-group/trpc-agent-go/pull/1859#discussion_r3310180497"}],"modules":"memory/tencentdb","number":1859,"outcome":"已提交行级评论，等待作者修复。","problem":"PR 把 session_key 暴露为模型可填写的 tool input。即使默认使用当前 session，模型仍可传入任意 session_key，绕过 current invocation scope 并尝试读取其他会话历史。","risk":"中到高。若 session_key 可猜或可枚举，会造成跨用户/跨会话历史泄露。","status":"commented","technical_background":"TencentDB Agent Memory integration 暴露 long-term memory search 与 conversation history search 两类工具。Conversation search 的 session_key 是访问会话历史的关键作用域边界。","tests_docs":"GitHub checks 150/150 通过；review comment 已锚定当前 diff。","title":"memory/tencentdb: add TencentDB Agent Memory integration","url":"https://github.com/trpc-group/trpc-agent-go/pull/1859"},{"approach":"在 workspace_runtime.go 提交行级评论，要求 per-session 模式下调用 stableWorkspaceHash 前拒绝空 execID，或退回 per-turn workspace 创建。","author":"nicklaus-dev","ci_state":"head=cd8523c5c787e7c115471daa3ce752d8322c88ea；checks green；未 approve/merge。","design_assessment":"CI 当前全绿，但该问题直接破坏 workspace isolation，不能 approve/merge。","inline_comments":[{"body":"When per-session persistence hashes an empty `execID`, every caller without a real session ID maps to the same deterministic workspace, which can leak files between unrelated runs in the same sandbox. Please reject blank `execID` in this mode before calling `stableWorkspaceHash`, or fall back to per-turn workspace creation.","focus":"empty execID stable workspace collision","line":117,"path":"codeexecutor/e2b/workspace_runtime.go","severity":"P1","url":"https://github.com/trpc-group/trpc-agent-go/pull/1874#discussion_r3310175622"}],"modules":"codeexecutor/e2b/workspace_runtime.go","number":1874,"outcome":"已提交行级评论，等待作者修复。","problem":"当 per-session persistence 收到空 execID 时，stable hash 固定为同一个值。任何没有真实 session ID 的调用都会共享同一 deterministic workspace，可能在同一 sandbox 中泄露文件。","risk":"中。无 session ID 的调用路径可能跨 run 共享工作目录。","status":"commented","technical_background":"E2B codeexecutor workspace persistence 允许同一 session 复用确定性 workspace path。为了避免 sanitize 后路径碰撞，PR 改用 raw execID 的 SHA-256 前缀作为目录名。","tests_docs":"GitHub checks green；focused review 发现空 execID collision。","title":"codeexecutor/e2b: add WithStableWorkspace option for deterministic workspace paths","url":"https://github.com/trpc-group/trpc-agent-go/pull/1874"}],"follow_up":[{"author":"bytethm","next":"等 codecov/patch 变绿后重新确认 head 未移动；若无新问题，可 squash merge。","number":1866,"reason":"作者已修复 Prompt() 空配置问题，当前只剩 codecov/patch soft-fail。","title":"agent/extension/toolpipe: add shell-like result filter extension","url":"https://github.com/trpc-group/trpc-agent-go/pull/1866"},{"author":"nicklaus-dev","next":"等作者拒绝空 execID 或回退 per-turn path 后复核。","number":1874,"reason":"已评论 empty execID 在 per-session 模式下共享 deterministic workspace 的隔离问题。","title":"codeexecutor/e2b: add WithStableWorkspace option for deterministic workspace paths","url":"https://github.com/trpc-group/trpc-agent-go/pull/1874"},{"author":"Rememorio","next":"等作者将 session_key 固定到 currentSession(ctx) 或改为服务端受信配置。","number":1859,"reason":"已评论 model-controlled session_key 跨会话读取风险。","title":"memory/tencentdb: add TencentDB Agent Memory integration","url":"https://github.com/trpc-group/trpc-agent-go/pull/1859"},{"author":"liuzengh","next":"需要解锁 PR 或由 maintainer 转达接口兼容性 blocker。","number":1400,"reason":"发现导出接口 breaking change，但 PR locked 导致评论提交失败。","title":"{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content","url":"https://github.com/trpc-group/trpc-agent-go/pull/1400"}],"generated_at":"2026-05-27T18:23:50+08:00","maintained":[],"overview":"本轮先检查 Codex 版 mycr skill，确认它只是 bootstrap；随后在 Cursor 个人技能目录安装同样委托 repo canonical skill 的 bootstrap。全量 MyCR 扫描后，重点复核 #1866 的 toolpipe extension-only 设计：确认它通过 BeforeModel、BeforeTool、AfterTool callback 完成 schema augmentation、参数剥离和结果过滤，没有侵入 llmAgent 主链路；最初发现 Prompt() 与运行时空配置行为不一致并提交行级评论，作者更新后该问题已修复。#1866 当前只剩 codecov/patch soft-fail，已按规则提交 LGTM approval，但因 codecov/patch 非绿未 merge。外部 clean PR #1878、#1860、#1842、#1815、#1879、#1839 均已提交正文严格为 LGTM 的 approving review 并 squash merge；#1874、#1859 已提交有效行级评论；#1400 发现导出接口 breaking change，但 GitHub 返回 Issue is locked，无法提交评论，已作为 blocked 记录。","repo":"trpc-group/trpc-agent-go","skill_evolution":{"commits":[],"status":"completed","summary":"Cursor 个人 mycr skill 已安装为 bootstrap，继续读取 /Users/guoqizhou/projects/github/mycr/skill/SKILL.md，避免 Codex 与 Cursor 两边出现长逻辑漂移。","validation":["读取 /Users/guoqizhou/.codex/skills/mycr/SKILL.md","读取 /Users/guoqizhou/projects/github/mycr/skill/SKILL.md","读取 Cursor create-skill 指南并安装 /Users/guoqizhou/.cursor/skills/mycr/SKILL.md"]},"skipped_groups":[{"items":[{"author":"WineChord","number":1876,"skip_reason":"own PR；未在本轮直接维护。","title":"{agent/taskrun, openclaw}: support worktree-isolated subagents","url":"https://github.com/trpc-group/trpc-agent-go/pull/1876"},{"author":"WineChord","number":1875,"skip_reason":"own PR；未在本轮直接维护。","title":"{session, internal/flow, openclaw}: track summary boundaries","url":"https://github.com/trpc-group/trpc-agent-go/pull/1875"},{"author":"WineChord","number":1872,"skip_reason":"own PR；未在本轮直接维护。","title":"agent/taskrun: expose run progress and transcripts","url":"https://github.com/trpc-group/trpc-agent-go/pull/1872"},{"author":"WineChord","number":1871,"skip_reason":"own PR；未在本轮直接维护。","title":"docs: clarify AgentTool context visibility","url":"https://github.com/trpc-group/trpc-agent-go/pull/1871"},{"author":"WineChord","number":1870,"skip_reason":"own PR；未在本轮直接维护。","title":"{agent, docs}: add lazy agent guidance","url":"https://github.com/trpc-group/trpc-agent-go/pull/1870"},{"author":"WineChord","number":1869,"skip_reason":"own PR；未在本轮直接维护。","title":"docs: clarify taskrun delegation usage","url":"https://github.com/trpc-group/trpc-agent-go/pull/1869"},{"author":"WineChord","number":1867,"skip_reason":"own PR；未在本轮直接维护。","title":"{tool, agent}: add tool permission policy","url":"https://github.com/trpc-group/trpc-agent-go/pull/1867"}],"reason":"Own PR，按本轮范围只做 ledger/follow-up，不自评、不自合并"},{"items":[{"author":"Rememorio","number":1865,"skip_reason":"draft=true。","title":"session: recover compacted tool results","url":"https://github.com/trpc-group/trpc-agent-go/pull/1865"},{"author":"print-happy","number":1857,"skip_reason":"draft=true。","title":"memory/mem0: advance checkpoint after successful ingest","url":"https://github.com/trpc-group/trpc-agent-go/pull/1857"},{"author":"Rememorio","number":1840,"skip_reason":"draft=true。","title":"telemetry: reduce chat trace payload size","url":"https://github.com/trpc-group/trpc-agent-go/pull/1840"},{"author":"hyprh","number":1778,"skip_reason":"draft=true。","title":"examples: add RLM (Recursive Language Model) demo","url":"https://github.com/trpc-group/trpc-agent-go/pull/1778"},{"author":"liuzengh","number":1710,"skip_reason":"draft=true。","title":"a2a: add input schema","url":"https://github.com/trpc-group/trpc-agent-go/pull/1710"},{"author":"bytethm","number":1683,"skip_reason":"draft=true。","title":"tool/workspaceexec: add workspace-scoped file tools sharing workspace_exec state","url":"https://github.com/trpc-group/trpc-agent-go/pull/1683"},{"author":"Rememorio","number":1651,"skip_reason":"draft=true。","title":"evolution: add async skill-extraction pipeline for agent self-evolution","url":"https://github.com/trpc-group/trpc-agent-go/pull/1651"},{"author":"sks","number":1526,"skip_reason":"draft=true。","title":"model: add ModelMaxOutputTokens map and ResolveMaxOutputTokens helper","url":"https://github.com/trpc-group/trpc-agent-go/pull/1526"},{"author":"hyprh","number":1509,"skip_reason":"title contains WIP。","title":"[WIP] session: support concurrent queued execution","url":"https://github.com/trpc-group/trpc-agent-go/pull/1509"},{"author":"hyprh","number":1380,"skip_reason":"title contains WIP。","title":"[WIP] fix(agent): always register InstructionProcessor to support run-time WithInstruction","url":"https://github.com/trpc-group/trpc-agent-go/pull/1380"}],"reason":"Draft 或 WIP gate"},{"items":[{"author":"Rememorio","number":1856,"skip_reason":"此前只看到 3/3 checks，正常 GitHub Actions matrix 缺失；后续复核虽显示无 non-pass，但本轮未完成 focused review。","title":"session: add portable event window loading","url":"https://github.com/trpc-group/trpc-agent-go/pull/1856"},{"author":"liuzengh","number":1768,"skip_reason":"62 files、13k+ additions，且 reviewDecision=CHANGES_REQUESTED；范围过大，本轮未在剩余时间完成 thread-level audit。","title":"feat(sandbox): add secure Linux sandbox for code execution based on bubblewrap","url":"https://github.com/trpc-group/trpc-agent-go/pull/1768"},{"author":"hyprh","number":1731,"skip_reason":"go-apidiff still failing；68 files、17k+ additions，且 reviewDecision=CHANGES_REQUESTED。","title":"knowledge: add GraphRAG code search (reasonable breaking change)","url":"https://github.com/trpc-group/trpc-agent-go/pull/1731"},{"author":"fernandezbaptiste","number":1460,"skip_reason":"hard failure：GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST。","title":"improve nano-pdf skill description + add skill-review-and-optimize CI","url":"https://github.com/trpc-group/trpc-agent-go/pull/1460"}],"reason":"CI 或 reviewability gate 阻塞"},{"items":[{"author":"meichuanyi","number":1826,"skip_reason":"未进入本轮 focused candidate list。","title":"docs: Add FAQ section","url":"https://github.com/trpc-group/trpc-agent-go/pull/1826"},{"author":"GongNanyue","number":1801,"skip_reason":"未进入本轮 focused candidate list。","title":"docs/mkdocs/zh/fix/agent.md: fix typo","url":"https://github.com/trpc-group/trpc-agent-go/pull/1801"},{"author":"meichuanyi","number":1776,"skip_reason":"未进入本轮 focused candidate list。","title":"docs: add FAQ section","url":"https://github.com/trpc-group/trpc-agent-go/pull/1776"},{"author":"hyprh","number":1764,"skip_reason":"未进入本轮 focused candidate list。","title":"examples: add graph RAG code search demo and viewer","url":"https://github.com/trpc-group/trpc-agent-go/pull/1764"},{"author":"liuzengh","number":1736,"skip_reason":"未进入本轮 focused candidate list。","title":"all: add deferred tool set","url":"https://github.com/trpc-group/trpc-agent-go/pull/1736"},{"author":"bytethm","number":1483,"skip_reason":"未进入本轮 focused candidate list。","title":"tool/subtask: add dynamic agent creation tools","url":"https://github.com/trpc-group/trpc-agent-go/pull/1483"},{"author":"SummerLv","number":1446,"skip_reason":"未进入本轮 focused candidate list。","title":"feat(a2a): add StructuredOutput → DataPart converter for custom event…","url":"https://github.com/trpc-group/trpc-agent-go/pull/1446"},{"author":"hongxiuzhe","number":1183,"skip_reason":"未进入本轮 focused candidate list。","title":"internal/util: add util for streaming parsing of JSON returned by LLM","url":"https://github.com/trpc-group/trpc-agent-go/pull/1183"}],"reason":"Not reached this run，需要后续补审"}],"timeline":[{"text":"读取用户要求：安装 Cursor mycr skill，执行全量 MyCR，并重点 review #1866 的 extension/callback-only 设计。","time":"17:40"},{"text":"读取 Codex mycr bootstrap、repo canonical skill 与 Cursor create-skill 指南。","time":"17:43"},{"text":"创建 /Users/guoqizhou/.cursor/skills/mycr/SKILL.md，作为指向 repo canonical skill 的 Cursor bootstrap。","time":"17:46"},{"text":"收集 trpc-agent-go open PR ledger；GitHub GraphQL 大字段查询 504 后改用轻量 list + per-PR detail。","time":"17:50"},{"text":"为 #1866 创建独立 worktree，审查 toolpipe callbacks、engine、ops、wrapped_tool 与框架 callback 调用路径。","time":"17:55"},{"text":"#1866 toolpipe 模块 go test ./... 通过；提交 Prompt() 空配置 contract 行级评论。","time":"18:02"},{"text":"同步 focused review 剩余候选；识别 6 个 approve-safe、#1859/#1400 findings 与若干 skip gates。","time":"18:10"},{"text":"对 #1859 提交 session_key 作用域行级评论；#1400 评论因 Issue is locked 被 GitHub 拒绝。","time":"18:13"},{"text":"对 #1878/#1860/#1842/#1815/#1879/#1839 提交 LGTM approval 并 squash merge。","time":"18:15"},{"text":"发现 #1866 head 已移动；复核当前 diff 确认 Prompt() 问题已修复，最终只剩 codecov/patch soft-fail。","time":"18:18"},{"text":"#1874 pending CI 转绿后补审，发现 empty execID stable workspace collision 并提交行级评论。","time":"18:22"},{"text":"生成本轮 MyCR JSON/HTML 报告并准备 archive/verify。","time":"18:23"}],"title":"MyCR Review Report 20260527-182350"};
+const labels = {
+  zh: {
+    title: "MyCR 审核报告",
+    subtitle: "仓库 {repo}，生成时间 {time}。默认展示中文，可切换英文。",
+    statusDistribution: "状态分布",
+    timeline: "执行时间线",
+    all: "全部",
+    approved: "已批准",
+    commented: "已评论",
+    maintained: "已维护",
+    merged: "已合并",
+    skipped: "未审核",
+    blocked: "阻塞",
+    total: "总 PR",
+    reviewed: "已审核",
+    comments: "评论",
+    followups: "需关注",
+    search: "搜索 PR、作者、标题、原因",
+    author: "作者",
+    technicalBackground: "技术背景",
+    problem: "解决的问题",
+    problemFraming: "问题本质与视角",
+    rootCause: "根因判断",
+    approach: "实现方式",
+    alternativeDesigns: "可选设计方案",
+    tradeoffs: "设计取舍",
+    designAssessment: "设计评估",
+    outcome: "审核结果",
+    risk: "剩余风险",
+    ci: "CI / 线程状态",
+    backgroundAndProblem: "背景与问题",
+    solutionAndTradeoffs: "方案与取舍",
+    impactAndEvidence: "影响与证据",
+    reviewSummary: "审查结论",
+    overviewSection: "整体摘要",
+    readingGuide: "阅读建议",
+    readingGuideHint: "先看高风险和高影响 PR",
+    readingAdvice: "阅读建议",
+    modules: "涉及模块",
+    apiSurface: "导出 API 变化",
+    changeInventory: "具体变更清单",
+    semanticChanges: "语义变化",
+    moduleImpact: "模块影响",
+    crossModuleImpact: "模块交叉影响",
+    behaviorImpact: "行为与兼容性影响",
+    testsDocs: "测试与文档",
+    attentionPoints: "需要注意",
+    directFixes: "直接修复",
+    selfReviewPolicy: "自审策略",
+    reason: "跳过原因",
+    reviewedSection: "已处理 PR",
+    reviewedHint: "点击卡片查看细节",
+    skippedGroups: "未审核 PR 分类",
+    skippedHint: "按排除原因分组",
+    followUpSection: "后续关注",
+    followUpHint: "接近可处理但仍有阻塞",
+    items: "项",
+    blocker: "阻塞点",
+    blockerDetails: "具体阻塞点",
+    readinessAudit: "就绪性审计",
+    blockerKinds: {
+      ci: "CI",
+      human_review: "人类评审",
+      bot_review: "机器人评审",
+      merge_conflict: "合并冲突",
+      draft_wip: "Draft/WIP",
+      own_pr: "自己发起",
+      soft_ci: "软门禁",
+      not_reached: "本轮未处理",
+      other: "其他"
+    },
+    inlineComments: "内联评论",
+    focus: "审核重点",
+    severity: "严重级别",
+    expandAll: "展开全部",
+    collapseAll: "收起全部",
+    empty: "当前筛选条件下没有 PR。",
+    footer: "报告文件为自包含 HTML，默认保存在 public/reports 并由 /mycr 站点归档。"
+  },
+  en: {
+    title: "MyCR Review Report",
+    subtitle: "Repository {repo}, generated at {time}. Chinese is the default view; English is available here.",
+    statusDistribution: "Status Distribution",
+    timeline: "Run Timeline",
+    all: "All",
+    approved: "Approved",
+    commented: "Commented",
+    maintained: "Maintained",
+    merged: "Merged",
+    skipped: "Not Reviewed",
+    blocked: "Blocked",
+    total: "Total PRs",
+    reviewed: "Reviewed",
+    comments: "Comments",
+    followups: "Follow-ups",
+    search: "Search PR, author, title, or reason",
+    author: "Author",
+    technicalBackground: "Technical Background",
+    problem: "Problem",
+    problemFraming: "Problem Framing",
+    rootCause: "Root Cause",
+    approach: "Implementation",
+    alternativeDesigns: "Alternative Designs",
+    tradeoffs: "Tradeoffs",
+    designAssessment: "Design Assessment",
+    outcome: "Outcome",
+    risk: "Remaining Risk",
+    ci: "CI / Thread State",
+    backgroundAndProblem: "Background and Problem",
+    solutionAndTradeoffs: "Solution and Tradeoffs",
+    impactAndEvidence: "Impact and Evidence",
+    reviewSummary: "Review Summary",
+    overviewSection: "Overview",
+    readingGuide: "Reading Guide",
+    readingGuideHint: "Start with high-risk or high-impact PRs",
+    readingAdvice: "Reading Advice",
+    modules: "Touched Modules",
+    apiSurface: "Exported API Changes",
+    changeInventory: "Concrete Change Inventory",
+    semanticChanges: "Semantic Changes",
+    moduleImpact: "Module Impact",
+    crossModuleImpact: "Cross-module Impact",
+    behaviorImpact: "Behavior and Compatibility Impact",
+    testsDocs: "Tests and Docs",
+    attentionPoints: "Attention Points",
+    directFixes: "Direct Fixes",
+    selfReviewPolicy: "Self-review Policy",
+    reason: "Skip Reason",
+    reviewedSection: "Processed PRs",
+    reviewedHint: "Click a card for details",
+    skippedGroups: "Not Reviewed by Reason",
+    skippedHint: "Grouped by exclusion reason",
+    followUpSection: "Follow-up Attention",
+    followUpHint: "Close to ready but still blocked",
+    items: "items",
+    blocker: "Blocker",
+    blockerDetails: "Concrete Blockers",
+    readinessAudit: "Readiness Audit",
+    blockerKinds: {
+      ci: "CI",
+      human_review: "Human Review",
+      bot_review: "Bot Review",
+      merge_conflict: "Merge Conflict",
+      draft_wip: "Draft/WIP",
+      own_pr: "Own PR",
+      soft_ci: "Soft CI",
+      not_reached: "Not Reached",
+      other: "Other"
+    },
+    inlineComments: "Inline Comments",
+    focus: "Review Focus",
+    severity: "Severity",
+    expandAll: "Expand all",
+    collapseAll: "Collapse all",
+    empty: "No PRs match the current filters.",
+    footer: "This self-contained HTML report is saved under public/reports by default and archived by the /mycr site."
+  }
+};
+
+let lang = "zh";
+let filter = "all";
+const statusOrder = ["approved", "commented", "maintained", "merged", "skipped", "blocked"];
+
+function text(value, fallback = "") {
+  if (value === undefined || value === null || value === "") return fallback;
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return value[lang] || value.zh || value.en || fallback;
+  }
+  return String(value);
+}
+
+function escapeHtml(value) {
+  return text(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function formatRich(value) {
+  let html = escapeHtml(value);
+  const replacements = [
+    [
+      /(P[0-2]|codecov\/patch=FAILURE|go-apidiff=FAILURE|go-apidiff|FAILURE|失败|阻塞|不能合入|不能 merge|未合并|破坏性|breaking|unbounded|无界|绕过|丢失|重复|不稳定|风险)/gi,
+      "mark-bad"
+    ],
+    [
+      /(LGTM|已合并|已批准|squash merge|merged|approved|CI 全绿|全绿|修复有效|\bresolved\b|\bresolve\b)/gi,
+      "mark-good"
+    ],
+    [
+      /(pending|soft[- ]?CI|软门禁|follow-up|后续|关注|CodeRabbit|reviewability ledger|not_reached)/gi,
+      "mark-info"
+    ],
+    [
+      /(导出 API|\bAPI\b|兼容性|\bsession\b|\brunner\b|\bmemory\b|GraphRAG|workspace_exec|OpenAPI|\bpolicy\b|security|安全)/gi,
+      "mark-warn"
+    ]
+  ];
+  for (const [pattern, className] of replacements) {
+    html = html.replace(pattern, `<mark class="${className}">$1</mark>`);
+  }
+  return html;
+}
+
+function prs() {
+  const groups = reportData.skipped_groups || [];
+  const skipped = groups.flatMap(group =>
+    (group.items || []).map(item => ({
+      ...item,
+      status: item.status || "skipped",
+      skip_reason: item.skip_reason || group.reason
+    }))
+  );
+  return [
+    ...(reportData.approved || []),
+    ...(reportData.commented || []),
+    ...(reportData.maintained || []),
+    ...(reportData.blocked || []),
+    ...skipped
+  ];
+}
+
+function skippedGroups() {
+  return reportData.skipped_groups || [];
+}
+
+function counts(items) {
+  const result = Object.fromEntries(statusOrder.map(status => [status, 0]));
+  for (const item of items) {
+    const status = item.status || "skipped";
+    result[status] = (result[status] || 0) + 1;
+  }
+  return result;
+}
+
+function setLanguage(nextLang) {
+  lang = nextLang;
+  document.documentElement.lang = nextLang === "zh" ? "zh-CN" : "en";
+  document.querySelectorAll("[data-lang-button]").forEach(button => {
+    button.classList.toggle("active", button.dataset.langButton === nextLang);
+  });
+  render();
+}
+
+function renderStatic() {
+  document.querySelectorAll("[data-i18n]").forEach(node => {
+    node.textContent = labels[lang][node.dataset.i18n];
+  });
+  const repo = reportData.repo || "trpc-group/trpc-agent-go";
+  const generated = reportData.generated_at || "2026-05-27T18:23:50+08:00";
+  document.getElementById("subtitle").textContent = labels[lang].subtitle
+    .replace("{repo}", repo)
+    .replace("{time}", generated);
+  document.getElementById("search").placeholder = labels[lang].search;
+  document.getElementById("openAll").textContent = labels[lang].expandAll;
+  document.getElementById("closeAll").textContent = labels[lang].collapseAll;
+  document.getElementById("footer").textContent = labels[lang].footer;
+}
+
+function renderMetrics(items) {
+  const totalComments = items.reduce((sum, item) =>
+    sum + ((item.inline_comments || []).length || item.comment_count || 0), 0);
+  const followups = (reportData.follow_up || []).length;
+  const reviewed = items.filter(item =>
+    ["approved", "commented", "maintained", "merged", "blocked"].includes(item.status)
+  ).length;
+  const metricRows = [
+    [labels[lang].total, items.length],
+    [labels[lang].reviewed, reviewed],
+    [labels[lang].approved, items.filter(item =>
+      ["approved", "merged"].includes(item.status)).length],
+    [labels[lang].comments, totalComments],
+    [labels[lang].followups, followups]
+  ];
+  document.getElementById("metrics").innerHTML = metricRows.map(([label, value]) => `
+    <div class="metric">
+      <div class="value">${value}</div>
+      <div class="label">${escapeHtml(label)}</div>
+    </div>
+  `).join("");
+}
+
+function renderBars(items) {
+  const byStatus = counts(items);
+  const maxCount = Math.max(1, ...Object.values(byStatus));
+  document.getElementById("bars").innerHTML = statusOrder.map(status => {
+    const value = byStatus[status] || 0;
+    const width = Math.max(3, Math.round((value / maxCount) * 100));
+    return `
+      <div class="bar-row">
+        <div class="bar-label">${labels[lang][status]}</div>
+        <div class="bar-track"><div class="bar-fill ${status}" style="width:${width}%"></div></div>
+        <strong>${value}</strong>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderTimeline() {
+  const events = reportData.timeline || [];
+  const container = document.getElementById("timeline");
+  if (!events.length) {
+    container.innerHTML = `<div class="empty">${labels[lang].empty}</div>`;
+    return;
+  }
+  container.innerHTML = events.map(event => `
+    <div class="timeline-item">
+      <div class="time">${escapeHtml(event.time || "")}</div>
+      <div>${escapeHtml(text(event.label || event))}</div>
+    </div>
+  `).join("");
+}
+
+function renderOverview() {
+  const panel = document.getElementById("overviewPanel");
+  const content = document.getElementById("overviewContent");
+  const overview = reportData.overview || reportData.summary;
+  const body = text(overview);
+  if (!body) {
+    panel.style.display = "none";
+    content.textContent = "";
+    return;
+  }
+  panel.style.display = "block";
+  content.innerHTML = formatRich(body);
+}
+
+function renderChips() {
+  const chipRows = ["all", ...statusOrder];
+  document.getElementById("chips").innerHTML = chipRows.map(status => `
+    <button type="button" class="chip ${filter === status ? "active" : ""}"
+      data-filter="${status}">${labels[lang][status]}</button>
+  `).join("");
+  document.querySelectorAll("[data-filter]").forEach(button => {
+    button.addEventListener("click", () => {
+      filter = button.dataset.filter;
+      renderCards();
+      renderSkipGroups();
+      renderFollowUp();
+      renderChips();
+    });
+  });
+}
+
+function matchesSearch(item, query) {
+  if (!query) return true;
+  const haystack = [
+    item.number,
+    text(item.title),
+    item.author,
+    text(item.problem),
+    text(item.approach),
+    text(item.outcome),
+    text(item.skip_reason),
+    text(item.group_reason),
+    text(item.readiness_audit),
+    blockersSearchText(item.blockers),
+    text(item.risk),
+    text(item.ci_state)
+  ].join(" ").toLowerCase();
+  return haystack.includes(query.toLowerCase());
+}
+
+function blockersSearchText(blockers) {
+  if (!Array.isArray(blockers)) return "";
+  return blockers.map(blocker => {
+    if (typeof blocker !== "object" || blocker === null) return text(blocker);
+    return [
+      blocker.kind,
+      blocker.summary,
+      blocker.reviewer,
+      blocker.path,
+      blocker.line,
+      blocker.latest_response,
+      blocker.verification,
+      blocker.url
+    ].map(value => text(value)).join(" ");
+  }).join(" ");
+}
+
+function field(label, value) {
+  const body = text(value);
+  if (!body) return "";
+  return `<div class="field"><strong>${label}</strong><div class="field-body">${formatRich(body)}</div></div>`;
+}
+
+function renderBlockers(item) {
+  const blockers = Array.isArray(item.blockers) ? item.blockers : [];
+  if (!blockers.length) return "";
+  const rendered = blockers.map(blocker => {
+    const data = typeof blocker === "object" && blocker !== null
+      ? blocker
+      : { summary: blocker };
+    const location = [data.path, data.line ? `:${data.line}` : ""].filter(Boolean).join("");
+    const meta = [
+      data.kind ? blockerKindLabel(data.kind) : "",
+      data.reviewer ? `reviewer: ${text(data.reviewer)}` : "",
+      location,
+      data.latest_response ? `latest: ${text(data.latest_response)}` : "",
+      data.verification ? text(data.verification) : ""
+    ].filter(Boolean).join(" · ");
+    const summary = formatRich(data.summary || blocker);
+    const link = data.url
+      ? ` <a href="${escapeHtml(data.url)}">link</a>`
+      : "";
+    return `<li class="blocker-item"><div>${summary}${link}</div>${meta ? `<div class="blocker-meta">${escapeHtml(meta)}</div>` : ""}</li>`;
+  }).join("");
+  return `<div class="skip-detail"><strong>${labels[lang].blockerDetails}:</strong></div><ul class="blocker-list">${rendered}</ul>`;
+}
+
+function blockerKindLabel(kind) {
+  return (labels[lang].blockerKinds || {})[kind] || text(kind);
+}
+
+function allPrText(item) {
+  const comments = (item.inline_comments || []).map(comment => [
+    comment.severity,
+    comment.focus,
+    comment.body,
+    comment.path
+  ].map(value => text(value)).join(" ")).join(" ");
+  const blockers = blockersSearchText(item.blockers);
+  return [
+    item.status,
+    item.number,
+    item.title,
+    item.author,
+    item.problem,
+    item.approach,
+    item.outcome,
+    item.risk,
+    item.ci_state,
+    item.skip_reason,
+    item.readiness_audit,
+    item.modules,
+    item.api_surface,
+    comments,
+    blockers
+  ].map(value => text(value)).join(" ").toLowerCase();
+}
+
+function readingAdvice(item) {
+  const status = item.status || "skipped";
+  const comments = item.inline_comments || [];
+  const blockers = item.blockers || [];
+  const body = allPrText(item);
+  const hasP1 = comments.some(comment =>
+    /\bP[01]\b/i.test(text(comment.severity)) ||
+    /\bP[01]\b/i.test(text(comment.body))
+  );
+  const hasCriticalRisk = hasP1 ||
+    /(security|安全|bypass|绕过|breaking|破坏性|unbounded|无界|丢失|重复|不稳定|兼容|api|go-apidiff|failure|失败|不能 merge|不能合入|race|并发)/i.test(body);
+  const highImpactFeature =
+    /(add|new|新增|support|支持|agent|runner|session|memory|graphrag|knowledge|openapi|workspace_exec|policy|extension|tool|graph|api)/i.test(body);
+
+  const copy = {
+    critical: {
+      icon: "🔥",
+      zh: "重点精读",
+      en: "Deep Read",
+      reasonZh: comments.length
+        ? `有 ${comments.length} 条行级评论，且包含 P1/兼容/正确性/安全类风险。`
+        : "包含高风险兼容性或正确性信号，需要重点复核。",
+      reasonEn: comments.length
+        ? `${comments.length} inline comment(s), including P1, compatibility, correctness, or security risk.`
+        : "High-risk compatibility or correctness signal; review carefully."
+    },
+    focus: {
+      icon: "🔎",
+      zh: "建议细看",
+      en: "Read Carefully",
+      reasonZh: comments.length
+        ? `有 ${comments.length} 条评论或重要设计取舍，建议看完整结论。`
+        : "涉及核心模块、导出 API 或较大功能，建议细看。",
+      reasonEn: comments.length
+        ? `${comments.length} comment(s) or important design tradeoffs; read the full conclusion.`
+        : "Core module, exported API, or larger feature; read carefully."
+    },
+    skim: {
+      icon: "✅",
+      zh: "快速略看",
+      en: "Quick Skim",
+      reasonZh: "风险低或改动较直接，扫结论和 CI 状态即可。",
+      reasonEn: "Low risk or straightforward change; skim outcome and CI state."
+    },
+    follow: {
+      icon: "⏳",
+      zh: "只看阻塞",
+      en: "Blocker Only",
+      reasonZh: blockers.length
+        ? `主要看 ${blockers.length} 个具体阻塞点，暂不需要读完整实现。`
+        : "当前不是可合并状态，先看阻塞和后续动作。",
+      reasonEn: blockers.length
+        ? `Focus on ${blockers.length} concrete blocker(s); no need to read the full implementation yet.`
+        : "Not merge-ready; focus on blockers and next action."
+    }
+  };
+
+  let level = "skim";
+  if (status === "blocked") {
+    level = "follow";
+  } else if (status === "commented") {
+    level = hasCriticalRisk ? "critical" : "focus";
+  } else if (status === "maintained") {
+    level = hasCriticalRisk || highImpactFeature ? "focus" : "skim";
+  } else if (status === "approved") {
+    level = hasCriticalRisk || highImpactFeature ? "focus" : "skim";
+  } else if (status === "merged") {
+    level = highImpactFeature || hasCriticalRisk ? "focus" : "skim";
+  } else if (status === "skipped") {
+    level = blockers.length || /(conflict|ci|failure|失败|未回应|review)/i.test(body)
+      ? "follow"
+      : "skim";
+  }
+
+  const selected = copy[level];
+  return {
+    level,
+    icon: selected.icon,
+    label: lang === "zh" ? selected.zh : selected.en,
+    reason: lang === "zh" ? selected.reasonZh : selected.reasonEn
+  };
+}
+
+function priorityRank(level) {
+  return { critical: 4, focus: 3, follow: 2, skim: 1 }[level] || 0;
+}
+
+function renderReadingGuide(items) {
+  const panel = document.getElementById("readingGuidePanel");
+  const container = document.getElementById("readingGuide");
+  const candidates = [
+    ...items.filter(item => (item.status || "skipped") !== "skipped"),
+    ...(reportData.follow_up || []).map(item => ({ ...item, status: item.status || "blocked" }))
+  ].map(item => ({ item, advice: readingAdvice(item) }))
+    .filter(entry => entry.advice.level !== "skim")
+    .sort((left, right) => priorityRank(right.advice.level) - priorityRank(left.advice.level));
+
+  if (!candidates.length) {
+    panel.style.display = "none";
+    container.innerHTML = "";
+    return;
+  }
+
+  panel.style.display = "block";
+  container.innerHTML = candidates.slice(0, 9).map(entry => {
+    const item = entry.item;
+    const advice = entry.advice;
+    const prText = item.number ? `#${item.number}` : "PR";
+    const prLink = item.url
+      ? `<a href="${escapeHtml(item.url)}">${prText} · ${escapeHtml(text(item.title))}</a>`
+      : `<span>${prText} · ${escapeHtml(text(item.title))}</span>`;
+    return `
+      <article class="guide-card ${advice.level}">
+        <div class="guide-meta">
+          <span class="read-pill ${advice.level}">${advice.icon} ${escapeHtml(advice.label)}</span>
+          <span class="badge ${item.status || "skipped"}">${labels[lang][item.status] || item.status || labels[lang].skipped}</span>
+        </div>
+        <div>${prLink}</div>
+        <div class="guide-reason">${escapeHtml(advice.reason)}</div>
+      </article>
+    `;
+  }).join("");
+}
+
+function storyLine(label, value) {
+  const body = text(value);
+  if (!body) return "";
+  return `
+    <p class="story-line">
+      <span class="story-label">${escapeHtml(label)}</span>
+      <span class="story-text">${formatRich(body)}</span>
+    </p>
+  `;
+}
+
+function storyBlock(title, rows, className = "") {
+  const body = rows.filter(Boolean).join("");
+  if (!body) return "";
+  const classes = ["story-block", className].filter(Boolean).join(" ");
+  return `<section class="${classes}"><h4>${escapeHtml(title)}</h4>${body}</section>`;
+}
+
+function factItem(label, value) {
+  const body = text(value);
+  if (!body) return "";
+  return `
+    <div class="fact">
+      <dt>${escapeHtml(label)}</dt>
+      <dd>${formatRich(body)}</dd>
+    </div>
+  `;
+}
+
+function directFixesText(fixes) {
+  if (!Array.isArray(fixes) || !fixes.length) return "";
+  return fixes.map(fix => {
+    if (typeof fix !== "object" || fix === null) return text(fix);
+    return [
+      fix.branch ? `branch: ${text(fix.branch)}` : "",
+      fix.commit ? `commit: ${text(fix.commit)}` : "",
+      fix.message ? `message: ${text(fix.message)}` : "",
+      fix.files ? `files: ${Array.isArray(fix.files) ? fix.files.map(file => text(file)).join(", ") : text(fix.files)}` : "",
+      fix.tests ? `tests: ${Array.isArray(fix.tests) ? fix.tests.map(test => text(test)).join(", ") : text(fix.tests)}` : "",
+      fix.push_state ? `push: ${text(fix.push_state)}` : "",
+      fix.ci_state ? `CI: ${text(fix.ci_state)}` : ""
+    ].filter(Boolean).join(" · ");
+  }).join("\n");
+}
+
+function renderReviewRail(item) {
+  const advice = readingAdvice(item);
+  const callout = `
+    <div class="reading-callout ${advice.level}">
+      <strong>${advice.icon} ${escapeHtml(advice.label)}</strong>
+      <span>${escapeHtml(advice.reason)}</span>
+    </div>
+  `;
+  const facts = [
+    factItem(labels[lang].outcome, item.outcome),
+    factItem(labels[lang].risk, item.risk),
+    factItem(labels[lang].ci, item.ci_state),
+    factItem(labels[lang].attentionPoints, item.attention_points),
+    factItem(labels[lang].directFixes, directFixesText(item.direct_fixes)),
+    factItem(labels[lang].selfReviewPolicy, item.self_review_policy),
+    factItem(labels[lang].testsDocs, item.tests_docs),
+    factItem(labels[lang].modules, item.modules),
+    factItem(labels[lang].apiSurface, item.api_surface),
+    factItem(labels[lang].reason, item.skip_reason)
+  ].filter(Boolean).join("");
+  if (!facts) return `<aside class="review-rail">${callout}</aside>`;
+  return `<aside class="review-rail">${callout}<h4>${labels[lang].reviewSummary}</h4><dl class="fact-list">${facts}</dl></aside>`;
+}
+
+function renderComments(item) {
+  const comments = item.inline_comments || [];
+  if (!comments.length) return "";
+  const rendered = comments.map(comment => `
+    <div class="comment">
+      <strong>${escapeHtml(comment.path || "")}${comment.line ? ":" + escapeHtml(comment.line) : ""}</strong>
+      <div>${formatRich(text(comment.body || comment))}</div>
+      ${comment.focus ? `<div><strong>${labels[lang].focus}:</strong> ${escapeHtml(text(comment.focus))}</div>` : ""}
+      ${comment.severity ? `<div><strong>${labels[lang].severity}:</strong> ${escapeHtml(text(comment.severity))}</div>` : ""}
+    </div>
+  `).join("");
+  return `<section class="comments-panel">
+    <h4>${labels[lang].inlineComments}</h4>
+    <div class="comment-list">${rendered}</div>
+  </section>`;
+}
+
+function renderPrReadout(item) {
+  const story = [
+    storyBlock(labels[lang].backgroundAndProblem, [
+      storyLine(labels[lang].technicalBackground, item.technical_background),
+      storyLine(labels[lang].problem, item.problem),
+      storyLine(labels[lang].problemFraming, item.problem_framing),
+      storyLine(labels[lang].rootCause, item.root_cause)
+    ], "hero-block"),
+    storyBlock(labels[lang].solutionAndTradeoffs, [
+      storyLine(labels[lang].approach, item.approach),
+      storyLine(labels[lang].alternativeDesigns, item.alternative_designs),
+      storyLine(labels[lang].tradeoffs, item.tradeoffs),
+      storyLine(labels[lang].designAssessment, item.design_assessment)
+    ]),
+    storyBlock(labels[lang].impactAndEvidence, [
+      storyLine(labels[lang].changeInventory, item.change_inventory),
+      storyLine(labels[lang].semanticChanges, item.semantic_changes),
+      storyLine(labels[lang].behaviorImpact, item.behavior_impact),
+      storyLine(labels[lang].moduleImpact, item.module_impact),
+      storyLine(labels[lang].crossModuleImpact, item.cross_module_impact)
+    ]),
+    renderComments(item)
+  ].filter(Boolean).join("");
+  return `<div class="pr-readout"><div class="pr-story">${story}</div>${renderReviewRail(item)}</div>`;
+}
+
+function renderCards() {
+  const query = document.getElementById("search").value.trim();
+  const visible = prs().filter(item => (item.status || "skipped") !== "skipped")
+    .filter(item => {
+    const status = item.status || "skipped";
+    return (filter === "all" || status === filter) && matchesSearch(item, query);
+  });
+  const container = document.getElementById("cards");
+  if (!visible.length) {
+    container.innerHTML = `<div class="empty">${labels[lang].empty}</div>`;
+    return;
+  }
+  container.innerHTML = visible.map(item => {
+    const status = item.status || "skipped";
+    const advice = readingAdvice(item);
+    const prText = item.number ? `#${item.number}` : "PR";
+    const prLink = item.url
+      ? `<a href="${escapeHtml(item.url)}">${prText}</a>`
+      : prText;
+    return `
+      <article class="card priority-${advice.level}" data-status="${status}">
+        <div class="card-head">
+          <div>
+            <div class="headline-row">
+              <h3 class="card-title">${prLink} · ${escapeHtml(text(item.title))}</h3>
+              <span class="read-pill ${advice.level}">${advice.icon} ${escapeHtml(advice.label)}</span>
+            </div>
+            <div class="meta">
+              <span>${labels[lang].author}: ${escapeHtml(item.author || "")}</span>
+              <span class="advice-reason">${escapeHtml(advice.reason)}</span>
+            </div>
+          </div>
+          <span class="badge ${status}">${labels[lang][status] || status}</span>
+        </div>
+        <div class="card-body">
+          ${renderPrReadout(item)}
+        </div>
+      </article>
+    `;
+  }).join("");
+  document.querySelectorAll(".card-head").forEach(head => {
+    head.addEventListener("click", event => {
+      if (event.target.closest("a")) return;
+      head.closest(".card").classList.toggle("open");
+    });
+  });
+}
+
+function renderSkipGroups() {
+  const heading = document.getElementById("skippedHeading");
+  const container = document.getElementById("skipGroups");
+  if (!["all", "skipped"].includes(filter)) {
+    heading.style.display = "none";
+    container.style.display = "none";
+    return;
+  }
+  heading.style.display = "flex";
+  container.style.display = "grid";
+  const query = document.getElementById("search").value.trim();
+  const groups = skippedGroups().map(group => {
+    const reason = group.reason || "";
+    const items = (group.items || []).map(item => ({
+      ...item,
+      status: item.status || "skipped",
+      group_reason: reason,
+      skip_reason: item.skip_reason || reason
+    })).filter(item => matchesSearch(item, query));
+    return { reason, items };
+  }).filter(group => group.items.length > 0);
+  if (!groups.length) {
+    container.innerHTML = `<div class="empty">${labels[lang].empty}</div>`;
+    return;
+  }
+  container.innerHTML = groups.map((group, index) => `
+    <article class="skip-group open">
+      <div class="skip-group-head" data-skip-group="${index}">
+        <h3 class="skip-group-title">${escapeHtml(text(group.reason))}</h3>
+        <span class="skip-group-count">${group.items.length} ${labels[lang].items}</span>
+      </div>
+      <div class="skip-group-body">
+        ${group.items.map(item => {
+          const prText = item.number ? `#${item.number}` : "PR";
+          const prLink = item.url
+            ? `<a href="${escapeHtml(item.url)}">${prText}</a>`
+            : prText;
+          return `
+            <div class="skip-row">
+              <div>
+                <div class="skip-title">${prLink} · ${escapeHtml(text(item.title))}</div>
+                <div class="skip-detail">${labels[lang].author}: ${escapeHtml(item.author || "")}</div>
+              </div>
+              <div>
+                <div><strong>${labels[lang].blocker}:</strong> ${formatRich(text(item.skip_reason))}</div>
+                ${item.readiness_audit ? `<div class="skip-detail"><strong>${labels[lang].readinessAudit}:</strong> ${formatRich(text(item.readiness_audit))}</div>` : ""}
+                ${renderBlockers(item)}
+                ${item.ci_state ? `<div class="skip-detail">${formatRich(text(item.ci_state))}</div>` : ""}
+                ${item.risk ? `<div class="skip-detail">${formatRich(text(item.risk))}</div>` : ""}
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </article>
+  `).join("");
+  document.querySelectorAll("[data-skip-group]").forEach(head => {
+    head.addEventListener("click", () => {
+      head.closest(".skip-group").classList.toggle("open");
+    });
+  });
+}
+
+function renderFollowUp() {
+  const heading = document.getElementById("followUpHeading");
+  const container = document.getElementById("followUpCards");
+  if (!["all", "skipped", "blocked"].includes(filter)) {
+    heading.style.display = "none";
+    container.style.display = "none";
+    return;
+  }
+  const query = document.getElementById("search").value.trim().toLowerCase();
+  const items = (reportData.follow_up || []).filter(item => {
+    if (!query) return true;
+    return [
+      item.number,
+      item.author,
+      text(item.title),
+      text(item.reason),
+      text(item.next)
+    ].join(" ").toLowerCase().includes(query);
+  });
+  if (!items.length) {
+    heading.style.display = "none";
+    container.style.display = "none";
+    return;
+  }
+  heading.style.display = "flex";
+  container.style.display = "grid";
+  container.innerHTML = items.map(item => {
+    const prText = item.number ? `#${item.number}` : "PR";
+    const prLink = item.url
+      ? `<a href="${escapeHtml(item.url)}">${prText}</a>`
+      : prText;
+    return `
+      <article class="card open" data-status="blocked">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">${prLink} · ${escapeHtml(text(item.title))}</h3>
+            <div class="meta">${labels[lang].author}: ${escapeHtml(item.author || "")}</div>
+          </div>
+          <span class="badge blocked">${labels[lang].followups}</span>
+        </div>
+        <div class="card-body">
+          <div class="grid">
+            ${field(labels[lang].reason, item.reason)}
+            ${field(labels[lang].outcome, item.next)}
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function render() {
+  const items = prs();
+  renderStatic();
+  renderMetrics(items);
+  renderBars(items);
+  renderTimeline();
+  renderOverview();
+  renderReadingGuide(items);
+  renderChips();
+  renderCards();
+  renderSkipGroups();
+  renderFollowUp();
+}
+
+document.querySelectorAll("[data-lang-button]").forEach(button => {
+  button.addEventListener("click", () => setLanguage(button.dataset.langButton));
+});
+document.getElementById("search").addEventListener("input", () => {
+  renderCards();
+  renderSkipGroups();
+  renderFollowUp();
+});
+document.getElementById("openAll").addEventListener("click", () => {
+  document.querySelectorAll(".card, .skip-group").forEach(node => {
+    node.classList.add("open");
+  });
+});
+document.getElementById("closeAll").addEventListener("click", () => {
+  document.querySelectorAll(".card, .skip-group").forEach(node => {
+    node.classList.remove("open");
+  });
+});
+render();
+</script>
+</body>
+</html>

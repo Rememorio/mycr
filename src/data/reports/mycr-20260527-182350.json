@@ -1,0 +1,538 @@
+{
+  "title": "MyCR Review Report 20260527-182350",
+  "repo": "trpc-group/trpc-agent-go",
+  "generated_at": "2026-05-27T18:23:50+08:00",
+  "overview": "本轮先检查 Codex 版 mycr skill，确认它只是 bootstrap；随后在 Cursor 个人技能目录安装同样委托 repo canonical skill 的 bootstrap。全量 MyCR 扫描后，重点复核 #1866 的 toolpipe extension-only 设计：确认它通过 BeforeModel、BeforeTool、AfterTool callback 完成 schema augmentation、参数剥离和结果过滤，没有侵入 llmAgent 主链路；最初发现 Prompt() 与运行时空配置行为不一致并提交行级评论，作者更新后该问题已修复。#1866 当前只剩 codecov/patch soft-fail，已按规则提交 LGTM approval，但因 codecov/patch 非绿未 merge。外部 clean PR #1878、#1860、#1842、#1815、#1879、#1839 均已提交正文严格为 LGTM 的 approving review 并 squash merge；#1874、#1859 已提交有效行级评论；#1400 发现导出接口 breaking change，但 GitHub 返回 Issue is locked，无法提交评论，已作为 blocked 记录。",
+  "skill_evolution": {
+    "status": "completed",
+    "summary": "Cursor 个人 mycr skill 已安装为 bootstrap，继续读取 /Users/guoqizhou/projects/github/mycr/skill/SKILL.md，避免 Codex 与 Cursor 两边出现长逻辑漂移。",
+    "commits": [],
+    "validation": [
+      "读取 /Users/guoqizhou/.codex/skills/mycr/SKILL.md",
+      "读取 /Users/guoqizhou/projects/github/mycr/skill/SKILL.md",
+      "读取 Cursor create-skill 指南并安装 /Users/guoqizhou/.cursor/skills/mycr/SKILL.md"
+    ]
+  },
+  "approved": [
+    {
+      "number": 1878,
+      "title": "{tool/skill, agent/llmagent}: scrub caller env in policy mode to close skill_run PATH bypass",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1878",
+      "author": "bytethm",
+      "status": "merged",
+      "technical_background": "skill_run policy mode 会把模型可触发的命令执行约束在允许策略内。这里的安全边界不仅是命令本身，还包括调用者传入的 PATH、SHELL、LD_* 等环境变量，因为这些变量可能改变二进制解析、动态链接或 shell 行为。",
+      "problem": "如果 policy mode 保留调用者环境，模型仍可能通过污染 PATH 或 shell/linker 相关变量绕过策略，执行并非预期的二进制或行为。",
+      "approach": "PR 在 policy mode 下清理 caller-controlled 环境，再重建受控 skill path；非 policy 路径保持原有兼容行为。",
+      "design_assessment": "变更集中在 llmagent option 与 skill run 工具边界，测试覆盖 allow/deny policy 行为。复核未发现新的兼容性或安全绕过。",
+      "modules": "agent/llmagent/option.go；tool/skill/run.go",
+      "tests_docs": "GitHub checks 150/150 通过；focused diff review 通过。",
+      "outcome": "提交 LGTM approving review，并使用 squash merge 合入 main。",
+      "risk": "低。剩余风险主要是外部调用方依赖 policy mode 下继承环境；但该收紧正是安全目标。",
+      "ci_state": "mergedAt=2026-05-27T10:14:48Z；head=678ded4a18165bbbba77df3eaeb6d60299529c2c。",
+      "inline_comments": []
+    },
+    {
+      "number": 1860,
+      "title": "docs: add prompt template guide",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1860",
+      "author": "yu-xin-c",
+      "status": "merged",
+      "technical_background": "Prompt template guide 是面向用户的文档入口，解释模板变量、占位符和中英文导航之间的对应关系。",
+      "problem": "现有文档缺少系统化 prompt template 指南，用户需要从示例和 API 注释中反推用法。",
+      "approach": "PR 新增英文和中文 prompt template guide，并补齐文档导航。",
+      "design_assessment": "文档-only 变更，不改变运行时代码；链接和锚点在 diff 中可追踪，未发现错误指引。",
+      "modules": "docs/mkdocs/en；docs/mkdocs/zh；mkdocs navigation",
+      "tests_docs": "GitHub checks 148/148 通过；docs-build 通过。",
+      "outcome": "提交 LGTM approving review，并使用 squash merge 合入 main。",
+      "risk": "低。主要风险是文档后续随 API 演进漂移。",
+      "ci_state": "mergedAt=2026-05-27T10:14:53Z；head=9038aa018ce81672e6485674c1e9dbca0c27bd7f。",
+      "inline_comments": []
+    },
+    {
+      "number": 1842,
+      "title": "model/gemini: support thinking level and thought signatures",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1842",
+      "author": "Kevin091827",
+      "status": "merged",
+      "technical_background": "Gemini provider 的 thinking level 与 thought signatures 用于控制推理预算并在多轮调用中保留 provider 要求的签名字段。它属于 provider-specific contract，需要在通用 model abstraction 与 Gemini API 之间保持兼容。",
+      "problem": "缺少 thinking level 和 thought signature 支持时，Gemini 的高阶推理配置和签名回传无法完整表达。",
+      "approach": "PR 在 Gemini generation config patching 与响应转换中加入 thinking level precedence 和 thought signature round trip。",
+      "design_assessment": "实现限定在 Gemini provider 内，保留 ThinkingTokens fallback，未污染其他 provider。",
+      "modules": "model/gemini",
+      "tests_docs": "GitHub checks 150/150 通过；provider-specific tests 覆盖签名和 thinking level。",
+      "outcome": "提交 LGTM approving review，并使用 squash merge 合入 main。",
+      "risk": "低到中。主要风险是 Gemini API 对 ThinkingLevel 字符串的后续解释变化。",
+      "ci_state": "mergedAt=2026-05-27T10:14:59Z；head=aeed69ad05bbad304cf9002688047cce5ab2646e。",
+      "inline_comments": []
+    },
+    {
+      "number": 1815,
+      "title": "{agent, internal/flow/processor}: add prompt section overrides",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1815",
+      "author": "Flash-LHR",
+      "status": "merged",
+      "technical_background": "Agent request prompt 会由多个 section 组成，包括 skill overview、workspace_exec guidance 等。Section override 允许调用方替换某些段落，同时保留默认 agent prompt 组织方式。",
+      "problem": "没有 section-level override 时，调用方只能整体替换 instruction，难以只调整某个 prompt 段落。",
+      "approach": "PR 增加 request-scoped skill overview 与 workspace_exec guidance override，并在 processor 层做 header normalization 和 duplicate suppression。",
+      "design_assessment": "功能 opt-in，默认 prompt 行为不变；测试覆盖重复抑制和 header 规范化。",
+      "modules": "agent；internal/flow/processor",
+      "tests_docs": "GitHub checks 150/150 通过；processor tests 覆盖关键行为。",
+      "outcome": "提交 LGTM approving review，并使用 squash merge 合入 main。",
+      "risk": "低。主要风险来自调用方自定义 prompt 格式，但默认路径不受影响。",
+      "ci_state": "mergedAt=2026-05-27T10:15:05Z；head=411b55d63e90ebe4d40e5c12dcdeb124a76f0039。",
+      "inline_comments": []
+    },
+    {
+      "number": 1879,
+      "title": "session: protect recent force-clean results",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1879",
+      "author": "Rememorio",
+      "status": "merged",
+      "technical_background": "Context compaction 会清理历史 tool results 以控制上下文大小，但当前轮或最近轮的 tool results 仍可能被后续模型步骤引用。",
+      "problem": "ForceCleanToolNames 如果过早清掉当前或最近工具结果，可能破坏正在进行的调用链和用户可见上下文。",
+      "approach": "PR 保护当前与 recent tool results，不让 force-clean 规则越过 recent boundary； oversized truncation 仍独立处理。",
+      "design_assessment": "行为边界清楚，测试覆盖 force-clean 与 recent 保护交互。",
+      "modules": "session compaction",
+      "tests_docs": "GitHub checks 150/150 通过；focused tests 覆盖保护逻辑。",
+      "outcome": "提交 LGTM approving review，并使用 squash merge 合入 main。",
+      "risk": "低。剩余风险是自定义 SkipRecentFunc 语义差异。",
+      "ci_state": "mergedAt=2026-05-27T10:15:11Z；head=e9cc84c0049d8d3d89e7192d0de6185127907e99。",
+      "inline_comments": []
+    },
+    {
+      "number": 1839,
+      "title": "{server/agui, docs}: add distributed cancel",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1839",
+      "author": "Flash-LHR",
+      "status": "merged",
+      "technical_background": "AG-UI server 的 cancel 需要跨实例传播：一个实例接收取消请求，另一个实例可能正在执行 session。Distributed cancel 依赖共享 SessionService 中的 marker 与 watcher 轮询来实现 best-effort 取消。",
+      "problem": "本地 cancel 不能覆盖多实例部署，导致用户发出的取消请求可能无法中断实际运行所在实例。",
+      "approach": "PR 增加分布式 cancel option、marker 生命周期、polling watcher 和 cleanup，并补充文档。",
+      "design_assessment": "功能 opt-in，要求共享 SessionService，保留本地 cancel 行为；失败和延迟语义符合 best-effort 分布式取消预期。",
+      "modules": "server/agui；docs",
+      "tests_docs": "GitHub checks 150/150 通过；tests 覆盖 marker lifecycle 与 watcher 行为。",
+      "outcome": "提交 LGTM approving review，并使用 squash merge 合入 main。",
+      "risk": "低到中。主要风险是共享存储延迟导致取消生效滞后。",
+      "ci_state": "mergedAt=2026-05-27T10:15:17Z；head=15e0d5e691720846f157b566fde4fd9129247745。",
+      "inline_comments": []
+    }
+  ],
+  "commented": [
+    {
+      "number": 1866,
+      "title": "agent/extension/toolpipe: add shell-like result filter extension",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1866",
+      "author": "bytethm",
+      "status": "approved",
+      "technical_background": "toolpipe 是 agent-scoped extension，通过 callback 给指定工具动态增加 result_filter 参数。模型可以写 grep/head/tail/jq 风格的 pipeline，extension 在 BeforeTool 中剥离参数，在 AfterTool 中过滤结果，从而实现类 shell output filtering，而不改 llmAgent 主执行链。",
+      "problem": "用户特别关注该 PR 是否真的不侵入 llmAgent。复核确认主设计符合 callback-only 方向；但旧 head 上 Prompt() helper 在未配置 WithToolNames/WithToolScope 时仍返回非空提示词，与运行时 beforeModel 不 wrap 工具也不注入提示词的行为不一致。",
+      "approach": "在 toolpipe.go 提交行级评论，要求空配置时 Prompt() 返回空字符串。作者随后更新 head，当前 diff 已加入 len(allowedOps)==0 和 len(allowedNames)==0 && predicate==nil 的空返回。",
+      "design_assessment": "当前 head 已修复所提问题，并保持 extension-only 架构。最新检查只剩 codecov/patch soft-fail；该失败不暴露本轮复核到的具体正确性 blocker，但按 MyCR 规则仍是 merge hard gate。",
+      "modules": "agent/extension/toolpipe；framework callbacks",
+      "tests_docs": "本地旧 head 在 agent/extension/toolpipe 中 go test ./... 通过；当前 head GitHub checks 仍有 coverage queued。",
+      "outcome": "已提交行级评论；作者修复后复核通过并提交 LGTM approval。因 codecov/patch 非绿，本轮未 merge。",
+      "risk": "低到中。功能使用 shell-like parser 和 jq/grep/head/tail 白名单，安全面主要在 filter expression parser 与输出截断边界；当前未发现 llmAgent 侵入。",
+      "ci_state": "current head=55439c4a056ee38f87242ba3ca4f963f572a602f；codecov/patch failed；已 approve，未 merge。",
+      "inline_comments": [
+        {
+          "path": "agent/extension/toolpipe/toolpipe.go",
+          "line": 226,
+          "severity": "P2",
+          "focus": "Prompt helper contract mismatch",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1866#discussion_r3309982835",
+          "body": "`Prompt()` still returns a non-empty toolpipe prompt when neither `WithToolNames` nor `WithToolScope` is configured, while runtime `beforeModel` wraps no tools and injects nothing. Please return `\"\"` for `len(names) == 0 && p.cfg.predicate == nil` so callers who embed this helper do not get a stale `result_filter` contract."
+        }
+      ]
+    },
+    {
+      "number": 1859,
+      "title": "memory/tencentdb: add TencentDB Agent Memory integration",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1859",
+      "author": "Rememorio",
+      "status": "commented",
+      "technical_background": "TencentDB Agent Memory integration 暴露 long-term memory search 与 conversation history search 两类工具。Conversation search 的 session_key 是访问会话历史的关键作用域边界。",
+      "problem": "PR 把 session_key 暴露为模型可填写的 tool input。即使默认使用当前 session，模型仍可传入任意 session_key，绕过 current invocation scope 并尝试读取其他会话历史。",
+      "approach": "在 memory/tencentdb/tools.go 提交行级评论，建议始终从 currentSession(ctx) 派生 session key，或只允许受信任服务端配置覆盖。",
+      "design_assessment": "CI 全绿，但这是明确的数据隔离风险，不能 approve。",
+      "modules": "memory/tencentdb",
+      "tests_docs": "GitHub checks 150/150 通过；review comment 已锚定当前 diff。",
+      "outcome": "已提交行级评论，等待作者修复。",
+      "risk": "中到高。若 session_key 可猜或可枚举，会造成跨用户/跨会话历史泄露。",
+      "ci_state": "head=79bb2066e73c91bf95bac2256a61454e7f9d835f；checks green；未 approve/merge。",
+      "inline_comments": [
+        {
+          "path": "memory/tencentdb/tools.go",
+          "line": 133,
+          "severity": "P1",
+          "focus": "model-controlled session_key",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1859#discussion_r3310180497",
+          "body": "Do not let the model choose an arbitrary `session_key` for `tdai_conversation_search`: this bypasses the current invocation scope and can expose another user's/session's conversation history if the key is guessed. Always derive the session key from `currentSession(ctx)`, or restrict overrides to trusted server-side configuration rather than tool input."
+        }
+      ]
+    },
+    {
+      "number": 1874,
+      "title": "codeexecutor/e2b: add WithStableWorkspace option for deterministic workspace paths",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1874",
+      "author": "nicklaus-dev",
+      "status": "commented",
+      "technical_background": "E2B codeexecutor workspace persistence 允许同一 session 复用确定性 workspace path。为了避免 sanitize 后路径碰撞，PR 改用 raw execID 的 SHA-256 前缀作为目录名。",
+      "problem": "当 per-session persistence 收到空 execID 时，stable hash 固定为同一个值。任何没有真实 session ID 的调用都会共享同一 deterministic workspace，可能在同一 sandbox 中泄露文件。",
+      "approach": "在 workspace_runtime.go 提交行级评论，要求 per-session 模式下调用 stableWorkspaceHash 前拒绝空 execID，或退回 per-turn workspace 创建。",
+      "design_assessment": "CI 当前全绿，但该问题直接破坏 workspace isolation，不能 approve/merge。",
+      "modules": "codeexecutor/e2b/workspace_runtime.go",
+      "tests_docs": "GitHub checks green；focused review 发现空 execID collision。",
+      "outcome": "已提交行级评论，等待作者修复。",
+      "risk": "中。无 session ID 的调用路径可能跨 run 共享工作目录。",
+      "ci_state": "head=cd8523c5c787e7c115471daa3ce752d8322c88ea；checks green；未 approve/merge。",
+      "inline_comments": [
+        {
+          "path": "codeexecutor/e2b/workspace_runtime.go",
+          "line": 117,
+          "severity": "P1",
+          "focus": "empty execID stable workspace collision",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1874#discussion_r3310175622",
+          "body": "When per-session persistence hashes an empty `execID`, every caller without a real session ID maps to the same deterministic workspace, which can leak files between unrelated runs in the same sandbox. Please reject blank `execID` in this mode before calling `stableWorkspaceHash`, or fall back to per-turn workspace creation."
+        }
+      ]
+    }
+  ],
+  "blocked": [
+    {
+      "number": 1400,
+      "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+      "author": "liuzengh",
+      "status": "blocked",
+      "technical_background": "artifact.Service 是导出的公共接口，外部实现方会在编译期依赖它的完整方法集。向接口直接新增方法是 Go 生态典型 breaking change。",
+      "problem": "PR 直接在 artifact.Service 接口上新增 Head 方法，导致所有外部实现都必须新增方法，当前 go-apidiff 失败正对应这个破坏性变更。",
+      "approach": "准备在 artifact/service.go line 53 提交行级评论，建议新增更窄的可选 HeadService 接口并在调用点 type assertion，或拆成明确 documented breaking release。",
+      "design_assessment": "这是具体兼容性 blocker。尝试通过 GitHub review API 提交行级评论时返回 HTTP 422 Issue is locked，因此未能落到 PR 上。",
+      "modules": "artifact/service.go",
+      "tests_docs": "CI soft-fail：go-apidiff x3 与 codecov/patch 失败；评论提交被 Issue is locked 阻止。",
+      "outcome": "未 approve/merge；记录为 blocked comment delivery。",
+      "risk": "高。公开接口 breaking change 会影响所有外部 artifact.Service 实现。",
+      "ci_state": "head=2e5bf368ac088be0a8c83a9858a5352e2ab80418；go-apidiff 与 codecov/patch non-green。",
+      "inline_comments": [
+        {
+          "path": "artifact/service.go",
+          "line": 53,
+          "severity": "P1",
+          "focus": "exported interface breaking change",
+          "url": "",
+          "body": "Adding `Head` directly to the exported `artifact.Service` interface is a compile-time breaking change for every external implementation, which matches the current `go-apidiff` failure. Keep the existing interface stable by introducing a narrower optional interface such as `HeadService` and type-asserting at call sites, or explicitly split this into a documented breaking release."
+        }
+      ]
+    }
+  ],
+  "maintained": [],
+  "skipped_groups": [
+    {
+      "reason": "Own PR，按本轮范围只做 ledger/follow-up，不自评、不自合并",
+      "items": [
+        {
+          "number": 1876,
+          "title": "{agent/taskrun, openclaw}: support worktree-isolated subagents",
+          "author": "WineChord",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1876",
+          "skip_reason": "own PR；未在本轮直接维护。"
+        },
+        {
+          "number": 1875,
+          "title": "{session, internal/flow, openclaw}: track summary boundaries",
+          "author": "WineChord",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1875",
+          "skip_reason": "own PR；未在本轮直接维护。"
+        },
+        {
+          "number": 1872,
+          "title": "agent/taskrun: expose run progress and transcripts",
+          "author": "WineChord",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1872",
+          "skip_reason": "own PR；未在本轮直接维护。"
+        },
+        {
+          "number": 1871,
+          "title": "docs: clarify AgentTool context visibility",
+          "author": "WineChord",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1871",
+          "skip_reason": "own PR；未在本轮直接维护。"
+        },
+        {
+          "number": 1870,
+          "title": "{agent, docs}: add lazy agent guidance",
+          "author": "WineChord",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1870",
+          "skip_reason": "own PR；未在本轮直接维护。"
+        },
+        {
+          "number": 1869,
+          "title": "docs: clarify taskrun delegation usage",
+          "author": "WineChord",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1869",
+          "skip_reason": "own PR；未在本轮直接维护。"
+        },
+        {
+          "number": 1867,
+          "title": "{tool, agent}: add tool permission policy",
+          "author": "WineChord",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1867",
+          "skip_reason": "own PR；未在本轮直接维护。"
+        }
+      ]
+    },
+    {
+      "reason": "Draft 或 WIP gate",
+      "items": [
+        {
+          "number": 1865,
+          "title": "session: recover compacted tool results",
+          "author": "Rememorio",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1865",
+          "skip_reason": "draft=true。"
+        },
+        {
+          "number": 1857,
+          "title": "memory/mem0: advance checkpoint after successful ingest",
+          "author": "print-happy",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1857",
+          "skip_reason": "draft=true。"
+        },
+        {
+          "number": 1840,
+          "title": "telemetry: reduce chat trace payload size",
+          "author": "Rememorio",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1840",
+          "skip_reason": "draft=true。"
+        },
+        {
+          "number": 1778,
+          "title": "examples: add RLM (Recursive Language Model) demo",
+          "author": "hyprh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1778",
+          "skip_reason": "draft=true。"
+        },
+        {
+          "number": 1710,
+          "title": "a2a: add input schema",
+          "author": "liuzengh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1710",
+          "skip_reason": "draft=true。"
+        },
+        {
+          "number": 1683,
+          "title": "tool/workspaceexec: add workspace-scoped file tools sharing workspace_exec state",
+          "author": "bytethm",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1683",
+          "skip_reason": "draft=true。"
+        },
+        {
+          "number": 1651,
+          "title": "evolution: add async skill-extraction pipeline for agent self-evolution",
+          "author": "Rememorio",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1651",
+          "skip_reason": "draft=true。"
+        },
+        {
+          "number": 1526,
+          "title": "model: add ModelMaxOutputTokens map and ResolveMaxOutputTokens helper",
+          "author": "sks",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1526",
+          "skip_reason": "draft=true。"
+        },
+        {
+          "number": 1509,
+          "title": "[WIP] session: support concurrent queued execution",
+          "author": "hyprh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1509",
+          "skip_reason": "title contains WIP。"
+        },
+        {
+          "number": 1380,
+          "title": "[WIP] fix(agent): always register InstructionProcessor to support run-time WithInstruction",
+          "author": "hyprh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1380",
+          "skip_reason": "title contains WIP。"
+        }
+      ]
+    },
+    {
+      "reason": "CI 或 reviewability gate 阻塞",
+      "items": [
+        {
+          "number": 1856,
+          "title": "session: add portable event window loading",
+          "author": "Rememorio",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1856",
+          "skip_reason": "此前只看到 3/3 checks，正常 GitHub Actions matrix 缺失；后续复核虽显示无 non-pass，但本轮未完成 focused review。"
+        },
+        {
+          "number": 1768,
+          "title": "feat(sandbox): add secure Linux sandbox for code execution based on bubblewrap",
+          "author": "liuzengh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1768",
+          "skip_reason": "62 files、13k+ additions，且 reviewDecision=CHANGES_REQUESTED；范围过大，本轮未在剩余时间完成 thread-level audit。"
+        },
+        {
+          "number": 1731,
+          "title": "knowledge: add GraphRAG code search (reasonable breaking change)",
+          "author": "hyprh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1731",
+          "skip_reason": "go-apidiff still failing；68 files、17k+ additions，且 reviewDecision=CHANGES_REQUESTED。"
+        },
+        {
+          "number": 1460,
+          "title": "improve nano-pdf skill description + add skill-review-and-optimize CI",
+          "author": "fernandezbaptiste",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1460",
+          "skip_reason": "hard failure：GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST。"
+        }
+      ]
+    },
+    {
+      "reason": "Not reached this run，需要后续补审",
+      "items": [
+        {
+          "number": 1826,
+          "title": "docs: Add FAQ section",
+          "author": "meichuanyi",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1826",
+          "skip_reason": "未进入本轮 focused candidate list。"
+        },
+        {
+          "number": 1801,
+          "title": "docs/mkdocs/zh/fix/agent.md: fix typo",
+          "author": "GongNanyue",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1801",
+          "skip_reason": "未进入本轮 focused candidate list。"
+        },
+        {
+          "number": 1776,
+          "title": "docs: add FAQ section",
+          "author": "meichuanyi",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1776",
+          "skip_reason": "未进入本轮 focused candidate list。"
+        },
+        {
+          "number": 1764,
+          "title": "examples: add graph RAG code search demo and viewer",
+          "author": "hyprh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1764",
+          "skip_reason": "未进入本轮 focused candidate list。"
+        },
+        {
+          "number": 1736,
+          "title": "all: add deferred tool set",
+          "author": "liuzengh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1736",
+          "skip_reason": "未进入本轮 focused candidate list。"
+        },
+        {
+          "number": 1483,
+          "title": "tool/subtask: add dynamic agent creation tools",
+          "author": "bytethm",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1483",
+          "skip_reason": "未进入本轮 focused candidate list。"
+        },
+        {
+          "number": 1446,
+          "title": "feat(a2a): add StructuredOutput → DataPart converter for custom event…",
+          "author": "SummerLv",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1446",
+          "skip_reason": "未进入本轮 focused candidate list。"
+        },
+        {
+          "number": 1183,
+          "title": "internal/util: add util for streaming parsing of JSON returned by LLM",
+          "author": "hongxiuzhe",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1183",
+          "skip_reason": "未进入本轮 focused candidate list。"
+        }
+      ]
+    }
+  ],
+  "follow_up": [
+    {
+      "number": 1866,
+      "title": "agent/extension/toolpipe: add shell-like result filter extension",
+      "author": "bytethm",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1866",
+      "reason": "作者已修复 Prompt() 空配置问题，当前只剩 codecov/patch soft-fail。",
+      "next": "等 codecov/patch 变绿后重新确认 head 未移动；若无新问题，可 squash merge。"
+    },
+    {
+      "number": 1874,
+      "title": "codeexecutor/e2b: add WithStableWorkspace option for deterministic workspace paths",
+      "author": "nicklaus-dev",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1874",
+      "reason": "已评论 empty execID 在 per-session 模式下共享 deterministic workspace 的隔离问题。",
+      "next": "等作者拒绝空 execID 或回退 per-turn path 后复核。"
+    },
+    {
+      "number": 1859,
+      "title": "memory/tencentdb: add TencentDB Agent Memory integration",
+      "author": "Rememorio",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1859",
+      "reason": "已评论 model-controlled session_key 跨会话读取风险。",
+      "next": "等作者将 session_key 固定到 currentSession(ctx) 或改为服务端受信配置。"
+    },
+    {
+      "number": 1400,
+      "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+      "author": "liuzengh",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+      "reason": "发现导出接口 breaking change，但 PR locked 导致评论提交失败。",
+      "next": "需要解锁 PR 或由 maintainer 转达接口兼容性 blocker。"
+    }
+  ],
+  "timeline": [
+    {
+      "time": "17:40",
+      "text": "读取用户要求：安装 Cursor mycr skill，执行全量 MyCR，并重点 review #1866 的 extension/callback-only 设计。"
+    },
+    {
+      "time": "17:43",
+      "text": "读取 Codex mycr bootstrap、repo canonical skill 与 Cursor create-skill 指南。"
+    },
+    {
+      "time": "17:46",
+      "text": "创建 /Users/guoqizhou/.cursor/skills/mycr/SKILL.md，作为指向 repo canonical skill 的 Cursor bootstrap。"
+    },
+    {
+      "time": "17:50",
+      "text": "收集 trpc-agent-go open PR ledger；GitHub GraphQL 大字段查询 504 后改用轻量 list + per-PR detail。"
+    },
+    {
+      "time": "17:55",
+      "text": "为 #1866 创建独立 worktree，审查 toolpipe callbacks、engine、ops、wrapped_tool 与框架 callback 调用路径。"
+    },
+    {
+      "time": "18:02",
+      "text": "#1866 toolpipe 模块 go test ./... 通过；提交 Prompt() 空配置 contract 行级评论。"
+    },
+    {
+      "time": "18:10",
+      "text": "同步 focused review 剩余候选；识别 6 个 approve-safe、#1859/#1400 findings 与若干 skip gates。"
+    },
+    {
+      "time": "18:13",
+      "text": "对 #1859 提交 session_key 作用域行级评论；#1400 评论因 Issue is locked 被 GitHub 拒绝。"
+    },
+    {
+      "time": "18:15",
+      "text": "对 #1878/#1860/#1842/#1815/#1879/#1839 提交 LGTM approval 并 squash merge。"
+    },
+    {
+      "time": "18:18",
+      "text": "发现 #1866 head 已移动；复核当前 diff 确认 Prompt() 问题已修复，最终只剩 codecov/patch soft-fail。"
+    },
+    {
+      "time": "18:22",
+      "text": "#1874 pending CI 转绿后补审，发现 empty execID stable workspace collision 并提交行级评论。"
+    },
+    {
+      "time": "18:23",
+      "text": "生成本轮 MyCR JSON/HTML 报告并准备 archive/verify。"
+    }
+  ]
+}
