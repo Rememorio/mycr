@@ -254,7 +254,7 @@
       "tests_docs": "本地通过 go test ./agent/taskrun/... ./tool/taskrun；覆盖率复核：agent/taskrun/inprocess 92.5%，tool/taskrun 90.8%；git diff --check 通过。",
       "outcome": "已直接推送 `8effee61` 和 `07acf78a`；新 head GitHub CI 刚开始跑，暂无失败；未自评、未自合并。",
       "risk": "低到中。代码层面 blocker 已修，剩余风险是新 GitHub CI/codecov 尚未完成。",
-      "ci_state": "latest head=07acf78a4e5e8cab83656e841305e213f95c434c；failed=0，queued=21，pending=1，pass=2，unresolved threads=0；checks still expanding。",
+      "ci_state": "latest head=07acf78a4e5e8cab83656e841305e213f95c434c；final poll failed=0，unresolved threads=0；GitHub CI 新矩阵仍在 queued/pending 阶段。",
       "direct_fixes": [
         {
           "branch": "taskrun_progress_transcript",
@@ -383,8 +383,8 @@
       "modules": "graph；tool；agent；internal/tool；internal/flow/processor；.golangci.yml",
       "tests_docs": "本地通过 go test ./graph ./tool ./agent ./internal/tool ./internal/flow/processor；tool/claudecode 目标回归连续 20 次通过；git diff --check 通过。",
       "outcome": "已直接推送 `f2ad4f9f`、`08d13929`、`24eab1a1`；新 head GitHub CI 仍在跑且暂无失败；未自评、未自合并。",
-      "risk": "中。核心修复和本地目标测试已通过，GitHub CI 已跑过大部分且暂无失败，但仍有 queued/in-progress checks。",
-      "ci_state": "latest head=24eab1a10281fd3fe083bff8d7868ccc0c4d1bbd；failed=0，in_progress=9，queued=16，pass=124；unresolved threads=0。",
+      "risk": "中。核心修复和本地目标测试已通过，GitHub CI 已跑过大部分且暂无失败，但仍未完成全矩阵。",
+      "ci_state": "latest head=24eab1a10281fd3fe083bff8d7868ccc0c4d1bbd；final poll failed=0，unresolved threads=0；GitHub CI 仍有 queued/in-progress checks，已完成项继续增加。",
       "direct_fixes": [
         {
           "branch": "tool_permission_policy",
