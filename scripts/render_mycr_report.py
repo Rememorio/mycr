@@ -1311,7 +1311,7 @@ function renderTimeline() {{
   container.innerHTML = events.map(event => `
     <div class="timeline-item">
       <div class="time">${{escapeHtml(event.time || "")}}</div>
-      <div>${{escapeHtml(text(event.label || event))}}</div>
+      <div>${{escapeHtml(text(event.label || event.text || event))}}</div>
     </div>
   `).join("");
 }}
