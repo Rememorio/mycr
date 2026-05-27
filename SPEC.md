@@ -41,6 +41,20 @@ merge conflict, unresolved human thread, or stale `Changes Requested` state.
 Never use aggregate GitHub states as the whole explanation when the exact
 thread, check, or conflict can be named.
 
+## Report UI Contract
+
+Self-contained HTML reports must be readable in a narrow editor preview as well
+as a normal browser:
+
+- PR detail cards are collapsed by default. The collapsed row must still show a
+  short outcome/problem summary so users can scan without opening every card.
+- Expanding a card must not create horizontal overflow. Long PR titles, paths,
+  SHA values, commands, and CI strings must wrap inside their cards.
+- Dense review facts may be grouped visually, but they should not be placed in a
+  sticky side rail that becomes the dominant content in narrow previews.
+- "Expand all" and "Collapse all" controls must keep each card's visible toggle
+  label and `aria-expanded` state in sync.
+
 ## Website Contract
 
 The site is a static Astro build with:

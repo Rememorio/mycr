@@ -228,6 +228,7 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
 .section-heading h2 {{ margin: 0; font-size: 20px; }}
 .section-heading .hint {{ color: var(--muted); font-size: 13px; }}
 .card {{
+  min-width: 0;
   background: var(--panel);
   border: 1px solid var(--line);
   border-left: 5px solid var(--accent);
@@ -243,13 +244,52 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
 .card[data-status="blocked"] {{ border-left-color: var(--bad); }}
 .card-head {{
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 16px;
   padding: 16px;
   cursor: pointer;
 }}
-.card-title {{ margin: 0; font-size: 17px; }}
-.meta {{ color: var(--muted); font-size: 13px; margin-top: 5px; }}
+.card-title {{ margin: 0; font-size: 17px; overflow-wrap: anywhere; }}
+.card-title a {{ overflow-wrap: anywhere; }}
+.meta {{
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-size: 13px;
+  margin-top: 5px;
+  min-width: 0;
+}}
+.card-summary {{
+  color: #42526a;
+  display: -webkit-box;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-top: 8px;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}}
+.card-actions {{
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}}
+.card-toggle {{
+  border: 1px solid #d8e1ec;
+  background: #fff;
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 10px;
+  white-space: nowrap;
+}}
+.card-toggle:hover {{ border-color: #9aa8bb; color: var(--ink); }}
 .badge {{
   display: inline-flex;
   align-items: center;
@@ -385,9 +425,11 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
   margin-bottom: 5px;
 }}
 .field-body {{
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
 }}
 .overview-content {{
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
   color: var(--ink);
 }}
@@ -397,11 +439,12 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
   background: #fffaf2;
   border-radius: 6px;
   margin-top: 10px;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
 }}
 .pr-readout {{
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.42fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   align-items: start;
   padding-top: 18px;
@@ -455,11 +498,11 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
 }}
 .story-text {{
   min-width: 0;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
 }}
 .review-rail {{
-  position: sticky;
-  top: 86px;
+  position: static;
   display: grid;
   gap: 14px;
   align-self: start;
@@ -501,6 +544,7 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
 .story-text mark,
 .fact dd mark,
 .field-body mark,
+.card-summary mark,
 .overview-content mark,
 .comment mark,
 .skip-detail mark {{
@@ -550,6 +594,7 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
   margin: 0;
   color: #1f2937;
   line-height: 1.55;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
 }}
 .comments-panel {{
@@ -820,8 +865,9 @@ h1 {{
   line-height: 1.42;
 }}
 .meta {{
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 7px;
 }}
@@ -831,6 +877,10 @@ h1 {{
   padding: 6px 11px;
   text-transform: none;
   white-space: nowrap;
+}}
+.card-summary {{
+  color: #526173;
+  margin-top: 9px;
 }}
 .badge::before {{
   content: "";
@@ -868,8 +918,8 @@ h1 {{
   color: #1f2937;
 }}
 .pr-readout {{
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.40fr);
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
 }}
 .story-block {{
   border-top-color: #e2e8f0;
@@ -897,6 +947,9 @@ h1 {{
   border-radius: 8px;
   padding: 14px;
   background: #fbfcfe;
+}}
+.review-rail .fact-list {{
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }}
 .fact {{
   border-top-color: #e8eef5;
@@ -926,6 +979,7 @@ h1 {{
 }}
 @media (max-width: 840px) {{
   .topbar, .card-head {{ grid-template-columns: 1fr; display: grid; }}
+  .card-actions {{ align-items: flex-start; flex-direction: row; flex-wrap: wrap; }}
   .dashboard, .grid, .metrics {{ grid-template-columns: 1fr; }}
   .guide-grid {{ grid-template-columns: 1fr; }}
   .headline-row {{ align-items: flex-start; flex-direction: column; }}
@@ -1077,6 +1131,9 @@ const labels = {{
     severity: "严重级别",
     expandAll: "展开全部",
     collapseAll: "收起全部",
+    expandDetails: "展开详情",
+    collapseDetails: "收起详情",
+    summaryFallback: "展开查看完整审查结论、风险和证据。",
     empty: "当前筛选条件下没有 PR。",
     footer: "报告文件为自包含 HTML，默认保存在 public/reports 并由 /mycr 站点归档。"
   }},
@@ -1155,6 +1212,9 @@ const labels = {{
     severity: "Severity",
     expandAll: "Expand all",
     collapseAll: "Collapse all",
+    expandDetails: "Expand details",
+    collapseDetails: "Collapse details",
+    summaryFallback: "Expand for the full review outcome, risk, and evidence.",
     empty: "No PRs match the current filters.",
     footer: "This self-contained HTML report is saved under public/reports by default and archived by the /mycr site."
   }}
@@ -1586,6 +1646,31 @@ function storyBlock(title, rows, className = "") {{
   return `<section class="${{classes}}"><h4>${{escapeHtml(title)}}</h4>${{body}}</section>`;
 }}
 
+function compactSummary(item) {{
+  const candidates = [
+    item.outcome,
+    item.skip_reason,
+    item.reason,
+    item.problem,
+    item.design_assessment,
+    item.risk
+  ].map(value => text(value).trim()).filter(Boolean);
+  return candidates[0] || labels[lang].summaryFallback;
+}}
+
+function updateCardToggle(card) {{
+  const button = card.querySelector(".card-toggle");
+  if (!button) return;
+  const open = card.classList.contains("open");
+  button.textContent = open ? labels[lang].collapseDetails : labels[lang].expandDetails;
+  button.setAttribute("aria-expanded", open ? "true" : "false");
+}}
+
+function setCardOpen(card, open) {{
+  card.classList.toggle("open", open);
+  updateCardToggle(card);
+}}
+
 function factItem(label, value) {{
   const body = text(value);
   if (!body) return "";
@@ -1695,6 +1780,7 @@ function renderCards() {{
   container.innerHTML = visible.map(item => {{
     const status = item.status || "skipped";
     const advice = readingAdvice(item);
+    const summary = compactSummary(item);
     const prText = item.number ? `#${{item.number}}` : "PR";
     const prLink = item.url
       ? `<a href="${{escapeHtml(item.url)}}">${{prText}}</a>`
@@ -1711,8 +1797,12 @@ function renderCards() {{
               <span>${{labels[lang].author}}: ${{escapeHtml(item.author || "")}}</span>
               <span class="advice-reason">${{escapeHtml(advice.reason)}}</span>
             </div>
+            <div class="card-summary">${{formatRich(summary)}}</div>
           </div>
-          <span class="badge ${{status}}">${{labels[lang][status] || status}}</span>
+          <div class="card-actions">
+            <span class="badge ${{status}}">${{labels[lang][status] || status}}</span>
+            <button class="card-toggle" type="button" aria-expanded="false">${{labels[lang].expandDetails}}</button>
+          </div>
         </div>
         <div class="card-body">
           ${{renderPrReadout(item)}}
@@ -1723,9 +1813,11 @@ function renderCards() {{
   document.querySelectorAll(".card-head").forEach(head => {{
     head.addEventListener("click", event => {{
       if (event.target.closest("a")) return;
-      head.closest(".card").classList.toggle("open");
+      const card = head.closest(".card");
+      setCardOpen(card, !card.classList.contains("open"));
     }});
   }});
+  document.querySelectorAll(".card").forEach(card => updateCardToggle(card));
 }}
 
 function renderSkipGroups() {{
@@ -1865,14 +1957,12 @@ document.getElementById("search").addEventListener("input", () => {{
   renderFollowUp();
 }});
 document.getElementById("openAll").addEventListener("click", () => {{
-  document.querySelectorAll(".card, .skip-group").forEach(node => {{
-    node.classList.add("open");
-  }});
+  document.querySelectorAll(".card").forEach(card => setCardOpen(card, true));
+  document.querySelectorAll(".skip-group").forEach(node => node.classList.add("open"));
 }});
 document.getElementById("closeAll").addEventListener("click", () => {{
-  document.querySelectorAll(".card, .skip-group").forEach(node => {{
-    node.classList.remove("open");
-  }});
+  document.querySelectorAll(".card").forEach(card => setCardOpen(card, false));
+  document.querySelectorAll(".skip-group").forEach(node => node.classList.remove("open"));
 }});
 render();
 </script>
