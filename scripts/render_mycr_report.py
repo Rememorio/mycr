@@ -14,6 +14,7 @@ from typing import Any
 DEFAULT_REPORT_DIR = Path("public") / "reports"
 STATUS_APPROVED = "approved"
 STATUS_COMMENTED = "commented"
+STATUS_MAINTAINED = "maintained"
 STATUS_MERGED = "merged"
 STATUS_SKIPPED = "skipped"
 STATUS_BLOCKED = "blocked"
@@ -176,6 +177,7 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
 .bar-fill {{ height: 100%; border-radius: 999px; background: var(--accent); }}
 .bar-fill.approved, .bar-fill.merged {{ background: var(--ok); }}
 .bar-fill.commented {{ background: var(--accent-2); }}
+.bar-fill.maintained {{ background: var(--accent); }}
 .bar-fill.skipped {{ background: var(--info); }}
 .bar-fill.blocked {{ background: var(--bad); }}
 .timeline {{ display: grid; gap: 10px; }}
@@ -236,6 +238,7 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
 .card[data-status="approved"],
 .card[data-status="merged"] {{ border-left-color: var(--ok); }}
 .card[data-status="commented"] {{ border-left-color: var(--accent-2); }}
+.card[data-status="maintained"] {{ border-left-color: var(--accent); }}
 .card[data-status="skipped"] {{ border-left-color: var(--info); }}
 .card[data-status="blocked"] {{ border-left-color: var(--bad); }}
 .card-head {{
@@ -261,6 +264,7 @@ h1 {{ margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; }}
 }}
 .badge.approved, .badge.merged {{ color: var(--ok); background: #e7f5ec; }}
 .badge.commented {{ color: var(--warn); background: #fff4e5; }}
+.badge.maintained {{ color: var(--accent); background: #e6fffb; }}
 .badge.skipped {{ color: var(--info); background: #eaf1ff; }}
 .badge.blocked {{ color: var(--bad); background: #fff0ee; }}
 .read-pill {{
@@ -799,6 +803,7 @@ h1 {{
 .card[data-status="approved"] .card-head,
 .card[data-status="merged"] .card-head {{ border-left-color: var(--ok); }}
 .card[data-status="commented"] .card-head {{ border-left-color: var(--accent-2); }}
+.card[data-status="maintained"] .card-head {{ border-left-color: var(--accent); }}
 .card[data-status="skipped"] .card-head {{ border-left-color: var(--info); }}
 .card[data-status="blocked"] .card-head {{ border-left-color: var(--bad); }}
 .card.priority-critical .card-head {{
@@ -1005,6 +1010,7 @@ const labels = {{
     all: "全部",
     approved: "已批准",
     commented: "已评论",
+    maintained: "已维护",
     merged: "已合并",
     skipped: "未审核",
     blocked: "阻塞",
@@ -1042,6 +1048,8 @@ const labels = {{
     behaviorImpact: "行为与兼容性影响",
     testsDocs: "测试与文档",
     attentionPoints: "需要注意",
+    directFixes: "直接修复",
+    selfReviewPolicy: "自审策略",
     reason: "跳过原因",
     reviewedSection: "已处理 PR",
     reviewedHint: "点击卡片查看细节",
@@ -1080,6 +1088,7 @@ const labels = {{
     all: "All",
     approved: "Approved",
     commented: "Commented",
+    maintained: "Maintained",
     merged: "Merged",
     skipped: "Not Reviewed",
     blocked: "Blocked",
@@ -1117,6 +1126,8 @@ const labels = {{
     behaviorImpact: "Behavior and Compatibility Impact",
     testsDocs: "Tests and Docs",
     attentionPoints: "Attention Points",
+    directFixes: "Direct Fixes",
+    selfReviewPolicy: "Self-review Policy",
     reason: "Skip Reason",
     reviewedSection: "Processed PRs",
     reviewedHint: "Click a card for details",
@@ -1151,7 +1162,7 @@ const labels = {{
 
 let lang = "zh";
 let filter = "all";
-const statusOrder = ["approved", "commented", "merged", "skipped", "blocked"];
+const statusOrder = ["approved", "commented", "maintained", "merged", "skipped", "blocked"];
 
 function text(value, fallback = "") {{
   if (value === undefined || value === null || value === "") return fallback;
@@ -1208,6 +1219,7 @@ function prs() {{
   return [
     ...(reportData.approved || []),
     ...(reportData.commented || []),
+    ...(reportData.maintained || []),
     ...(reportData.blocked || []),
     ...skipped
   ];
@@ -1255,7 +1267,7 @@ function renderMetrics(items) {{
     sum + ((item.inline_comments || []).length || item.comment_count || 0), 0);
   const followups = (reportData.follow_up || []).length;
   const reviewed = items.filter(item =>
-    ["approved", "commented", "merged", "blocked"].includes(item.status)
+    ["approved", "commented", "maintained", "merged", "blocked"].includes(item.status)
   ).length;
   const metricRows = [
     [labels[lang].total, items.length],
@@ -1494,6 +1506,8 @@ function readingAdvice(item) {{
     level = "follow";
   }} else if (status === "commented") {{
     level = hasCriticalRisk ? "critical" : "focus";
+  }} else if (status === "maintained") {{
+    level = hasCriticalRisk || highImpactFeature ? "focus" : "skim";
   }} else if (status === "approved") {{
     level = hasCriticalRisk || highImpactFeature ? "focus" : "skim";
   }} else if (status === "merged") {{
@@ -1583,6 +1597,22 @@ function factItem(label, value) {{
   `;
 }}
 
+function directFixesText(fixes) {{
+  if (!Array.isArray(fixes) || !fixes.length) return "";
+  return fixes.map(fix => {{
+    if (typeof fix !== "object" || fix === null) return text(fix);
+    return [
+      fix.branch ? `branch: ${{text(fix.branch)}}` : "",
+      fix.commit ? `commit: ${{text(fix.commit)}}` : "",
+      fix.message ? `message: ${{text(fix.message)}}` : "",
+      fix.files ? `files: ${{Array.isArray(fix.files) ? fix.files.map(file => text(file)).join(", ") : text(fix.files)}}` : "",
+      fix.tests ? `tests: ${{Array.isArray(fix.tests) ? fix.tests.map(test => text(test)).join(", ") : text(fix.tests)}}` : "",
+      fix.push_state ? `push: ${{text(fix.push_state)}}` : "",
+      fix.ci_state ? `CI: ${{text(fix.ci_state)}}` : ""
+    ].filter(Boolean).join(" · ");
+  }}).join("\\n");
+}}
+
 function renderReviewRail(item) {{
   const advice = readingAdvice(item);
   const callout = `
@@ -1596,6 +1626,8 @@ function renderReviewRail(item) {{
     factItem(labels[lang].risk, item.risk),
     factItem(labels[lang].ci, item.ci_state),
     factItem(labels[lang].attentionPoints, item.attention_points),
+    factItem(labels[lang].directFixes, directFixesText(item.direct_fixes)),
+    factItem(labels[lang].selfReviewPolicy, item.self_review_policy),
     factItem(labels[lang].testsDocs, item.tests_docs),
     factItem(labels[lang].modules, item.modules),
     factItem(labels[lang].apiSurface, item.api_surface),

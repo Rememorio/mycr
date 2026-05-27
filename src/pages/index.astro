@@ -57,6 +57,7 @@ const prStatusLabels = {
   approved: "已批准",
   blocked: "阻塞",
   commented: "已评论",
+  maintained: "已维护",
   merged: "已合并",
   skipped: "未审核",
 };
@@ -75,6 +76,9 @@ const reportStatusLabel = (report) => {
   if (report.commentCount > 0) {
     return "Commented";
   }
+  if (report.maintainedCount > 0) {
+    return "Maintained";
+  }
   return "Archived";
 };
 
@@ -85,6 +89,7 @@ const reports = Object.entries(reportModules)
     const htmlName = jsonName.replace(/\.json$/u, ".html");
     const approved = asArray(data.approved);
     const commented = asArray(data.commented);
+    const maintained = asArray(data.maintained);
     const blocked = asArray(data.blocked);
     const followUp = asArray(data.follow_up);
     const skippedGroups = asArray(data.skipped_groups);
@@ -101,10 +106,15 @@ const reports = Object.entries(reportModules)
       mergedCount > 0 ? "merged" : "",
       approvedOnlyCount > 0 ? "approved" : "",
       commented.length > 0 ? "commented" : "",
+      maintained.length > 0 ? "maintained" : "",
       skippedItems.length > 0 ? "skipped" : "",
       followUp.length > 0 || blocked.length > 0 ? "followup" : "",
     ].filter(Boolean);
-    const headlineItems = [...approved.slice(0, 3), ...commented.slice(0, 3)];
+    const headlineItems = [
+      ...approved.slice(0, 3),
+      ...commented.slice(0, 3),
+      ...maintained.slice(0, 3),
+    ];
     const haystack = [
       data.title,
       data.repo,
@@ -127,6 +137,7 @@ const reports = Object.entries(reportModules)
       timeline: asArray(data.timeline),
       approved,
       commented,
+      maintained,
       blocked,
       followUp,
       skippedGroups,
@@ -135,9 +146,11 @@ const reports = Object.entries(reportModules)
       approvedOnlyCount,
       approvedCount: approved.length,
       commentCount: commented.length,
+      maintainedCount: maintained.length,
       skippedCount: skippedItems.length,
       followUpCount: followUp.length + blocked.length,
-      touchedCount: approved.length + commented.length + skippedItems.length,
+      touchedCount:
+        approved.length + commented.length + maintained.length + skippedItems.length,
       generatedAtMs: parseReportDate(data.generated_at).getTime(),
       reportId: reportIdFromFile(jsonName),
       statuses,
@@ -160,6 +173,7 @@ const totals = reports.reduce(
     acc.merged += report.mergedCount;
     acc.approved += report.approvedOnlyCount;
     acc.commented += report.commentCount;
+    acc.maintained += report.maintainedCount;
     acc.skipped += report.skippedCount;
     acc.followUp += report.followUpCount;
     acc.prs += report.touchedCount;
@@ -170,6 +184,7 @@ const totals = reports.reduce(
     merged: 0,
     approved: 0,
     commented: 0,
+    maintained: 0,
     skipped: 0,
     followUp: 0,
     prs: 0,
@@ -180,6 +195,7 @@ const statusMetrics = [
   ["merged", "Merged", totals.merged],
   ["approved", "Approved", totals.approved],
   ["commented", "Commented", totals.commented],
+  ["maintained", "Maintained", totals.maintained],
   ["skipped", "Skipped", totals.skipped],
   ["followup", "Follow-up", totals.followUp],
 ];
@@ -217,7 +233,7 @@ const statusMetrics = [
                   <strong>{reportShortTitle(report)}</strong>
                   <small>
                     {report.mergedCount} merged · {report.commentCount} comments ·{" "}
-                    {report.skippedCount} skipped
+                    {report.maintainedCount} maintained · {report.skippedCount} skipped
                   </small>
                 </a>
               ))}
@@ -283,6 +299,9 @@ const statusMetrics = [
               </button>
               <button class="filter-button" type="button" data-filter="commented">
                 Commented
+              </button>
+              <button class="filter-button" type="button" data-filter="maintained">
+                Maintained
               </button>
               <button class="filter-button" type="button" data-filter="skipped">
                 Skipped
@@ -396,6 +415,10 @@ const statusMetrics = [
                         <div>
                           <dt>Commented</dt>
                           <dd>{report.commentCount}</dd>
+                        </div>
+                        <div>
+                          <dt>Maintained</dt>
+                          <dd>{report.maintainedCount}</dd>
                         </div>
                         <div>
                           <dt>Skipped</dt>

@@ -235,7 +235,7 @@ h1 {
 
 .metric-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -267,6 +267,10 @@ h1 {
 
 .metric-commented {
   border-left-color: var(--orange);
+}
+
+.metric-maintained {
+  border-left-color: var(--teal);
 }
 
 .metric-skipped {
@@ -476,6 +480,11 @@ h1 {
   color: var(--orange);
 }
 
+.quick-pr-status.maintained {
+  background: #e6fffb;
+  color: var(--teal);
+}
+
 .quick-pr-status.approved {
   background: #eef8f3;
   color: var(--green);
@@ -580,6 +589,11 @@ h1 {
 .status-pill.commented {
   background: #fff3e0;
   color: var(--orange);
+}
+
+.status-pill.maintained {
+  background: #e6fffb;
+  color: var(--teal);
 }
 
 .status-pill.archived {

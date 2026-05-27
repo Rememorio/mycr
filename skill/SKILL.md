@@ -1,6 +1,6 @@
 ---
 name: mycr
-description: Repo-managed MyCR workflow for reviewing and merging ready trpc-agent-go pull requests, archiving reports, and improving the MyCR skill itself. Use when the user says "执行 mycr", "run mycr", or asks Codex to batch-review open trpc-agent-go GitHub PRs, filter out WIP/draft/own/unready PRs, check CI and previously raised review threads, run one xhigh subagent review per candidate, post only Flash-LHR style inline comments for real issues, approve perfect PRs with "LGTM", merge mergeable approved PRs, write an xhigh-quality Chinese-first standalone engineering report, publish that report under the MyCR archive, and capture concrete self-improvement opportunities for the skill.
+description: Repo-managed MyCR workflow for reviewing and merging ready trpc-agent-go pull requests, maintaining the user's own pull requests without self-review comments, archiving reports, and improving the MyCR skill itself. Use when the user says "执行 mycr", "run mycr", or asks Codex to batch-review open trpc-agent-go GitHub PRs, filter out WIP/draft/unready PRs, directly fix own ready PRs, check CI and previously raised review threads, run one xhigh subagent review per review candidate, post only Flash-LHR style inline comments for real issues, approve perfect external PRs with "LGTM", merge mergeable approved external PRs, write an xhigh-quality Chinese-first standalone engineering report, publish that report under the MyCR archive, and capture concrete self-improvement opportunities for the skill.
 ---
 
 # MyCR
@@ -30,7 +30,11 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    `/Users/guoqizhou/projects/github/mycr`, and resolve the target checkout
    using the order in the overview.
 2. Determine the authenticated reviewer login. Treat PRs authored by that login
-   as own PRs and skip them.
+   as own PRs. Also treat `WineChord` / `winechord` as own PR authors when they
+   appear, because this workflow is run for the repository owner's account.
+   Own PRs are not skipped by default. They enter the own-PR maintenance path
+   below: review them for real issues, but never post review comments, approve,
+   or merge them from this run.
 3. List all open PRs and collect metadata for each PR:
    title, author, labels, draft state, mergeability, requested reviewers, head
    SHA, base branch, review threads, review submissions, commit statuses, and
@@ -54,9 +58,26 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    intentionally not reached, or blocked by a concrete gate. Do not allow an
    open PR to disappear from the run because of candidate ordering, stale
    aggregate review state, vague soft-CI uncertainty, or a broad skip group.
-4. Keep only PRs that satisfy every gate:
+4. Split PRs into two auditable processing paths before applying the candidate
+   gates:
+   - External PR review path: PRs not authored by an own login. These are the
+     only PRs eligible for inline review comments, approval with exactly
+     `LGTM`, and merge.
+   - Own-PR maintenance path: PRs authored by an own login. For these PRs, do
+     the same quality audit you would do for an external PR, but convert valid
+     findings into direct branch fixes instead of review comments. Prefer a
+     separate `git worktree` for the PR branch so existing local changes in the
+     main target checkout are not disturbed. Fetch the PR head, check out the
+     contributor branch when it is pushable from the authenticated account, run
+     the relevant tests/tooling, commit with project-style commit messages when
+     changes are needed, and push back to the PR branch. If the branch is not
+     pushable, report the exact blocker instead of posting review comments.
+     Do not approve, request changes, submit `LGTM`, merge, or resolve review
+     threads on own PRs as if you were a third-party reviewer. The goal is to
+     leave each own PR at the quality level where the external PR path would
+     have approved it.
+5. Keep external review candidates only when they satisfy every gate:
    - state is open
-   - author is not the authenticated reviewer
    - title and labels do not indicate WIP
    - PR is not draft and is ready for review
    - base branch is the repository default branch unless the user said otherwise
@@ -101,14 +122,33 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    - comments previously raised by us, `Flash-LHR`, or on our behalf must be
      verified against the latest head; if fixed, proceed even if the thread was
      not clicked resolved, and resolve our own/on-behalf threads when allowed
-   - after the first gate pass, run a second pass over all non-draft, non-WIP,
-     non-own PRs. Any PR with green CI or only acceptable soft-CI failures, no
+   - after the first gate pass, run a second pass over all non-draft, non-WIP
+     external PRs. Any PR with green CI or only acceptable soft-CI failures, no
      merge conflict, and no verified live blocker must be either reviewed in
      this run or listed as `not_reached` with a concrete reason why capacity or
      ordering stopped it. It must not be hidden under CI, human review,
      `Changes Requested`, or "needs discussion" unless the exact current
      blocker has been named and verified.
-5. For skipped PRs, record the concrete skip reason for the final report. The
+6. For own PRs, apply the same readiness audit, but use own-PR outcomes:
+   - If an own PR is draft, WIP, has non-soft failing CI, has a merge conflict,
+     or has a live human-review blocker that requires product/design input,
+     record the exact blocker. Do not post comments.
+   - If an own PR is ready enough to inspect, perform the full review locally.
+     Run one xhigh subagent review when the change is non-trivial, verify every
+     finding yourself, then fix valid issues directly in the PR branch. Prefer
+     creating a dedicated `git worktree` for the target branch and then running
+     `gh pr checkout <number> --repo trpc-group/trpc-agent-go` inside that
+     worktree, or use explicit fetch/checkouts when that is more reliable.
+     Preserve unrelated worktree changes and never reuse a dirty checkout for
+     own-PR fixes.
+   - After pushing fixes, re-check the PR's CI and latest comments/threads.
+     If CI is pending, report it as waiting for CI. If CI is green or only has
+     acceptable soft-CI findings, report the PR under `maintained` with the
+     commits, tests, and residual risks. Do not self-approve or merge it.
+   - If the audit finds no needed code changes, report the PR under
+     `maintained` as "no direct fix needed" with the evidence that would have
+     made the external PR path approve it. Do not submit an approving review.
+7. For skipped PRs, record the concrete skip reason for the final report. The
    reason must identify the exact gate that blocked review. Use structured
    `blockers` entries when possible. Do not group PRs under vague combined
    reasons such as "human review thread, Changes Requested, or API discussion"
@@ -122,28 +162,28 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    otherwise report it as `not_reached` and include the specific reason it was
    deferred. The report must make this visible enough that the user can spot
    missed CR opportunities immediately.
-6. Process candidates one at a time. Spawn exactly one subagent per candidate
-   with reasoning effort `xhigh`. Give it the PR number, repo, diff access
-   instructions, and ask for a code-review result only; do not let the subagent
-   post comments, approve, merge, or modify files.
-7. Ask the subagent to focus on design, compatibility, likely bugs, cross-module
+8. Process external candidates one at a time. Spawn exactly one subagent per
+   candidate with reasoning effort `xhigh`. Give it the PR number, repo, diff
+   access instructions, and ask for a code-review result only; do not let the
+   subagent post comments, approve, merge, or modify files.
+9. Ask the subagent to focus on design, compatibility, likely bugs, cross-module
    impact, severity, and the smallest correct fix. Require findings to include
    `path`, changed-side `line` or `position`, concise English body, Chinese
    translation, and why the issue matters.
-8. Verify each returned finding against the current PR diff. Keep only concrete,
+10. Verify each returned finding against the current PR diff. Keep only concrete,
    actionable issues that can be anchored to changed lines. Discard style,
    preference, broad design commentary, or findings outside the diff unless the
    changed line directly creates the risk.
-9. For valid findings, submit a GitHub review with only inline file comments.
+11. For valid external-PR findings, submit a GitHub review with only inline file comments.
    Use the `flash-lhr-pr-comment` skill shape:
    one or two direct English sentences, then a Chinese translation in
    `<details><summary>中文</summary>...</details>`.
    Do not post a top-level PR comment when inline comments are available.
-10. If the PR has no valid findings, approve it with a GitHub pull-request
+12. If an external PR has no valid findings, approve it with a GitHub pull-request
     review whose state is approve and whose body is exactly `LGTM`. This must
     be the same visible effect as a human submitting an approving review from
     the GitHub UI, not a standalone issue comment that says `LGTM`.
-11. After approval, merge the PR using the repository-supported merge method
+13. After approval, merge the external PR using the repository-supported merge method
     only when it has no non-green `codecov/patch` check. For this repo, prefer
     squash merge when repository metadata says only squash merge is allowed.
     The merge must preserve GitHub's default squash commit title and body, the
@@ -157,16 +197,20 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
     fields, do not use that path. This keeps the PR number suffix generated by
     GitHub, for example `(#1844)`. If `codecov/patch` is still non-green, leave
     the approved PR unmerged and report it as approved but waiting for codecov.
-12. Before ending, fetch each processed PR's latest comments and review threads
-    again. If new actionable comments appeared and can be fixed or require a
-    different outcome, handle them before reporting; otherwise include them in
-    the report. If the PR head moved after comments or fixes, require CI to be
-    all green again before approving or merging, except for documented soft CI
-    failures that were explicitly re-evaluated after the head movement. A
-    re-evaluated `codecov/patch` soft failure can still allow review/approval,
-    but never merge while it remains non-green.
-13. Report all reviewed PRs, skipped PRs with reasons, comments posted,
-    approvals, merge results, and any blocked operations. Generate the
+14. Before ending, fetch each processed PR's latest comments and review threads
+    again. For external PRs, if new actionable comments appeared and can be
+    fixed by the author or require a different outcome, handle them before
+    reporting; otherwise include them in the report. For own PRs, convert any
+    newly discovered actionable issue into another direct branch fix when
+    possible, then re-check CI and threads. If any PR head moved after comments
+    or fixes, require CI to be all green again before approving or merging,
+    except for documented soft CI failures that were explicitly re-evaluated
+    after the head movement. A re-evaluated `codecov/patch` soft failure can
+    still allow external review/approval, but never merge while it remains
+    non-green.
+15. Report all reviewed PRs, maintained own PRs, skipped PRs with reasons,
+    comments posted, direct fixes, approvals, merge results, and any blocked
+    operations. Generate the
     interactive HTML report described below before sending the final answer.
     Follow the detailed reporting contract below. Treat report writing as an
     xhigh-quality pass, not as a short run log: synthesize the PR content,
@@ -195,7 +239,8 @@ In the final report:
   Raycast-style detail panes. Keep it self-contained, fast, responsive, and
   readable: clear hierarchy, restrained color, strong scanability, sticky
   search/filter controls, status dots, compact metrics, readable long-form PR
-  details, and obvious reviewed / commented / skipped / follow-up sections.
+  details, and obvious reviewed / commented / maintained / skipped / follow-up
+  sections.
   Avoid decorative clutter, marketing-page layout, or generic blog styling.
 - The report must be a self-contained engineering brief, not merely an action
   log. A reader should be able to understand, from the report alone, what each
@@ -332,8 +377,10 @@ In the final report:
      explicit `codecov/patch` blocker when approved but intentionally not
      merged.
   2. PRs that received inline comments second.
-  3. PRs that were not reviewed, grouped by the reason they were excluded.
-- For every reviewed candidate PR, include:
+  3. Own PRs maintained directly without self-review comments, including commits
+     pushed, tests run, CI state, and remaining external-review expectations.
+  4. PRs that were not reviewed, grouped by the reason they were excluded.
+- For every reviewed or maintained candidate PR, include:
   - author
   - title
   - beginner-friendly technical background for every important module and
@@ -361,13 +408,16 @@ In the final report:
     contracts
   - the expected before/after behavior from the user's or maintainer's point of
     view
-  - review outcome: commented, approved, merged, skipped after recheck, or
-    blocked
+  - review outcome: commented, approved, merged, maintained, skipped after
+    recheck, or blocked
   - possible remaining issues or compatibility risks
   - if approved, why it is acceptable to approve and whether any residual risk
     remains
   - if approved while `codecov/patch` is non-green, state that it was not merged
     because codecov is still a merge blocker
+  - if maintained as an own PR, state explicitly that no self-review comment,
+    self-approval, or self-merge was submitted; list the branch/commits pushed
+    or say that no direct fix was needed
   - if comments were posted, the exact inline comment bodies, the review focus,
     severity, and whether the user should pay extra attention
   - latest CI and review-thread state when it affects the outcome

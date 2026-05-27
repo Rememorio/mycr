@@ -11,6 +11,8 @@ The archive page accepts the JSON shape produced by `mycr` reports.
 - `timeline`: ordered run events.
 - `approved`: PRs approved or merged by the run.
 - `commented`: PRs that received inline comments.
+- `maintained`: own PRs that were audited directly and either fixed on their
+  branch or confirmed as needing no self-review comment.
 - `blocked`: PRs blocked after candidate processing.
 - `skipped_groups`: skipped PRs grouped by reason.
 - `follow_up`: PRs requiring later attention.
@@ -41,6 +43,11 @@ Reviewed entries should include:
 - `risk`
 - `ci_state`
 - `inline_comments`
+- `direct_fixes`: optional array for own PRs with direct branch maintenance
+  details. Each object should include the branch, commit SHA or message when
+  available, files touched, tests run, and push/CI state.
+- `self_review_policy`: optional text for own PRs confirming that no review
+  comments, `LGTM` approval, or merge were submitted by the same account.
 
 Skipped entries should also include:
 
