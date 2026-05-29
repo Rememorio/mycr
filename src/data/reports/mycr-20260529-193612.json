@@ -1,0 +1,776 @@
+{
+  "title": "MyCR 全量执行报告 2026-05-29",
+  "repo": "trpc-group/trpc-agent-go",
+  "generated_at": "2026-05-29T19:36:12+08:00",
+  "overview": "本轮从 33 个 open PR 建立完整 ledger：5 个外部 PR 发现可执行问题并留下 8 条 inline comments；4 个外部 PR 通过复核后提交 `LGTM` 并 squash merge；1 个自有 PR 按 own-PR maintenance 路径直接修复并推送 2 个 commits，不做自评审/自合并。其余 PR 均按 draft/WIP、硬 CI、merge conflict 或明确 review blocker 归档。#1885 最新 CI 因新提交重新排队，报告生成时仍 pending。",
+  "skill_evolution": "本轮暴露的主要摩擦是：PR metadata/check/thread/final-state 刷新仍大量依赖手动 gh/GraphQL 命令，报告组装需要手工同步多份临时 JSON，容易遗漏 late comments 或 pending CI 的最新状态。已把该自动化缺口写入 evolution backlog。",
+  "approved": [
+    {
+      "number": 1887,
+      "title": "tool/mcp: propagate annotations to metadata",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1887",
+      "author": "print-happy",
+      "status": "merged",
+      "technical_background": "MCP 工具声明不仅有名称、描述和输入 schema，还可以带 annotations。annotations 是工具安全性、只读性、幂等等语义提示，框架在把 MCP 工具转换为本地 tool metadata 时需要保留这些提示，后续模型选择工具、UI 展示或策略判断才有完整上下文。",
+      "problem": "旧转换路径只传播核心声明字段，annotations 没有进入 metadata，调用方拿不到 MCP server 已经表达的工具语义。",
+      "problem_framing": "这是一个信息保真问题：工具执行行为没有改变，但跨协议适配层丢字段会让上层策略基于不完整事实做判断。",
+      "root_cause": "MCP declaration 到 trpc-agent-go tool metadata 的映射没有覆盖 annotation 字段。",
+      "approach": "在 MCP tool adapter 中把 annotations 传入 metadata，并补充测试验证 metadata 中能读到这些值。",
+      "alternative_designs": "另一种做法是让上层直接访问原始 MCP declaration，但这会泄漏协议细节，违背本地 tool 抽象。",
+      "tradeoffs": "保留 annotations 增加少量 metadata 负载，换来语义完整性；不改变执行路径，兼容风险低。",
+      "design_assessment": "实现窄而清晰，属于协议字段透传，subagent 和本地复核都未发现行为回归。",
+      "modules": "tool/mcp 适配层及相关测试。",
+      "api_surface": "对外可观察变化是 tool metadata 新增 MCP annotations；没有破坏已有字段。",
+      "change_inventory": "字段映射和单元测试更新。",
+      "semantic_changes": "模型或调用方现在可以看到 MCP server 提供的 annotations。",
+      "module_impact": "影响 MCP 工具注册与工具元数据读取。",
+      "cross_module_impact": "对 tool consumer 是增量信息；不影响非 MCP 工具。",
+      "behavior_impact": "运行时工具调用结果不变。",
+      "tests_docs": "最新 152 项 checks 全绿。",
+      "attention_points": "",
+      "outcome": "提交 `LGTM` approving review，并以 squash merge 合入 main。merge commit a7c35009。",
+      "risk": "低。主要风险是上层开始依赖新增 metadata，但这是预期增强。",
+      "ci_state": "head=e2714ee617664b621d7c0a858b58336e68fc6f42；mergedAt=2026-05-29T11:28:21Z。",
+      "inline_comments": []
+    },
+    {
+      "number": 1881,
+      "title": "knowledge : Fix knowledge query request comment",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1881",
+      "author": "hyprh",
+      "status": "merged",
+      "technical_background": "knowledge 查询请求结构用于描述向知识库检索时的输入。字段注释虽然不改变二进制行为，但会影响 Go 文档、IDE 提示、使用者理解，以及后续生成文档的准确性。",
+      "problem": "请求注释与真实语义不完全一致，容易让初学者或外部调用方误解查询参数。",
+      "problem_framing": "这是低风险文档型修正，目标是让代码旁的说明和接口语义对齐。",
+      "root_cause": "注释文本落后于当前 knowledge query request 的含义。",
+      "approach": "更新注释表述，保留现有接口和行为。",
+      "alternative_designs": "可以只在外部文档补充说明，但字段注释才是 Go API 的第一入口。",
+      "tradeoffs": "没有运行时成本；收益是 API 可读性提升。",
+      "design_assessment": "diff 很小，语义明确，未触碰执行路径。",
+      "modules": "knowledge query request 定义。",
+      "api_surface": "无 API 签名变化；Go doc 输出更准确。",
+      "change_inventory": "注释更新。",
+      "semantic_changes": "运行时语义不变。",
+      "module_impact": "只影响阅读和文档生成。",
+      "cross_module_impact": "无。",
+      "behavior_impact": "无行为变化。",
+      "tests_docs": "最新 150 项 checks 全绿。",
+      "attention_points": "",
+      "outcome": "提交 `LGTM` approving review，并以 squash merge 合入 main。merge commit 7aca1ee1。",
+      "risk": "很低。",
+      "ci_state": "head=ab46f882b1b5a8b97769ec377bc8395edbc6bdfd；mergedAt=2026-05-29T11:28:28Z。",
+      "inline_comments": []
+    },
+    {
+      "number": 1880,
+      "title": "session: respect tool result threshold for summaries",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1880",
+      "author": "Rememorio",
+      "status": "merged",
+      "technical_background": "session summary 会把较长的历史会话压缩成摘要，避免模型上下文无限增长。工具调用结果通常可能很长，所以框架提供阈值控制，决定哪些 tool result 进入摘要，哪些应裁剪或跳过。",
+      "problem": "摘要生成没有完整尊重 tool result threshold，可能让超长工具结果进入摘要，增加 token 成本，也可能污染后续对话上下文。",
+      "problem_framing": "这是上下文管理问题：摘要不是普通日志，而是下一轮模型决策的输入，因此阈值错误会影响后续行为。",
+      "root_cause": "summary 构建工具结果内容时没有在对应路径应用阈值判断。",
+      "approach": "在 summary 处理工具结果时接入 threshold，并保留原有 session/event 流程。作者已对旧 Flash-LHR 线程回复 fixed，本轮复核后 resolve 该线程。",
+      "alternative_designs": "可以在更下游统一裁剪所有 message，但那会丢失不同消息类型的语义控制。",
+      "tradeoffs": "更早过滤工具结果能保持摘要稳定，但需要确保普通 assistant/user 内容不被误裁。",
+      "design_assessment": "修复点贴近 summary 工具结果路径，测试覆盖阈值行为；复核未发现新的遗漏。",
+      "modules": "session summary、internal/flow/processor/content.go 相关路径。",
+      "api_surface": "无新 API；配置语义被正确兑现。",
+      "change_inventory": "summary tool-result threshold 应用和测试更新。",
+      "semantic_changes": "超出阈值的工具结果不再原样进入摘要。",
+      "module_impact": "影响 session summary 的输入内容。",
+      "cross_module_impact": "对后续 LLM 调用上下文更稳定；不改变工具执行本身。",
+      "behavior_impact": "长工具结果场景下摘要更短、更符合配置。",
+      "tests_docs": "最新 150 项 checks 全绿。",
+      "attention_points": "旧 reviewDecision 曾停留在 REVIEW_REQUIRED；线程级复核显示唯一旧线程已由作者 fixed，并已 resolve。",
+      "outcome": "提交 `LGTM` approving review，并以 squash merge 合入 main。merge commit a0371e05。",
+      "risk": "低。主要观察点是摘要内容变化会影响长工具输出场景，但这正是配置目标。",
+      "ci_state": "head=8d5af39aaf493315f9652b81e9f845261c043d2e；mergedAt=2026-05-29T11:28:35Z。",
+      "inline_comments": []
+    },
+    {
+      "number": 1731,
+      "title": "knowledge: add GraphRAG code search (reasonable breaking change)",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1731",
+      "author": "hyprh",
+      "status": "merged",
+      "technical_background": "GraphRAG 是把知识组织成图再检索的做法。普通向量检索擅长找语义相近文本，图检索擅长表达“函数调用谁、类型属于哪个包、路径如何连接”等结构关系。本 PR 把 Go AST 解析、repo source、graph model、AGE graphstore 和 agent tool 串起来，让代码搜索可以同时利用语义向量和代码结构。",
+      "problem": "现有 knowledge/repo 检索更偏文本和向量，难以回答跨文件符号关系、路径遍历、调用链等结构化问题。",
+      "problem_framing": "这是一次横跨数据模型、存储、源码解析和工具接口的大功能。正确性不只在单个函数，而在“源码解析成图、图存储、工具查询、agent 使用”整条链路。",
+      "root_cause": "缺少统一图数据模型和图存储接口，repo source 也没有把 Go AST 符号关系转换为可查询图。",
+      "approach": "新增 graph 数据类型和 graphstore 接口，加入 AGE-backed store；repo source 从 Go AST 读取节点和边；knowledge/tool 暴露 graph traverse、find paths、code search 工具；示例和 viewer 展示端到端 GraphRAG。",
+      "alternative_designs": "可以只做向量检索增强，或只在示例里维护私有图结构。但公共 graph API 能让后续存储和工具复用，代价是 API 面更大。",
+      "tradeoffs": "PR 体量较大，带来一个明确的 `knowledge/document/reader/golang` 不兼容变更；作者在评论中说明这是预期，因为该目录作为独立 go.mod 暴露。",
+      "design_assessment": "xhigh subagent 未发现新问题。本地门禁复核确认 `go-apidiff` 失败只包含作者明确接受的 `New`/`Reader` 移除；5 条未 resolved CodeRabbit 线程内容是把 PR 图片描述贴到代码行，不构成代码风险。",
+      "modules": "knowledge/graph、knowledge/graphstore、knowledge/graphstore/age、knowledge/source/repo、knowledge/tool、features/graphrag、docs。",
+      "api_surface": "新增 graph model、GraphKnowledge、graph tool constructors、repo graph source 选项；移除独立 golang reader 模块的 `New` 和 `Reader`。",
+      "change_inventory": "新增图模型、AGE 存储、Go AST 图解析、repo 图 source、GraphRAG tools、示例 viewer 和大量测试。",
+      "semantic_changes": "knowledge 可以加载并查询代码结构图；agent 可通过工具做路径、遍历和图代码搜索。",
+      "module_impact": "knowledge 子系统能力显著扩展。",
+      "cross_module_impact": "agent tool 层新增可调用图工具；docs/examples 引导用户使用 GraphRAG。",
+      "behavior_impact": "新增功能为主；兼容性变化限定在独立 golang reader module。",
+      "tests_docs": "最新 154 项 checks 中仅 `go-apidiff` 失败；codecov/patch 绿色。作者列出 `go test ./knowledge ./knowledge/tool ./knowledge/source/repo`、AGE store、features/graphrag 构建等验证。",
+      "attention_points": "后续如需对外发布，应在 release note 中标明该独立 module 的 breaking change。",
+      "outcome": "提交 `LGTM` approving review，并以 squash merge 合入 main。merge commit 4f267029。",
+      "risk": "中。功能大且 API 面广，但本轮未发现阻断问题；主要残余风险是新 graph API 的长期兼容承诺。",
+      "ci_state": "head=757f1c38d9c6602167c9a90b0d4f6c5ba40daae9；mergedAt=2026-05-29T11:28:43Z；`go-apidiff` 软失败已复核为预期。",
+      "inline_comments": []
+    }
+  ],
+  "commented": [
+    {
+      "number": 1888,
+      "title": "session/summary: add detailed continuity summaries",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1888",
+      "author": "Rememorio",
+      "status": "commented",
+      "technical_background": "session summary 是把历史事件压缩成可继续对话的上下文。continuity summary 更强调“下一轮怎么接着做”，而 detailed/structured summary 会把摘要拆成更细字段。这里的关键是不同 summary 模式必须保持各自输出契约，否则下游读取摘要时会拿到空内容或格式不匹配内容。",
+      "problem": "新 detailed cleanup 被无条件套到所有 summary 输出上，可能把默认 summary 或用户自定义 summary 当成 detailed 格式处理。另一个问题是 structured prompt 缺少 `{max_summary_words}` 占位，导致最大词数配置失效。",
+      "problem_framing": "摘要内容会成为后续模型输入，错误清洗不是展示问题，而是会删除或扭曲模型记忆。",
+      "root_cause": "格式清理逻辑没有和 detailed prompt path 绑定；structured prompt 变体没有承接现有 max words 约束。",
+      "approach": "提交两条 inline comments，建议只在 detailed prompt 路径做 cleanup，并为空清洗结果保底；同时为 structured prompt 加上 max words placeholder 或在调用 `WithMaxSummaryWords` 前选择正确 prompt。",
+      "alternative_designs": "可以让 cleanup 自动识别多种格式，但路径显式 gating 更容易证明不会影响旧模式。",
+      "tradeoffs": "保持旧 summary 行为需要多一个分支；收益是兼容已有用户自定义 summary。",
+      "design_assessment": "问题锚定在 changed lines，属于当前 diff 引入的兼容性风险，未 approve。",
+      "modules": "session/summary/summarizer.go；openclaw/app/backends.go。",
+      "api_surface": "summary 配置语义和 prompt 变量语义。",
+      "change_inventory": "PR 新增 detailed continuity summaries 和 openclaw structured summary 配置。",
+      "semantic_changes": "目标是提供更结构化的延续摘要。",
+      "module_impact": "影响 session summary 输出内容。",
+      "cross_module_impact": "openclaw backend 使用 structured summary 时会受 max words 配置影响。",
+      "behavior_impact": "当前实现可能导致空摘要或忽略 max words。",
+      "tests_docs": "CI 绿；本轮基于 diff 提交 2 条 inline comments。",
+      "attention_points": "",
+      "outcome": "留下 review comments，等待作者修复。",
+      "risk": "中。摘要错误会直接影响后续对话连续性。",
+      "ci_state": "head=b7ba2f2a；PR 仍 open。",
+      "inline_comments": [
+        {
+          "path": "session/summary/summarizer.go",
+          "line": 352,
+          "summary": "将 detailed cleanup 限定在 detailed prompt 路径，并处理清洗后为空的情况。"
+        },
+        {
+          "path": "openclaw/app/backends.go",
+          "line": 290,
+          "summary": "structured detailed prompt 缺少 `{max_summary_words}`，导致 `SessionSummaryMaxWords` 不生效。"
+        }
+      ]
+    },
+    {
+      "number": 1890,
+      "title": "codeexecutor/container: honor RunProgramSpec.CleanEnv in RunProgram",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1890",
+      "author": "bytethm",
+      "status": "commented",
+      "technical_background": "container code executor 负责在容器环境里运行用户或模型触发的程序。`CleanEnv` 的语义是清理环境变量，降低 PATH、动态链接器变量、代理变量等对执行行为的影响。这里有两层环境：wrapper 进程启动时继承的环境，以及 `env -i` 清理后目标程序看到的环境。",
+      "problem": "实现用 bare `env -i` 清理目标进程环境，但启动 `env` 这个 wrapper 本身仍会受容器 exec 环境影响。PATH 或动态链接相关变量可能在清理前影响 wrapper 解析或装载。",
+      "problem_framing": "安全/隔离语义必须从第一个可执行文件开始成立，不能只在第二层目标进程成立。",
+      "root_cause": "CleanEnv 逻辑把 `env -i` 当成完整环境清理，但没有控制 wrapper 进程自身的启动环境和可执行路径。",
+      "approach": "提交 inline comment，建议使用可信绝对路径或等价实现，并为 wrapper 设置最小环境。",
+      "alternative_designs": "可以在 Go 侧直接构造 exec env 而不依赖 `env -i`；也可以继续使用 `env` 但显式选择路径并清理 wrapper env。",
+      "tradeoffs": "绝对路径/最小环境会牺牲少量平台灵活性，但符合 CleanEnv 的安全预期。",
+      "design_assessment": "问题具体、可复现方向明确，属于清洁环境语义的边界漏洞。",
+      "modules": "codeexecutor/container/workspace_runtime.go。",
+      "api_surface": "`RunProgramSpec.CleanEnv` 的行为契约。",
+      "change_inventory": "PR 修改 RunProgram 执行环境处理。",
+      "semantic_changes": "目标是让 CleanEnv 生效。",
+      "module_impact": "影响容器代码执行。",
+      "cross_module_impact": "上层调用 code executor 的 agent/tool 都依赖这个安全边界。",
+      "behavior_impact": "当前实现仍可能被 wrapper 环境影响。",
+      "tests_docs": "CI 绿；本轮提交 1 条 inline comment。",
+      "attention_points": "",
+      "outcome": "留下 review comment，等待作者修复。",
+      "risk": "中高。CleanEnv 常用于隔离或安全场景。",
+      "ci_state": "head=e5ed317e；PR 仍 open。",
+      "inline_comments": [
+        {
+          "path": "codeexecutor/container/workspace_runtime.go",
+          "line": 1253,
+          "summary": "`env -i` wrapper 仍继承 exec 环境，CleanEnv 应控制 wrapper 环境和可信 env 路径。"
+        }
+      ]
+    },
+    {
+      "number": 1859,
+      "title": "memory/tencentdb: add TencentDB Agent Memory integration",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1859",
+      "author": "Rememorio",
+      "status": "commented",
+      "technical_background": "memory service 会把会话内容写入长期记忆。checkpoint/lastCapture 这类状态用于记录“哪些消息已经抓取过”，避免重复写入同一段历史。TencentDB 集成需要在 session lifecycle 中正确推进这个 checkpoint。",
+      "problem": "`/session/end` 后清理 `lastCapture` 会让重载后的 session 丢掉 service-level checkpoint，下一次可能重新发送已经 capture 的历史。",
+      "problem_framing": "重复记忆不是简单的性能问题，会污染长期记忆，使后续检索得到重复或过时内容。",
+      "root_cause": "清理生命周期与 checkpoint 生命周期混在一起；session 结束不等于 service 可以忘记已 capture 的边界。",
+      "approach": "提交 inline comment，建议保留 checkpoint 至 service shutdown，或先持久化/有界化再删除。",
+      "alternative_designs": "可以在数据库侧做幂等去重，但源头 checkpoint 更便宜、更容易解释。",
+      "tradeoffs": "保留 checkpoint 需要管理内存上限；删除过早则会重复 capture。",
+      "design_assessment": "问题位于新增 TencentDB memory service 的生命周期路径，影响真实会话重复写入。",
+      "modules": "memory/tencentdb/service.go。",
+      "api_surface": "memory service session end 语义。",
+      "change_inventory": "新增 TencentDB memory integration。",
+      "semantic_changes": "引入 TencentDB 作为 Agent Memory 后端。",
+      "module_impact": "影响 memory ingest checkpoint。",
+      "cross_module_impact": "长期记忆检索结果可能受重复写入影响。",
+      "behavior_impact": "当前实现有重复 capture 风险。",
+      "tests_docs": "CI 绿；本轮提交 1 条 inline comment。",
+      "attention_points": "",
+      "outcome": "留下 review comment，等待作者修复。",
+      "risk": "中。长期记忆污染较难事后清理。",
+      "ci_state": "head=9a42c486；PR 仍 open。",
+      "inline_comments": [
+        {
+          "path": "memory/tencentdb/service.go",
+          "line": 143,
+          "summary": "不要在 `/session/end` 直接清掉 service-level checkpoint，否则重载 session 后可能重复 capture 历史。"
+        }
+      ]
+    },
+    {
+      "number": 1856,
+      "title": "session: add portable event window loading",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1856",
+      "author": "Rememorio",
+      "status": "commented",
+      "technical_background": "session event window loading 是把某段历史事件取回给模型继续使用。事件流里有 user、assistant、tool 等角色；如果读取时套用了面向普通会话展示的过滤器，就可能丢掉模型恢复所需的前置 assistant/tool 事件。`session_search` 和 `session_load` 是配套工具：前者找窗口，后者加载窗口。",
+      "problem": "in-memory `GetEventWindow` 通过 `getSession` 读取，会应用 `ApplyEventFiltering`，导致 `session_load` 可能丢掉 leading assistant/tool events。另一个问题是 search-only 模式只暴露 `session_search`，但工具描述仍要求模型调用 `session_load`。",
+      "problem_framing": "这是“工具能力与描述不一致”和“恢复数据被过滤”的双重问题，都会让模型按文档做却失败。",
+      "root_cause": "复用了带过滤/hook 的 session 读取路径；tool description 没有按 capability 组合切换。",
+      "approach": "提交两条 inline comments：窗口加载应读取 raw clone 并绕过展示过滤；search-only 工具描述应改成不承诺 session_load。",
+      "alternative_designs": "也可以让过滤器知道当前是 window loading，但 raw clone 路径更直接。",
+      "tradeoffs": "绕过过滤需要确保不会暴露不该暴露的事件；但 session_load 的目的就是恢复真实窗口。",
+      "design_assessment": "两个问题都直接锚定新增 diff，且会在实际 tool 使用中触发。",
+      "modules": "session/inmemory/service.go；agent/llmagent/llm_agent.go。",
+      "api_surface": "`GetEventWindow` 行为和 session tool 描述。",
+      "change_inventory": "新增 portable event window loading 和 session search/load 工具能力。",
+      "semantic_changes": "允许跨存储后端按窗口加载会话事件。",
+      "module_impact": "影响 session 恢复和 agent tool 指令。",
+      "cross_module_impact": "LLM agent 使用 session 工具时可能受到描述误导。",
+      "behavior_impact": "当前实现可能加载不完整窗口或引导模型调用不存在工具。",
+      "tests_docs": "可见 checks 绿；本轮提交 2 条 inline comments。",
+      "attention_points": "",
+      "outcome": "留下 review comments，等待作者修复。",
+      "risk": "中。会话恢复错误会导致模型上下文不一致。",
+      "ci_state": "head=19c3c441；PR 仍 open。",
+      "inline_comments": [
+        {
+          "path": "session/inmemory/service.go",
+          "line": 398,
+          "summary": "`GetEventWindow` 应绕过普通 session filtering/hook，按 raw event window 返回。"
+        },
+        {
+          "path": "agent/llmagent/llm_agent.go",
+          "line": 1055,
+          "summary": "search-only 工具描述不能要求模型调用未暴露的 `session_load`。"
+        }
+      ]
+    },
+    {
+      "number": 1768,
+      "title": "feat(sandbox): add secure Linux sandbox for code execution based on bubblewrap",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1768",
+      "author": "liuzengh",
+      "status": "commented",
+      "technical_background": "bubblewrap sandbox 通过 mount namespace、bind mount、只读/可写路径等机制限制进程能访问哪些文件。path policy 里的 no-access paths/globs 要防止进程读取或创建敏感路径；否则“启动时不存在”的文件可能在运行中被创建，从而绕过策略。",
+      "problem": "`WithNoAccessGlobs` 只在启动前展开，未来新建的匹配路径不会被禁止；缺失的 no-access concrete path 被跳过，进程仍可在可写父目录中创建该路径。",
+      "problem_framing": "安全策略必须覆盖运行全过程，而不是只覆盖 sandbox 启动瞬间已存在的文件集合。",
+      "root_cause": "glob expansion 和 missing path 处理都是静态快照，没有与 writable parent 的关系一起验证。",
+      "approach": "提交两条 inline comments：拒绝与 writable globs 重叠的 no-access globs，或通过只读父目录加显式 writable 子路径实施；对 missing no-access path 创建不可访问占位或在无法 enforce 时失败。",
+      "alternative_designs": "可用更复杂的运行时监控拦截创建，但 mount policy 侧静态 enforce 更符合 bubblewrap 模型。",
+      "tradeoffs": "更严格的 setup 可能拒绝一些历史可运行配置，但安全策略不能静默失效。",
+      "design_assessment": "两个问题都是 sandbox 安全边界漏洞，虽然 CI 可通过，但必须让作者处理。",
+      "modules": "codeexecutor/sandbox/path_policy.go；codeexecutor/sandbox/backend_linux.go。",
+      "api_surface": "`WithNoAccessGlobs`、`WithNoAccessPaths` 安全语义。",
+      "change_inventory": "新增 Linux bubblewrap sandbox。",
+      "semantic_changes": "提供代码执行隔离能力。",
+      "module_impact": "影响 sandbox 文件系统隔离。",
+      "cross_module_impact": "code executor 的安全承诺依赖这些策略。",
+      "behavior_impact": "当前实现可能允许创建被声明 no-access 的路径。",
+      "tests_docs": "CI 绿；本轮提交 2 条 inline comments。",
+      "attention_points": "",
+      "outcome": "留下 review comments，等待作者修复。",
+      "risk": "高。sandbox 语义失效会形成安全问题。",
+      "ci_state": "head=146124ae；PR 仍 open。",
+      "inline_comments": [
+        {
+          "path": "codeexecutor/sandbox/path_policy.go",
+          "line": 473,
+          "summary": "no-access globs 只预展开会漏掉运行中新建路径，应拒绝与可写范围重叠或改用可 enforce 的 mount 结构。"
+        },
+        {
+          "path": "codeexecutor/sandbox/backend_linux.go",
+          "line": 320,
+          "summary": "missing no-access concrete path 被跳过后仍可创建，应放置不可访问占位或失败。"
+        }
+      ]
+    }
+  ],
+  "blocked": [
+    {
+      "number": 1884,
+      "title": "feat: implement e2b sandbox Pause/Resume via standard connect endpoint",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1884",
+      "author": "AllesOderNicht",
+      "status": "blocked",
+      "technical_background": "",
+      "problem": "",
+      "problem_framing": "",
+      "root_cause": "",
+      "approach": "",
+      "alternative_designs": "",
+      "tradeoffs": "",
+      "design_assessment": "",
+      "modules": "",
+      "api_surface": "",
+      "change_inventory": "",
+      "semantic_changes": "",
+      "module_impact": "",
+      "cross_module_impact": "",
+      "behavior_impact": "",
+      "tests_docs": "",
+      "attention_points": "",
+      "outcome": "",
+      "risk": "",
+      "ci_state": "",
+      "inline_comments": [],
+      "skip_reason": "CI 绿但存在仍未修复的 Flash-LHR 旧线程。",
+      "blockers": [
+        {
+          "kind": "human_review",
+          "reviewer": "Flash-LHR",
+          "path": "codeexecutor/e2b/internal/codeinterpreter/sandbox.go",
+          "line": 74,
+          "summary": "Create 路径丢失 `trafficAccessToken`，会破坏需要 token 的 sandbox 创建。"
+        },
+        {
+          "kind": "human_review",
+          "reviewer": "Flash-LHR",
+          "path": "codeexecutor/e2b/e2b.go",
+          "line": 540,
+          "summary": "Close 会 kill paused owned sandbox，和 Pause/Resume 生命周期不一致。"
+        }
+      ],
+      "readiness_audit": "不是因为 GitHub aggregate state 跳过，而是线程级复核仍看到两个当前 diff 上有效的问题。"
+    },
+    {
+      "number": 1400,
+      "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+      "author": "liuzengh",
+      "status": "blocked",
+      "technical_background": "",
+      "problem": "",
+      "problem_framing": "",
+      "root_cause": "",
+      "approach": "",
+      "alternative_designs": "",
+      "tradeoffs": "",
+      "design_assessment": "",
+      "modules": "",
+      "api_surface": "",
+      "change_inventory": "",
+      "semantic_changes": "",
+      "module_impact": "",
+      "cross_module_impact": "",
+      "behavior_impact": "",
+      "tests_docs": "",
+      "attention_points": "",
+      "outcome": "",
+      "risk": "",
+      "ci_state": "",
+      "inline_comments": [],
+      "skip_reason": "存在 breaking API review blocker，且 soft CI 非绿。",
+      "blockers": [
+        {
+          "kind": "human_review",
+          "reviewer": "Flash-LHR",
+          "summary": "给 `artifact.Service` 新增 `Head` 会破坏所有现有实现；需要兼容方案。"
+        },
+        {
+          "kind": "soft_ci",
+          "summary": "`codecov/patch` 非绿，且 go-apidiff 失败反映真实兼容风险。"
+        }
+      ],
+      "readiness_audit": "`codecov/patch` 和 `go-apidiff` 是软 review gate，但这里的 go-apidiff 对应 reviewer 已指出的 `artifact.Service` 接口破坏，因此不能当作可接受软失败。"
+    }
+  ],
+  "maintained": [
+    {
+      "number": 1885,
+      "title": "internal/flow: add pre-LLM latency diagnostics",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1885",
+      "author": "WineChord",
+      "status": "maintained_waiting_ci",
+      "technical_background": "LLM flow 是一次 agent 调用中最核心的流水线：准备请求、执行 before/after model callbacks、处理 streaming response、记录 usage/timing、发事件。latency diagnostics 在这些阶段加 span 和诊断事件，帮助定位慢点。callback 可以替换 context 中的 invocation，因此 timing/usage 必须跟随最新 invocation，否则指标会写到错误对象上。runner 则负责把 agent run 产生的事件持久化到 session。",
+      "problem": "own-PR 审查发现 streaming after-model callback 返回新 context 后，`applyCallbackResponse` 先于 `p.currentInvocation`/`p.timingInfo` 刷新执行，`RestoreIfTimingInfoChanged` 用的是旧 timing。另一个现有 CodeRabbit nitpick 指出 runner 的 run-error 测试依赖事件顺序且未先判空。",
+      "problem_framing": "这是自有 PR，不能自评审、自 approve 或自 merge；有效发现必须直接修到 PR 分支。timing 错误会让 streaming usage metadata 落到 callback 前 invocation，测试问题会让未来事件顺序调整时产生脆弱失败。",
+      "root_cause": "streaming response processor 在 after-model callback 后的状态刷新顺序和 graph/state_graph 已有正确模式不一致；runner 测试把 event list 当成固定顺序而非按语义查找。",
+      "approach": "在 `/tmp/mycr-worktrees/pr-1885` 中直接提交两次维护修复：先刷新 invocation 和 metrics/timing，再恢复 callback timing attachment；再把 runner 测试改为扫描 `model.ErrorTypeRunError` 事件并判空。",
+      "alternative_designs": "可以把 final timing 显式传入 `applyCallbackResponse`，但在 processor 内先更新状态更贴近现有 graph 实现。测试也可以保留 Len 断言并补判空，但语义扫描更稳。",
+      "tradeoffs": "顺序调整很小，不改变 custom response 路径；测试改动少量增加循环代码，换来事件顺序无关。",
+      "design_assessment": "修复范围最小，沿用已有 graph/state_graph 的顺序模式。",
+      "modules": "internal/flow/llmflow/llmflow.go；runner/runner_test.go。",
+      "api_surface": "无 API 变化。",
+      "change_inventory": "两个维护 commits：`71c64997 internal/flow: refresh streaming timing after callbacks`，`51f4f75f runner: make run error test event-order independent`。",
+      "semantic_changes": "after-model callback 替换 invocation 后，streaming response usage timing 会绑定到最新 invocation；run-error 测试不再依赖事件位置。",
+      "module_impact": "影响 internal/flow streaming metrics/timing；runner 仅测试稳健性。",
+      "cross_module_impact": "telemetry/usage 消费者会看到更准确 timing metadata。",
+      "behavior_impact": "修复 callback 切换 invocation 的边界场景。",
+      "tests_docs": "本地通过：`go test ./internal/flow/llmflow -run TestProcessStreamingResponses_(UsesUpdatedInvocationForResponseUsageTimingOnSingleChunk|PreservesTimingInfoWhenInvocationChanges|PreservesReasoningTimingWhenInvocationChanges|UsesUpdatedInvocationForMetricsMetadataAfterCallbackOnSingleChunk) -count=1`；`go test ./internal/flow/llmflow -count=1`；`go test ./runner -run TestRunner_Run_AgentRunError -count=1`；`go test ./runner -count=1`。",
+      "attention_points": "最新 head `51f4f75f` 的 GitHub CI 刚重新排队，报告生成时 24 项 checks 中 23 项仍 pending。",
+      "outcome": "已推回 `WineChord:latency_trace_debug_0528`；不提交自评审、不 approve、不 merge。",
+      "risk": "低到中。代码修复很小，但 PR 本身涉及 latency diagnostics 较多，仍需等待完整 CI。",
+      "ci_state": "head=51f4f75f8a4c75b2c5695660f939c7738beaa603；GitHub checks pending。",
+      "inline_comments": [],
+      "direct_fixes": [
+        {
+          "branch": "latency_trace_debug_0528",
+          "commit": "71c649970707e65a37abe3bc5d2aeffc8b5b513f",
+          "files": [
+            "internal/flow/llmflow/llmflow.go"
+          ],
+          "tests": [
+            "go test ./internal/flow/llmflow -count=1"
+          ],
+          "push_state": "pushed to wine"
+        },
+        {
+          "branch": "latency_trace_debug_0528",
+          "commit": "51f4f75f8a4c75b2c5695660f939c7738beaa603",
+          "files": [
+            "runner/runner_test.go"
+          ],
+          "tests": [
+            "go test ./runner -count=1"
+          ],
+          "push_state": "pushed to wine; CI pending"
+        }
+      ],
+      "self_review_policy": "own PR path: no inline review comments, no LGTM, no approval, no merge were submitted by this run."
+    }
+  ],
+  "skipped_groups": [
+    {
+      "reason": "Draft / WIP / 明确未准备好",
+      "items": [
+        {
+          "number": 1891,
+          "title": "WIP: tool/openviking - add OpenViking context tools integration",
+          "author": "hyprh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1891",
+          "skip_reason": "draft 且标题 WIP；本轮不审。",
+          "blockers": []
+        },
+        {
+          "number": 1886,
+          "title": "tool/agent: restore live session for subagents",
+          "author": "bytethm",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1886",
+          "skip_reason": "draft；本轮不审。",
+          "blockers": []
+        },
+        {
+          "number": 1865,
+          "title": "session: recover compacted tool results",
+          "author": "Rememorio",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1865",
+          "skip_reason": "draft 且 mergeable=CONFLICTING。",
+          "blockers": []
+        },
+        {
+          "number": 1857,
+          "title": "memory/mem0: advance checkpoint after successful ingest",
+          "author": "print-happy",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1857",
+          "skip_reason": "draft；本轮不审。",
+          "blockers": []
+        },
+        {
+          "number": 1778,
+          "title": "examples: add RLM (Recursive Language Model) demo",
+          "author": "hyprh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1778",
+          "skip_reason": "draft；本轮不审。",
+          "blockers": []
+        },
+        {
+          "number": 1710,
+          "title": "a2a: add input schema",
+          "author": "liuzengh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1710",
+          "skip_reason": "draft；本轮不审。",
+          "blockers": []
+        },
+        {
+          "number": 1683,
+          "title": "tool/workspaceexec: add workspace-scoped file tools sharing workspace_exec state",
+          "author": "bytethm",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1683",
+          "skip_reason": "draft、merge conflict，且存在失败 checks。",
+          "blockers": []
+        },
+        {
+          "number": 1678,
+          "title": "agent: centralize invoke_agent telemetry in RunWithPlugins",
+          "author": "liuzengh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1678",
+          "skip_reason": "draft、merge conflict，且存在多项失败 checks。",
+          "blockers": []
+        },
+        {
+          "number": 1651,
+          "title": "evolution: add async skill-extraction pipeline for agent self-evolution",
+          "author": "Rememorio",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1651",
+          "skip_reason": "draft；本轮不审。",
+          "blockers": []
+        },
+        {
+          "number": 1526,
+          "title": "model: add ModelMaxOutputTokens map and ResolveMaxOutputTokens helper",
+          "author": "sks",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1526",
+          "skip_reason": "draft；同时 codecov/patch 非绿。",
+          "blockers": []
+        },
+        {
+          "number": 1509,
+          "title": "[WIP] session: support concurrent queued execution",
+          "author": "hyprh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1509",
+          "skip_reason": "标题 WIP，merge conflict，且 checks 非绿。",
+          "blockers": []
+        },
+        {
+          "number": 1380,
+          "title": "[WIP] fix(agent): always register InstructionProcessor to support run-time WithInstruction",
+          "author": "hyprh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1380",
+          "skip_reason": "标题 WIP 且 merge conflict。",
+          "blockers": []
+        }
+      ]
+    },
+    {
+      "reason": "硬 CI 失败或 merge conflict 阻塞",
+      "items": [
+        {
+          "number": 1826,
+          "title": "docs: Add FAQ section",
+          "author": "meichuanyi",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1826",
+          "skip_reason": "CLAAssistant failing。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "CLAAssistant failure"
+            }
+          ]
+        },
+        {
+          "number": 1801,
+          "title": "docs/mkdocs/zh/fix/agent.md: fix typo",
+          "author": "GongNanyue",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1801",
+          "skip_reason": "openclaw test 和 CLAAssistant failing。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "openclaw test failure"
+            },
+            {
+              "kind": "ci",
+              "summary": "CLAAssistant failure"
+            }
+          ]
+        },
+        {
+          "number": 1776,
+          "title": "docs: add FAQ section",
+          "author": "meichuanyi",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1776",
+          "skip_reason": "tool/claudecode test 和 CLAAssistant failing。",
+          "blockers": []
+        },
+        {
+          "number": 1764,
+          "title": "examples: add graph RAG code search demo and viewer",
+          "author": "hyprh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1764",
+          "skip_reason": "examples check failing。",
+          "blockers": []
+        },
+        {
+          "number": 1736,
+          "title": "all: add deferred tool set",
+          "author": "liuzengh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1736",
+          "skip_reason": "merge conflict 且 test failing。",
+          "blockers": []
+        },
+        {
+          "number": 1483,
+          "title": "tool/subtask: add dynamic agent creation tools",
+          "author": "bytethm",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1483",
+          "skip_reason": "mergeable=CONFLICTING。",
+          "blockers": []
+        },
+        {
+          "number": 1460,
+          "title": "improve nano-pdf skill description + add skill-review-and-optimize CI",
+          "author": "fernandezbaptiste",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1460",
+          "skip_reason": "open source scan failing。",
+          "blockers": []
+        },
+        {
+          "number": 1446,
+          "title": "feat(a2a): add StructuredOutput -> DataPart converter for custom event…",
+          "author": "SummerLv",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1446",
+          "skip_reason": "merge conflict，且 codecov/open source scan/CLA failing。",
+          "blockers": []
+        },
+        {
+          "number": 1183,
+          "title": "internal/util: add util for streaming parsing of JSON returned by LLM",
+          "author": "hongxiuzhe",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1183",
+          "skip_reason": "codecov、lint、CLA failing。",
+          "blockers": []
+        }
+      ]
+    },
+    {
+      "reason": "已命名的人类 review blocker",
+      "items": [
+        {
+          "number": 1884,
+          "title": "feat: implement e2b sandbox Pause/Resume via standard connect endpoint",
+          "author": "AllesOderNicht",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1884",
+          "skip_reason": "CI 绿但存在仍未修复的 Flash-LHR 旧线程。",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "reviewer": "Flash-LHR",
+              "path": "codeexecutor/e2b/internal/codeinterpreter/sandbox.go",
+              "line": 74,
+              "summary": "Create 路径丢失 `trafficAccessToken`，会破坏需要 token 的 sandbox 创建。"
+            },
+            {
+              "kind": "human_review",
+              "reviewer": "Flash-LHR",
+              "path": "codeexecutor/e2b/e2b.go",
+              "line": 540,
+              "summary": "Close 会 kill paused owned sandbox，和 Pause/Resume 生命周期不一致。"
+            }
+          ]
+        },
+        {
+          "number": 1400,
+          "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+          "author": "liuzengh",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+          "skip_reason": "存在 breaking API review blocker，且 soft CI 非绿。",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "reviewer": "Flash-LHR",
+              "summary": "给 `artifact.Service` 新增 `Head` 会破坏所有现有实现；需要兼容方案。"
+            },
+            {
+              "kind": "soft_ci",
+              "summary": "`codecov/patch` 非绿，且 go-apidiff 失败反映真实兼容风险。"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "follow_up": [
+    {
+      "number": 1885,
+      "title": "internal/flow: add pre-LLM latency diagnostics",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1885",
+      "summary": "已直接修复两个问题并推送；等待 head 51f4f75f 的完整 CI。"
+    },
+    {
+      "number": 1888,
+      "title": "session/summary: add detailed continuity summaries",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1888",
+      "summary": "等待作者处理 detailed cleanup gating 和 max words prompt placeholder。"
+    },
+    {
+      "number": 1890,
+      "title": "codeexecutor/container: honor RunProgramSpec.CleanEnv in RunProgram",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1890",
+      "summary": "等待作者收紧 CleanEnv wrapper 进程环境。"
+    },
+    {
+      "number": 1859,
+      "title": "memory/tencentdb: add TencentDB Agent Memory integration",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1859",
+      "summary": "等待作者调整 lastCapture checkpoint 生命周期。"
+    },
+    {
+      "number": 1856,
+      "title": "session: add portable event window loading",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1856",
+      "summary": "等待作者修复 raw event window loading 和 search-only tool 描述。"
+    },
+    {
+      "number": 1768,
+      "title": "feat(sandbox): add secure Linux sandbox for code execution based on bubblewrap",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1768",
+      "summary": "等待作者修复 no-access glob/path 可 enforce 性。"
+    },
+    {
+      "number": 1884,
+      "title": "feat: implement e2b sandbox Pause/Resume via standard connect endpoint",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1884",
+      "summary": "已有旧 Flash-LHR 线程仍有效，暂不二次审。"
+    },
+    {
+      "number": 1400,
+      "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+      "summary": "需要兼容设计处理 `artifact.Service` breaking change。"
+    }
+  ],
+  "timeline": [
+    {
+      "time": "18:50",
+      "text": "读取 canonical MyCR skill，确认目标仓库、own PR 策略、外部 PR approve/merge 规则和报告归档要求。"
+    },
+    {
+      "time": "19:00",
+      "text": "收集 33 个 open PR 的 metadata、checks、files、review threads，并建立 reviewability ledger。"
+    },
+    {
+      "time": "19:10",
+      "text": "对 #1890/#1888/#1887/#1881/#1880/#1859/#1856/#1768/#1885/#1731 分别执行 xhigh subagent review 或 own-PR audit。"
+    },
+    {
+      "time": "19:20",
+      "text": "向 #1888、#1890、#1859、#1856、#1768 提交共 8 条 inline review comments。"
+    },
+    {
+      "time": "19:25",
+      "text": "修复 own PR #1885 的 streaming timing 顺序问题，运行 llmflow 定向和包级测试，推送 71c64997。"
+    },
+    {
+      "time": "19:28",
+      "text": "approve 并 squash merge #1887、#1881、#1880、#1731；#1731 的 go-apidiff breaking change 经作者确认并复核为预期。"
+    },
+    {
+      "time": "19:35",
+      "text": "处理 #1885 的有效 CodeRabbit nitpick，改造 runner run-error 测试，运行 runner 定向和包级测试，推送 51f4f75f。"
+    },
+    {
+      "time": "19:40",
+      "text": "刷新最终 PR 状态、comments、review threads 和 #1885 CI pending 状态，生成并归档 MyCR 报告。"
+    }
+  ]
+}
