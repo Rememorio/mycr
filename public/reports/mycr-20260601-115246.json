@@ -1,0 +1,3291 @@
+{
+  "title": "MyCR 增量验证执行报告 2026-06-01",
+  "repo": "trpc-group/trpc-agent-go",
+  "generated_at": "2026-06-01T11:52:46+08:00",
+  "overview": "本次执行已经走了增量 planner，但实际没有只审增量：上一份归档报告没有 run_state，planner 按保守策略把 33 个 open PR 全部放进 heavy_review 队列，并且因为上次 run 已超过 24 小时触发 full-sweep 安全网。已在本报告写入完整 run_state 和 checks/comments/review-threads 指纹；用同一 snapshot 做 self-check 时结果为 heavy_review=0、carry_forward=33，说明下一次在无变化且未触发安全 full sweep 时会只看增量变化。",
+  "skill_evolution": "这次验证暴露的重点不是 planner 逻辑，而是历史报告缺状态导致第一轮无法增量。已把本次 run_state 归档，后续 mycr 可以用 lightweight fingerprints 跳过未变化 PR，同时仍会在 head/checks/comments/review threads/readiness 任一变化时重新 heavy review。",
+  "incremental_plan": {
+    "schema_version": 1,
+    "generated_at": "2026-06-01T03:47:33.059Z",
+    "repo": "trpc-group/trpc-agent-go",
+    "previous_generated_at": "2026-05-29T11:36:12.000Z",
+    "overlap_watermark": "2026-05-29T11:26:12.000Z",
+    "force_full_sweep": true,
+    "totals": {
+      "open": 33,
+      "heavy_review": 33,
+      "carry_forward": 0,
+      "closed_or_missing": 0
+    },
+    "queue": [
+      {
+        "number": 1895,
+        "title": "session: align SQL backend timestamps to UTC",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1895",
+        "author": "Rememorio",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "3a728955473d123fee175dc54da60d7c38466b66",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-06-01T03:21:23.000Z"
+      },
+      {
+        "number": 1894,
+        "title": "fix(model/gemini): inject skip validator for cross-provider function calls",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1894",
+        "author": "sks",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "f8c31c4f87d2b028642f5c361969536995d60d12",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-31T20:40:41.000Z"
+      },
+      {
+        "number": 1893,
+        "title": "session: store pgvector timestamps in UTC",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1893",
+        "author": "Rememorio",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "77745e2f38a47fa660648d449c5d6e65a751214e",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-31T08:52:18.000Z"
+      },
+      {
+        "number": 1892,
+        "title": "examples: tidy promptiter examples",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1892",
+        "author": "Flash-LHR",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "772d8b976222c86498c3ddb96cb86804b6bbfb77",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-29T15:36:23.000Z"
+      },
+      {
+        "number": 1891,
+        "title": "WIP: tool/openviking - add OpenViking context tools integration",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1891",
+        "author": "hyprh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "80812d015619d8d48e5c9ac847086d1a153d5f7d",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-30T09:08:10.000Z"
+      },
+      {
+        "number": 1890,
+        "title": "codeexecutor/container: honor RunProgramSpec.CleanEnv in RunProgram",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1890",
+        "author": "bytethm",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "e5ed317eb458be706d65f8724b3015c96deb9a7a",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-29T11:02:25.000Z"
+      },
+      {
+        "number": 1888,
+        "title": "session/summary: add detailed continuity summaries",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1888",
+        "author": "Rememorio",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "b7ba2f2a90c7a2be2d153858bc286b5c4def08b5",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-30T02:41:36.000Z"
+      },
+      {
+        "number": 1886,
+        "title": "tool/agent: restore live session for subagents",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1886",
+        "author": "bytethm",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "5fe3ac90981b5dc61197869ec6e00597a8f98aff",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-29T13:21:33.000Z"
+      },
+      {
+        "number": 1885,
+        "title": "internal/flow: add pre-LLM latency diagnostics",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1885",
+        "author": "WineChord",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "d3387d4b7b29beb033d02b4ecc083092fad6f0d8",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-06-01T02:25:07.000Z"
+      },
+      {
+        "number": 1884,
+        "title": "feat: implement e2b sandbox Pause/Resume via standard connect endpoint",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1884",
+        "author": "AllesOderNicht",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "5ce6e50b2e69cd87c8cd9f817922f7cf190c95bb",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-29T09:22:22.000Z"
+      },
+      {
+        "number": 1865,
+        "title": "session: recover compacted tool results",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1865",
+        "author": "Rememorio",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "04a2ef91259cc95e54d6065f5133dd2310b67181",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-30T12:02:30.000Z"
+      },
+      {
+        "number": 1859,
+        "title": "memory/tencentdb: add TencentDB Agent Memory integration",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1859",
+        "author": "Rememorio",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "dc1a3aca2cda6830a37368e428e0ed4abd725801",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-29T12:54:46.000Z"
+      },
+      {
+        "number": 1857,
+        "title": "memory/mem0: advance checkpoint after successful ingest",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1857",
+        "author": "print-happy",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "22a8ad2330427cc84dd7028678907edb1667175e",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-26T03:40:51.000Z"
+      },
+      {
+        "number": 1856,
+        "title": "session: add portable event window loading",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1856",
+        "author": "Rememorio",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "29f6f0df1c8682ae5c5c86a9b6794d709af336ac",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-29T14:07:18.000Z"
+      },
+      {
+        "number": 1826,
+        "title": "docs: Add FAQ section",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1826",
+        "author": "meichuanyi",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "b8e4772f26c251d8c31a4463ac99fcc15978ee38",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-20T04:41:54.000Z"
+      },
+      {
+        "number": 1801,
+        "title": "docs/mkdocs/zh/fix/agent.md: fix typo",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1801",
+        "author": "GongNanyue",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "ef95fa2eee093cb689d1223a37d9ba32b4693dc4",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-13T14:30:50.000Z"
+      },
+      {
+        "number": 1778,
+        "title": "examples: add RLM (Recursive Language Model) demo",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1778",
+        "author": "hyprh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "9c3b50887c6c2781f084fb44ee24e51f411cc55f",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-13T14:13:33.000Z"
+      },
+      {
+        "number": 1776,
+        "title": "docs: add FAQ section",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1776",
+        "author": "meichuanyi",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "574015831d13b5a27971e0f88f133b515ec750fb",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-11T00:27:20.000Z"
+      },
+      {
+        "number": 1768,
+        "title": "feat(sandbox): add secure Linux sandbox for code execution based on bubblewrap",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1768",
+        "author": "liuzengh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "146124ae49eafad075f9f30e0603d2907b8512b2",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-06-01T02:05:11.000Z"
+      },
+      {
+        "number": 1764,
+        "title": "examples: add graph RAG code search demo and viewer",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1764",
+        "author": "hyprh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "c221a77c5238fccc2dd8cd4eb4070713f365dbec",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-08T23:02:32.000Z"
+      },
+      {
+        "number": 1736,
+        "title": "all: add deferred tool set",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1736",
+        "author": "liuzengh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "384aa5d638c4d54114adeac6718abc281ae18228",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-08T09:43:55.000Z"
+      },
+      {
+        "number": 1710,
+        "title": "a2a: add input schema",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1710",
+        "author": "liuzengh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "1a40571201299e8ff92216494fac4a0a30dc0d03",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-04-28T12:08:51.000Z"
+      },
+      {
+        "number": 1683,
+        "title": "tool/workspaceexec: add workspace-scoped file tools sharing workspace_exec state",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1683",
+        "author": "bytethm",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "fd864a041cf4508ec340b083549a82bf8093a798",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-04-24T04:15:48.000Z"
+      },
+      {
+        "number": 1678,
+        "title": "agent: centralize invoke_agent telemetry in RunWithPlugins",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1678",
+        "author": "liuzengh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "657cf9c0438565fe410933dac8306f9da1f57fc8",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-04-23T10:04:39.000Z"
+      },
+      {
+        "number": 1651,
+        "title": "evolution: add async skill-extraction pipeline for agent self-evolution",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1651",
+        "author": "Rememorio",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "4395738445acf1fdbbb8388f1c9c85f2714f04be",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-29T07:33:33.000Z"
+      },
+      {
+        "number": 1526,
+        "title": "model: add ModelMaxOutputTokens map and ResolveMaxOutputTokens helper",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1526",
+        "author": "sks",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "63836c7d4068ae20352dee9fa94bbcfc8c1774ba",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-04-03T08:04:11.000Z"
+      },
+      {
+        "number": 1509,
+        "title": "[WIP] session: support concurrent queued execution",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1509",
+        "author": "hyprh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "48d5e000c2c37f927faaa7cbe59ed82eb65206e8",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-03-26T06:15:50.000Z"
+      },
+      {
+        "number": 1483,
+        "title": "tool/subtask: add dynamic agent creation tools",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1483",
+        "author": "bytethm",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "d8277c3a2165567209b6a2755a6bdf3db521a83a",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-21T13:06:52.000Z"
+      },
+      {
+        "number": 1460,
+        "title": "improve nano-pdf skill description + add skill-review-and-optimize CI",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1460",
+        "author": "fernandezbaptiste",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "e0b02982cbba6d09ee5963595f3e16f2eb3d1afd",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-03-18T16:54:40.000Z"
+      },
+      {
+        "number": 1446,
+        "title": "feat(a2a): add StructuredOutput → DataPart converter for custom event…",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1446",
+        "author": "SummerLv",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "79557d7bf2c6e666e4488d28cae3024d390fe941",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-03-18T10:44:25.000Z"
+      },
+      {
+        "number": 1400,
+        "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+        "author": "liuzengh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "2e5bf368ac088be0a8c83a9858a5352e2ab80418",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-03-12T16:24:18.000Z"
+      },
+      {
+        "number": 1380,
+        "title": "[WIP] fix(agent): always register InstructionProcessor to support run-time WithInstruction",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1380",
+        "author": "hyprh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "249ba3848afcbec5020784be7f74b658571fd50e",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-03-12T16:25:55.000Z"
+      },
+      {
+        "number": 1183,
+        "title": "internal/util: add util for streaming parsing of JSON returned by LLM",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1183",
+        "author": "hongxiuzhe",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "53b1a26538f27b3fa570fc1768ac2b92ad8815ba",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-03-12T16:36:49.000Z"
+      }
+    ],
+    "heavy_review": [
+      {
+        "number": 1895,
+        "title": "session: align SQL backend timestamps to UTC",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1895",
+        "author": "Rememorio",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "3a728955473d123fee175dc54da60d7c38466b66",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-06-01T03:21:23.000Z"
+      },
+      {
+        "number": 1894,
+        "title": "fix(model/gemini): inject skip validator for cross-provider function calls",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1894",
+        "author": "sks",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "f8c31c4f87d2b028642f5c361969536995d60d12",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-31T20:40:41.000Z"
+      },
+      {
+        "number": 1893,
+        "title": "session: store pgvector timestamps in UTC",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1893",
+        "author": "Rememorio",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "77745e2f38a47fa660648d449c5d6e65a751214e",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-31T08:52:18.000Z"
+      },
+      {
+        "number": 1892,
+        "title": "examples: tidy promptiter examples",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1892",
+        "author": "Flash-LHR",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "772d8b976222c86498c3ddb96cb86804b6bbfb77",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-29T15:36:23.000Z"
+      },
+      {
+        "number": 1891,
+        "title": "WIP: tool/openviking - add OpenViking context tools integration",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1891",
+        "author": "hyprh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "80812d015619d8d48e5c9ac847086d1a153d5f7d",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-30T09:08:10.000Z"
+      },
+      {
+        "number": 1890,
+        "title": "codeexecutor/container: honor RunProgramSpec.CleanEnv in RunProgram",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1890",
+        "author": "bytethm",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "e5ed317eb458be706d65f8724b3015c96deb9a7a",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-29T11:02:25.000Z"
+      },
+      {
+        "number": 1888,
+        "title": "session/summary: add detailed continuity summaries",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1888",
+        "author": "Rememorio",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "b7ba2f2a90c7a2be2d153858bc286b5c4def08b5",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-30T02:41:36.000Z"
+      },
+      {
+        "number": 1886,
+        "title": "tool/agent: restore live session for subagents",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1886",
+        "author": "bytethm",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "5fe3ac90981b5dc61197869ec6e00597a8f98aff",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-29T13:21:33.000Z"
+      },
+      {
+        "number": 1885,
+        "title": "internal/flow: add pre-LLM latency diagnostics",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1885",
+        "author": "WineChord",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "d3387d4b7b29beb033d02b4ecc083092fad6f0d8",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-06-01T02:25:07.000Z"
+      },
+      {
+        "number": 1884,
+        "title": "feat: implement e2b sandbox Pause/Resume via standard connect endpoint",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1884",
+        "author": "AllesOderNicht",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "5ce6e50b2e69cd87c8cd9f817922f7cf190c95bb",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-29T09:22:22.000Z"
+      },
+      {
+        "number": 1865,
+        "title": "session: recover compacted tool results",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1865",
+        "author": "Rememorio",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "04a2ef91259cc95e54d6065f5133dd2310b67181",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-30T12:02:30.000Z"
+      },
+      {
+        "number": 1859,
+        "title": "memory/tencentdb: add TencentDB Agent Memory integration",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1859",
+        "author": "Rememorio",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "dc1a3aca2cda6830a37368e428e0ed4abd725801",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-29T12:54:46.000Z"
+      },
+      {
+        "number": 1857,
+        "title": "memory/mem0: advance checkpoint after successful ingest",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1857",
+        "author": "print-happy",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "22a8ad2330427cc84dd7028678907edb1667175e",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-26T03:40:51.000Z"
+      },
+      {
+        "number": 1856,
+        "title": "session: add portable event window loading",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1856",
+        "author": "Rememorio",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "29f6f0df1c8682ae5c5c86a9b6794d709af336ac",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-29T14:07:18.000Z"
+      },
+      {
+        "number": 1826,
+        "title": "docs: Add FAQ section",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1826",
+        "author": "meichuanyi",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "b8e4772f26c251d8c31a4463ac99fcc15978ee38",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-20T04:41:54.000Z"
+      },
+      {
+        "number": 1801,
+        "title": "docs/mkdocs/zh/fix/agent.md: fix typo",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1801",
+        "author": "GongNanyue",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "ef95fa2eee093cb689d1223a37d9ba32b4693dc4",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-13T14:30:50.000Z"
+      },
+      {
+        "number": 1778,
+        "title": "examples: add RLM (Recursive Language Model) demo",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1778",
+        "author": "hyprh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "9c3b50887c6c2781f084fb44ee24e51f411cc55f",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-13T14:13:33.000Z"
+      },
+      {
+        "number": 1776,
+        "title": "docs: add FAQ section",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1776",
+        "author": "meichuanyi",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "574015831d13b5a27971e0f88f133b515ec750fb",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-11T00:27:20.000Z"
+      },
+      {
+        "number": 1768,
+        "title": "feat(sandbox): add secure Linux sandbox for code execution based on bubblewrap",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1768",
+        "author": "liuzengh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "146124ae49eafad075f9f30e0603d2907b8512b2",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-06-01T02:05:11.000Z"
+      },
+      {
+        "number": 1764,
+        "title": "examples: add graph RAG code search demo and viewer",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1764",
+        "author": "hyprh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "c221a77c5238fccc2dd8cd4eb4070713f365dbec",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-08T23:02:32.000Z"
+      },
+      {
+        "number": 1736,
+        "title": "all: add deferred tool set",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1736",
+        "author": "liuzengh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "384aa5d638c4d54114adeac6718abc281ae18228",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-08T09:43:55.000Z"
+      },
+      {
+        "number": 1710,
+        "title": "a2a: add input schema",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1710",
+        "author": "liuzengh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "1a40571201299e8ff92216494fac4a0a30dc0d03",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-04-28T12:08:51.000Z"
+      },
+      {
+        "number": 1683,
+        "title": "tool/workspaceexec: add workspace-scoped file tools sharing workspace_exec state",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1683",
+        "author": "bytethm",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "fd864a041cf4508ec340b083549a82bf8093a798",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-04-24T04:15:48.000Z"
+      },
+      {
+        "number": 1678,
+        "title": "agent: centralize invoke_agent telemetry in RunWithPlugins",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1678",
+        "author": "liuzengh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "657cf9c0438565fe410933dac8306f9da1f57fc8",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-04-23T10:04:39.000Z"
+      },
+      {
+        "number": 1651,
+        "title": "evolution: add async skill-extraction pipeline for agent self-evolution",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1651",
+        "author": "Rememorio",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "4395738445acf1fdbbb8388f1c9c85f2714f04be",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-29T07:33:33.000Z"
+      },
+      {
+        "number": 1526,
+        "title": "model: add ModelMaxOutputTokens map and ResolveMaxOutputTokens helper",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1526",
+        "author": "sks",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "63836c7d4068ae20352dee9fa94bbcfc8c1774ba",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-04-03T08:04:11.000Z"
+      },
+      {
+        "number": 1509,
+        "title": "[WIP] session: support concurrent queued execution",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1509",
+        "author": "hyprh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "48d5e000c2c37f927faaa7cbe59ed82eb65206e8",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-03-26T06:15:50.000Z"
+      },
+      {
+        "number": 1483,
+        "title": "tool/subtask: add dynamic agent creation tools",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1483",
+        "author": "bytethm",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "d8277c3a2165567209b6a2755a6bdf3db521a83a",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-05-21T13:06:52.000Z"
+      },
+      {
+        "number": 1460,
+        "title": "improve nano-pdf skill description + add skill-review-and-optimize CI",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1460",
+        "author": "fernandezbaptiste",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "e0b02982cbba6d09ee5963595f3e16f2eb3d1afd",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-03-18T16:54:40.000Z"
+      },
+      {
+        "number": 1446,
+        "title": "feat(a2a): add StructuredOutput → DataPart converter for custom event…",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1446",
+        "author": "SummerLv",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "79557d7bf2c6e666e4488d28cae3024d390fe941",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-03-18T10:44:25.000Z"
+      },
+      {
+        "number": 1400,
+        "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+        "author": "liuzengh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "2e5bf368ac088be0a8c83a9858a5352e2ab80418",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-03-12T16:24:18.000Z"
+      },
+      {
+        "number": 1380,
+        "title": "[WIP] fix(agent): always register InstructionProcessor to support run-time WithInstruction",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1380",
+        "author": "hyprh",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "249ba3848afcbec5020784be7f74b658571fd50e",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-03-12T16:25:55.000Z"
+      },
+      {
+        "number": 1183,
+        "title": "internal/util: add util for streaming parsing of JSON returned by LLM",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1183",
+        "author": "hongxiuzhe",
+        "action": "heavy_review",
+        "reasons": [
+          "no_previous_state"
+        ],
+        "head_sha": "53b1a26538f27b3fa570fc1768ac2b92ad8815ba",
+        "previous_head_sha": "",
+        "previous_bucket": "",
+        "previous_last_action": "",
+        "latest_activity_at": "2026-03-12T16:36:49.000Z"
+      }
+    ],
+    "carry_forward": [],
+    "closed_or_missing": [],
+    "self_check": {
+      "totals": {
+        "open": 33,
+        "heavy_review": 0,
+        "carry_forward": 33,
+        "closed_or_missing": 0
+      },
+      "force_full_sweep": false,
+      "reason": "same enriched snapshot against this run state"
+    }
+  },
+  "run_state": {
+    "schema_version": 1,
+    "generated_at": "2026-06-01T11:52:46+08:00",
+    "run_started_at": "2026-06-01T11:52:46+08:00",
+    "repo": "trpc-group/trpc-agent-go",
+    "overlap_watermark": "2026-05-29T11:26:12.000Z",
+    "pull_requests": {
+      "1183": {
+        "number": 1183,
+        "title": "internal/util: add util for streaming parsing of JSON returned by LLM",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1183",
+        "author": "hongxiuzhe",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "json-stream-parse",
+        "head_sha": "53b1a26538f27b3fa570fc1768ac2b92ad8815ba",
+        "updated_at": "2026-03-12T16:36:49.000Z",
+        "latest_activity_at": "2026-03-12T16:36:49.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "62b70adbc0dd236f01c43b68f03430e4cac256e79727e5e59a8a60f732689159",
+        "review_threads_fingerprint": "92dcecec57ef72105713e8fbcd07389c9ab72af800d2e2e2bde85e8b97af495d",
+        "comments_fingerprint": "d1250ea38b0c09f3b49b80379db6fac9c93cc8993abfb1d34a174774efb5766a",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "53b1a26538f27b3fa570fc1768ac2b92ad8815ba",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "CLAAssistant: FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/21628484500/job/62334701007"
+          },
+          {
+            "kind": "ci",
+            "summary": "CLAAssistant: FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/23011748334/job/66823949328"
+          },
+          {
+            "kind": "ci",
+            "summary": "CLAAssistant: FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/23012436475/job/66826471051"
+          },
+          {
+            "kind": "ci",
+            "summary": "lint: FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/21628485211/job/62334702973"
+          },
+          {
+            "kind": "ci",
+            "summary": "lint: FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/23011748924/job/66823951471"
+          },
+          {
+            "kind": "ci",
+            "summary": "lint: FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/23012436298/job/66826470503"
+          },
+          {
+            "kind": "ci",
+            "summary": "codecov/patch: FAILURE",
+            "url": "https://app.codecov.io/gh/trpc-group/trpc-agent-go/pull/1183"
+          }
+        ]
+      },
+      "1380": {
+        "number": 1380,
+        "title": "[WIP] fix(agent): always register InstructionProcessor to support run-time WithInstruction",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1380",
+        "author": "hyprh",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": true,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "fix/instruction-processor-always-register",
+        "head_sha": "249ba3848afcbec5020784be7f74b658571fd50e",
+        "updated_at": "2026-03-12T16:25:55.000Z",
+        "latest_activity_at": "2026-03-12T16:25:55.000Z",
+        "mergeable": "CONFLICTING",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "b03f8f03efc6a91bb6c20da684954bc979882dc56ada85157885f3bd6344f4d3",
+        "review_threads_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "comments_fingerprint": "13552c6cfdacb05333bbfa16136925ad2acff7e8450811b0615116939548a48d",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "249ba3848afcbec5020784be7f74b658571fd50e",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": []
+      },
+      "1400": {
+        "number": 1400,
+        "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+        "author": "liuzengh",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "artfict-interface",
+        "head_sha": "2e5bf368ac088be0a8c83a9858a5352e2ab80418",
+        "updated_at": "2026-03-12T16:24:18.000Z",
+        "latest_activity_at": "2026-03-12T16:24:18.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "8e7734f6a6bfc021d5a04beef028b73b05072ed5fb04a18a9257174e8c719165",
+        "review_threads_fingerprint": "dad96cff0cdedf5fa8f6482fafbee673683c1305912cd78961778853ce595aa1",
+        "comments_fingerprint": "069ebdf144acb0ca16fc6db700eccd4b6111b677fcce605bbb761d400632f64c",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "2e5bf368ac088be0a8c83a9858a5352e2ab80418",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "go-apidiff: FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/23000148213/job/66790396523"
+          },
+          {
+            "kind": "ci",
+            "summary": "go-apidiff: FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/23011691221/job/66823732231"
+          },
+          {
+            "kind": "ci",
+            "summary": "go-apidiff: FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/23012343072/job/66826132480"
+          },
+          {
+            "kind": "ci",
+            "summary": "codecov/patch: FAILURE",
+            "url": "https://app.codecov.io/gh/trpc-group/trpc-agent-go/pull/1400"
+          }
+        ]
+      },
+      "1446": {
+        "number": 1446,
+        "title": "feat(a2a): add StructuredOutput → DataPart converter for custom event…",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1446",
+        "author": "SummerLv",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "feature/datapart_custom_message",
+        "head_sha": "79557d7bf2c6e666e4488d28cae3024d390fe941",
+        "updated_at": "2026-03-18T10:44:25.000Z",
+        "latest_activity_at": "2026-03-18T10:44:25.000Z",
+        "mergeable": "CONFLICTING",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "cf99b27657637a764d7be57409a743c5d2ab4040992e69ba009ff4be8a01307b",
+        "review_threads_fingerprint": "fa5eb30478d53a4af41ebceb1c477f7b7ab6ef8ffebbe8ce661988d610765a94",
+        "comments_fingerprint": "cc2efd824326e009a523859bb8b14152cd15a897fde6a27ede4d8e947178311e",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "79557d7bf2c6e666e4488d28cae3024d390fe941",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "CLAAssistant: FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/23231644959/job/67526257200"
+          },
+          {
+            "kind": "ci",
+            "summary": "GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST: FAILURE",
+            "url": "https://codecc.woa.com/codecc/GITHUB_983515771/task/list?pipelineId=p-b73072596edb4474a19815ef3e8e1c01&buildId=b-f53636524c0c462bbdd3c375549e3a24&from=check_run"
+          },
+          {
+            "kind": "ci",
+            "summary": "codecov/patch: FAILURE",
+            "url": "https://app.codecov.io/gh/trpc-group/trpc-agent-go/pull/1446"
+          }
+        ]
+      },
+      "1460": {
+        "number": 1460,
+        "title": "improve nano-pdf skill description + add skill-review-and-optimize CI",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1460",
+        "author": "fernandezbaptiste",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "improve-nano-pdf-skill",
+        "head_sha": "e0b02982cbba6d09ee5963595f3e16f2eb3d1afd",
+        "updated_at": "2026-03-18T16:54:40.000Z",
+        "latest_activity_at": "2026-03-18T16:54:40.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "3dd608ba5f51a3aa33002333b458b8cf7956f7613a29216cfabdc9feddb35c25",
+        "review_threads_fingerprint": "e61154f57c5dc552220e6a2046be1240f8eaebcc1f00256fba57979146a750c9",
+        "comments_fingerprint": "9d9bd0b4dbc99fa755015adc6806618735dcf34642410baa54434885566505b2",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "e0b02982cbba6d09ee5963595f3e16f2eb3d1afd",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST: FAILURE",
+            "url": "https://codecc.woa.com/codecc/GITHUB_983515771/task/list?pipelineId=p-b73072596edb4474a19815ef3e8e1c01&buildId=b-08471d11c71543d4b75107205ba05c1d&from=check_run"
+          }
+        ]
+      },
+      "1483": {
+        "number": 1483,
+        "title": "tool/subtask: add dynamic agent creation tools",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1483",
+        "author": "bytethm",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "feat/spawn-tools",
+        "head_sha": "d8277c3a2165567209b6a2755a6bdf3db521a83a",
+        "updated_at": "2026-05-21T13:06:52.000Z",
+        "latest_activity_at": "2026-05-21T13:06:52.000Z",
+        "mergeable": "CONFLICTING",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "abeed762413c254e63f42013889f40da45f1fea95bfc8ad64a5326f0fd8c092d",
+        "review_threads_fingerprint": "3d561e53f56c836b137dcd2c3d5d267bd1bdd63198e0b96e5e09517fec009f9c",
+        "comments_fingerprint": "7cddbffd2edfdb488cd6e4f195241763c0a8d7fd610ce3839268dc28260bfe61",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "d8277c3a2165567209b6a2755a6bdf3db521a83a",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": []
+      },
+      "1509": {
+        "number": 1509,
+        "title": "[WIP] session: support concurrent queued execution",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1509",
+        "author": "hyprh",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": true,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "forksess",
+        "head_sha": "48d5e000c2c37f927faaa7cbe59ed82eb65206e8",
+        "updated_at": "2026-03-26T06:15:50.000Z",
+        "latest_activity_at": "2026-03-26T06:15:50.000Z",
+        "mergeable": "CONFLICTING",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "15a5903b8491ad64e594718a8f9200295e7fe73fd6a8e5b05a9a5162dcbd6208",
+        "review_threads_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "comments_fingerprint": "1fdaf2ee9bbf698ea14e61b6001b5574bc27226e2af20d0de74d6790db4a2b65",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "48d5e000c2c37f927faaa7cbe59ed82eb65206e8",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "test@PULL_REQUEST: FAILURE",
+            "url": "https://devops.woa.com/console/pipeline/pcgtrpcproject/p-837b330efe0f44cf94ee6e2eec36fd03/detail/b-cd7cf040a6a5407d88e4eebf75e90d0d"
+          }
+        ]
+      },
+      "1526": {
+        "number": 1526,
+        "title": "model: add ModelMaxOutputTokens map and ResolveMaxOutputTokens helper",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1526",
+        "author": "sks",
+        "state": "OPEN",
+        "is_draft": true,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "feature/model-max-output-tokens",
+        "head_sha": "63836c7d4068ae20352dee9fa94bbcfc8c1774ba",
+        "updated_at": "2026-04-03T08:04:11.000Z",
+        "latest_activity_at": "2026-04-03T08:04:11.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "b6b834751225f2c6eb6c991481fcbb1665a69e4fcd855dad30ab97ba549c4e88",
+        "review_threads_fingerprint": "6ca75dc388a630a7da92884260c02cef34cb4682cd9e2728ee1e5459b099b7b5",
+        "comments_fingerprint": "2e14cafc6d3e1f5c51fc9755cceb835c859574986e68c9645e8b1c2cfdc8d5a0",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "63836c7d4068ae20352dee9fa94bbcfc8c1774ba",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "codecov/patch: FAILURE",
+            "url": "https://app.codecov.io/gh/trpc-group/trpc-agent-go/pull/1526"
+          }
+        ]
+      },
+      "1651": {
+        "number": 1651,
+        "title": "evolution: add async skill-extraction pipeline for agent self-evolution",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1651",
+        "author": "Rememorio",
+        "state": "OPEN",
+        "is_draft": true,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "evolution_memory",
+        "head_sha": "4395738445acf1fdbbb8388f1c9c85f2714f04be",
+        "updated_at": "2026-05-29T07:33:33.000Z",
+        "latest_activity_at": "2026-05-29T07:33:33.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "d9b687e485bc4f03e357e79fdbe8bc840902f4331b0e3a7ad2c92b8401d20618",
+        "review_threads_fingerprint": "2843df93e91ea995f47954e9a69beca9e21fe3ffae2cb438cfe83b354982ef45",
+        "comments_fingerprint": "5db58568b3b2a7258f7c31caef6d6506d273daa4be28dd508b434d26a4ddfe73",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "4395738445acf1fdbbb8388f1c9c85f2714f04be",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": []
+      },
+      "1678": {
+        "number": 1678,
+        "title": "agent: centralize invoke_agent telemetry in RunWithPlugins",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1678",
+        "author": "liuzengh",
+        "state": "OPEN",
+        "is_draft": true,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "feat/invoke-agent-recorder-and-callback-docs",
+        "head_sha": "657cf9c0438565fe410933dac8306f9da1f57fc8",
+        "updated_at": "2026-04-23T10:04:39.000Z",
+        "latest_activity_at": "2026-04-23T10:04:39.000Z",
+        "mergeable": "CONFLICTING",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "f8719de3692b0bbbb9e0ef2e3aa3a77d8bb09e888f07cb4eaa3c37b40ef76ba4",
+        "review_threads_fingerprint": "cd47223b478389ccdf26d96ea05226b5ebfd666b95a8ef26f0f6e0bdc49c3552",
+        "comments_fingerprint": "3f4d96ffa297062a499c287d92d1429bdaf2d2aa861bbf982c8c205738b7dfba",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "657cf9c0438565fe410933dac8306f9da1f57fc8",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "check go mod tidy: FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673219531"
+          },
+          {
+            "kind": "ci",
+            "summary": "go test (agent/dify/go.mod): FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673387653"
+          },
+          {
+            "kind": "ci",
+            "summary": "go test (agent/n8n/go.mod): FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673387612"
+          },
+          {
+            "kind": "ci",
+            "summary": "go test (memory/mysql/go.mod): FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673387668"
+          },
+          {
+            "kind": "ci",
+            "summary": "go test (memory/mysqlvec/go.mod): FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673387738"
+          },
+          {
+            "kind": "ci",
+            "summary": "go test (memory/pgvector/go.mod): FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673387699"
+          },
+          {
+            "kind": "ci",
+            "summary": "go test (memory/postgres/go.mod): FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673387746"
+          },
+          {
+            "kind": "ci",
+            "summary": "go test (memory/redis/go.mod): FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673387791"
+          },
+          {
+            "kind": "ci",
+            "summary": "go test (memory/sqlite/go.mod): FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673387713"
+          },
+          {
+            "kind": "ci",
+            "summary": "go test (memory/sqlitevec/go.mod): FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673387759"
+          },
+          {
+            "kind": "ci",
+            "summary": "coverage: SKIPPED",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72675792547"
+          }
+        ]
+      },
+      "1683": {
+        "number": 1683,
+        "title": "tool/workspaceexec: add workspace-scoped file tools sharing workspace_exec state",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1683",
+        "author": "bytethm",
+        "state": "OPEN",
+        "is_draft": true,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "workspaceexec-file-tools",
+        "head_sha": "fd864a041cf4508ec340b083549a82bf8093a798",
+        "updated_at": "2026-04-24T04:15:48.000Z",
+        "latest_activity_at": "2026-04-24T04:15:48.000Z",
+        "mergeable": "CONFLICTING",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "57de6f87f59ca655c0a24856e7a30baf74ce7b18df1160057eca3e547d8ac81d",
+        "review_threads_fingerprint": "90c972b471b39a2dc0d0f6ed6b8a696530631895a60bf4abbba2fd2afecfab53",
+        "comments_fingerprint": "f0f60d3381ca0868a5457049a138cf0c9edb85ebf98c6f1fa8f6b855707ac20a",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "fd864a041cf4508ec340b083549a82bf8093a798",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "lint: FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24817886004/job/72635989932"
+          },
+          {
+            "kind": "ci",
+            "summary": "codecov/patch: FAILURE",
+            "url": "https://app.codecov.io/gh/trpc-group/trpc-agent-go/pull/1683"
+          }
+        ]
+      },
+      "1710": {
+        "number": 1710,
+        "title": "a2a: add input schema",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1710",
+        "author": "liuzengh",
+        "state": "OPEN",
+        "is_draft": true,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "qa-main",
+        "head_sha": "1a40571201299e8ff92216494fac4a0a30dc0d03",
+        "updated_at": "2026-04-28T12:08:51.000Z",
+        "latest_activity_at": "2026-04-28T12:08:51.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "f94c0958a79955cd654032e4243c2c92adfcf6beb80502c968fca25819973ff5",
+        "review_threads_fingerprint": "cc6c42a6353aacab3095a2210543dd1d011be183d85e69190c83b735132db34a",
+        "comments_fingerprint": "86c9b0e653ad406e782290ff9ce8cd17c7f9606ebbb05681b81d30f935d78176",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "1a40571201299e8ff92216494fac4a0a30dc0d03",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": []
+      },
+      "1736": {
+        "number": 1736,
+        "title": "all: add deferred tool set",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1736",
+        "author": "liuzengh",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "deferred-tool-set",
+        "head_sha": "384aa5d638c4d54114adeac6718abc281ae18228",
+        "updated_at": "2026-05-08T09:43:55.000Z",
+        "latest_activity_at": "2026-05-08T09:43:55.000Z",
+        "mergeable": "CONFLICTING",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "43d0f8b2ae29a8fc0d74e513b4f90e9e3f4f5876460684a7cfb1877b9ee05eb8",
+        "review_threads_fingerprint": "f7db66967a5e6d50f712d75cee11f6b42b2acc28203e8a90f5be3ec387aacd0d",
+        "comments_fingerprint": "bd27b41014b29d2f470f058897a10c22b43affa422a585c1ada8ace609b332e0",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "384aa5d638c4d54114adeac6718abc281ae18228",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "test@PULL_REQUEST: FAILURE",
+            "url": "https://devops.woa.com/console/pipeline/pcgtrpcproject/p-837b330efe0f44cf94ee6e2eec36fd03/detail/b-16bf238ec83841f4951849fbb26fbf5b"
+          }
+        ]
+      },
+      "1764": {
+        "number": 1764,
+        "title": "examples: add graph RAG code search demo and viewer",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1764",
+        "author": "hyprh",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "knowledge-graphrag-examples",
+        "head_sha": "c221a77c5238fccc2dd8cd4eb4070713f365dbec",
+        "updated_at": "2026-05-08T23:02:32.000Z",
+        "latest_activity_at": "2026-05-08T23:02:32.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "492d1b6434c78e004eb58adaa2d0ff4de6aaca7346659c30585092fd313e06d7",
+        "review_threads_fingerprint": "e081bb2b24323e6ededc3c827a4eaf0cc20ceb87d5ce3e9be840ce154cc1d876",
+        "comments_fingerprint": "36b3f4b8e7dadac06ca77c996155b4e9d0732304039ced2eeb64c9f08c1da6b6",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "c221a77c5238fccc2dd8cd4eb4070713f365dbec",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "check examples (1/4): FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25546096213/job/74982582483"
+          },
+          {
+            "kind": "ci",
+            "summary": "check examples build script (1/4): FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25546096213/job/74982582490"
+          }
+        ]
+      },
+      "1768": {
+        "number": 1768,
+        "title": "feat(sandbox): add secure Linux sandbox for code execution based on bubblewrap",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1768",
+        "author": "liuzengh",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "os-sanbox-linux",
+        "head_sha": "146124ae49eafad075f9f30e0603d2907b8512b2",
+        "updated_at": "2026-06-01T02:05:11.000Z",
+        "latest_activity_at": "2026-06-01T02:05:11.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "CHANGES_REQUESTED",
+        "checks_fingerprint": "8d8b43ccf0002f8d710b9eb7369b4b890c066ec4538d7891aab4b848c2fdba09",
+        "review_threads_fingerprint": "6c790194274731a3982cd1a689b16aeb782788c33da6a5a95cd1068f9da182c5",
+        "comments_fingerprint": "38b2d68ba98653510702c1968c12bc2c75a55a719373a2e2b354c5dc20840af8",
+        "ledger_bucket": "blocked",
+        "last_action": "blocked",
+        "last_heavy_reviewed_head_sha": "146124ae49eafad075f9f30e0603d2907b8512b2",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "human_review",
+            "summary": "6 current unresolved human review thread(s) remain.",
+            "verification": "latest review-thread refresh found 6 current unresolved human thread(s)."
+          }
+        ]
+      },
+      "1776": {
+        "number": 1776,
+        "title": "docs: add FAQ section",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1776",
+        "author": "meichuanyi",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "docs-faq-1778459031",
+        "head_sha": "574015831d13b5a27971e0f88f133b515ec750fb",
+        "updated_at": "2026-05-11T00:27:20.000Z",
+        "latest_activity_at": "2026-05-11T00:27:20.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "74a290252dac2a32da69e02f1e34f38fe21aed646924eab6c73587ff6b9d263e",
+        "review_threads_fingerprint": "ca8acc62d3ccca59afc779e94aae9dfdb4e3dc6f69c100ef8ffaf3c9c9aba731",
+        "comments_fingerprint": "8e75fa92a2ae58a0b30367d814df187fb23935b41db4839157c339fb39aaeb48",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "574015831d13b5a27971e0f88f133b515ec750fb",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "CLAAssistant: FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25643940693/job/75269098706"
+          },
+          {
+            "kind": "ci",
+            "summary": "go test (tool/claudecode/go.mod): FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25643940731/job/75269112915"
+          },
+          {
+            "kind": "ci",
+            "summary": "coverage: SKIPPED",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25643940731/job/75269674425"
+          }
+        ]
+      },
+      "1778": {
+        "number": 1778,
+        "title": "examples: add RLM (Recursive Language Model) demo",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1778",
+        "author": "hyprh",
+        "state": "OPEN",
+        "is_draft": true,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "hyprh/examples-rlm-recursive-language-model",
+        "head_sha": "9c3b50887c6c2781f084fb44ee24e51f411cc55f",
+        "updated_at": "2026-05-13T14:13:33.000Z",
+        "latest_activity_at": "2026-05-13T14:13:33.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "b76c6d6e46b502165eddf1d8ba0ad9daa78495e2a275e246923bb13dc7f87c70",
+        "review_threads_fingerprint": "4d0ac16710f993b6dc689f950b78d001d1d088e9cda179280abc23299a42a32c",
+        "comments_fingerprint": "ad5bc13c78f25d62a7a2a18fd4a7b3bbdfb2381e45478bddbe576076747206bc",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "9c3b50887c6c2781f084fb44ee24e51f411cc55f",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "check examples (4/4): FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25799479098/job/75785246777"
+          },
+          {
+            "kind": "ci",
+            "summary": "check examples (4/4): FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25799477617/job/75785241348"
+          },
+          {
+            "kind": "ci",
+            "summary": "go-apidiff: SKIPPED",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25799477617/job/75785241841"
+          },
+          {
+            "kind": "ci",
+            "summary": "go test (openclaw/go.mod): FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25799479098/job/75789813879"
+          },
+          {
+            "kind": "ci",
+            "summary": "coverage: SKIPPED",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25799479098/job/75799934195"
+          }
+        ]
+      },
+      "1801": {
+        "number": 1801,
+        "title": "docs/mkdocs/zh/fix/agent.md: fix typo",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1801",
+        "author": "GongNanyue",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "patch-1",
+        "head_sha": "ef95fa2eee093cb689d1223a37d9ba32b4693dc4",
+        "updated_at": "2026-05-13T14:30:50.000Z",
+        "latest_activity_at": "2026-05-13T14:30:50.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "5edb116aa3c1fbd00bbb8b473afce86c521c12fb9bb496c80b794448a20f1327",
+        "review_threads_fingerprint": "9e058a524dc2ac4f4a885593dfb0afebbda235ab15e3d53199d033f7f16bed54",
+        "comments_fingerprint": "9dfc8dd283f3ef77c8c7edc76a1037cc999ae0e0f8e74d5b663c905ed998ab77",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "ef95fa2eee093cb689d1223a37d9ba32b4693dc4",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "CLAAssistant: FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25804853890/job/75804601828"
+          },
+          {
+            "kind": "ci",
+            "summary": "go test (openclaw/go.mod): FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25804853410/job/75805702757"
+          },
+          {
+            "kind": "ci",
+            "summary": "coverage: SKIPPED",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25804853410/job/75809308258"
+          }
+        ]
+      },
+      "1826": {
+        "number": 1826,
+        "title": "docs: Add FAQ section",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1826",
+        "author": "meichuanyi",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "docs/add-faq-section",
+        "head_sha": "b8e4772f26c251d8c31a4463ac99fcc15978ee38",
+        "updated_at": "2026-05-20T04:41:54.000Z",
+        "latest_activity_at": "2026-05-20T04:41:54.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "145974fc26c2b4217fb5ebc7a1f9106723c7936cb735f619d315f1013862788a",
+        "review_threads_fingerprint": "368070bafefe2b0091a19c5e94b4ee2a97bea40dc9eb222b57a29283dd9dd2e8",
+        "comments_fingerprint": "51764bd955a18f3df549cf497a200f331e1b7894b9036c9287979ba12dddcb67",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "b8e4772f26c251d8c31a4463ac99fcc15978ee38",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "CLAAssistant: FAILURE",
+            "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/26139008730/job/76880322264"
+          }
+        ]
+      },
+      "1856": {
+        "number": 1856,
+        "title": "session: add portable event window loading",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1856",
+        "author": "Rememorio",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "session_window_service",
+        "head_sha": "29f6f0df1c8682ae5c5c86a9b6794d709af336ac",
+        "updated_at": "2026-05-29T14:07:18.000Z",
+        "latest_activity_at": "2026-05-29T14:07:18.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "776e57529793e67fa366108ca74eff417ded5b8dc2e331319b7920e48128ff4a",
+        "review_threads_fingerprint": "3c93d64b962ceb77582948261a69a31b9b384bc62fe3f78eb61c980b8955caff",
+        "comments_fingerprint": "e546add495f2034a40d69a7f35c7c7d3c2eb27b33b85abf3e8075a8c349a82a9",
+        "ledger_bucket": "blocked",
+        "last_action": "blocked",
+        "last_heavy_reviewed_head_sha": "29f6f0df1c8682ae5c5c86a9b6794d709af336ac",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "human_review",
+            "summary": "4 current unresolved human review thread(s) remain.",
+            "verification": "latest review-thread refresh found 4 current unresolved human thread(s)."
+          }
+        ]
+      },
+      "1857": {
+        "number": 1857,
+        "title": "memory/mem0: advance checkpoint after successful ingest",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1857",
+        "author": "print-happy",
+        "state": "OPEN",
+        "is_draft": true,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "fix/mem0-ingest-checkpoint",
+        "head_sha": "22a8ad2330427cc84dd7028678907edb1667175e",
+        "updated_at": "2026-05-26T03:40:51.000Z",
+        "latest_activity_at": "2026-05-26T03:40:51.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "8d8b43ccf0002f8d710b9eb7369b4b890c066ec4538d7891aab4b848c2fdba09",
+        "review_threads_fingerprint": "cae4aac06dc5708290f737625cb75ab945a1c0da21535e75f19c5a3344d37faa",
+        "comments_fingerprint": "c92cd2085f3cd44611caa47a54bf36381baa4e09c464815e0230e87c94fb48bd",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "22a8ad2330427cc84dd7028678907edb1667175e",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": []
+      },
+      "1859": {
+        "number": 1859,
+        "title": "memory/tencentdb: add TencentDB Agent Memory integration",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1859",
+        "author": "Rememorio",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "tencentdb_memory_integration",
+        "head_sha": "dc1a3aca2cda6830a37368e428e0ed4abd725801",
+        "updated_at": "2026-05-29T12:54:46.000Z",
+        "latest_activity_at": "2026-05-29T12:54:46.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "b2476affdd969bb69e70623dee518900c753a31f97a547ab4c66cae5392bb2c4",
+        "review_threads_fingerprint": "d102ddaee3562f73b26515934715ee23d62ce570b5a58635c2df1efa9215c3af",
+        "comments_fingerprint": "e95634e605c912e4d5fa022865e8bf1711c74872115b571cde1788f7c8c63a9a",
+        "ledger_bucket": "blocked",
+        "last_action": "blocked",
+        "last_heavy_reviewed_head_sha": "dc1a3aca2cda6830a37368e428e0ed4abd725801",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "human_review",
+            "summary": "2 current unresolved human review thread(s) remain.",
+            "verification": "latest review-thread refresh found 2 current unresolved human thread(s)."
+          }
+        ]
+      },
+      "1865": {
+        "number": 1865,
+        "title": "session: recover compacted tool results",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1865",
+        "author": "Rememorio",
+        "state": "OPEN",
+        "is_draft": true,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "tool_result_recovery_refs_window",
+        "head_sha": "04a2ef91259cc95e54d6065f5133dd2310b67181",
+        "updated_at": "2026-05-30T12:02:30.000Z",
+        "latest_activity_at": "2026-05-30T12:02:30.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "b2476affdd969bb69e70623dee518900c753a31f97a547ab4c66cae5392bb2c4",
+        "review_threads_fingerprint": "1b9c229adcd52a7907708f1587cd1d5582155049b9261666fde4f3a8a3094c00",
+        "comments_fingerprint": "af4ac6f601c408c202ddba72bb7d97fa988609e9005c3adbc7e9bdb317138ca9",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "04a2ef91259cc95e54d6065f5133dd2310b67181",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": []
+      },
+      "1884": {
+        "number": 1884,
+        "title": "feat: implement e2b sandbox Pause/Resume via standard connect endpoint",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1884",
+        "author": "AllesOderNicht",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "feat/e2b-pause-resume-connect",
+        "head_sha": "5ce6e50b2e69cd87c8cd9f817922f7cf190c95bb",
+        "updated_at": "2026-05-29T09:22:22.000Z",
+        "latest_activity_at": "2026-05-29T09:22:22.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "d9b687e485bc4f03e357e79fdbe8bc840902f4331b0e3a7ad2c92b8401d20618",
+        "review_threads_fingerprint": "fadcb38b2cdba8a7eca3ac11be2f1fd52aa03fd3b35856b24f6c233a25ee58ab",
+        "comments_fingerprint": "ebfc73b848f7a5fd100f7e7a29b5a9debb91da9aeb8c654df79c29edd032f94e",
+        "ledger_bucket": "blocked",
+        "last_action": "blocked",
+        "last_heavy_reviewed_head_sha": "5ce6e50b2e69cd87c8cd9f817922f7cf190c95bb",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "human_review",
+            "summary": "2 current unresolved human review thread(s) remain.",
+            "verification": "latest review-thread refresh found 2 current unresolved human thread(s)."
+          }
+        ]
+      },
+      "1885": {
+        "number": 1885,
+        "title": "internal/flow: add pre-LLM latency diagnostics",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1885",
+        "author": "WineChord",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "latency_trace_debug_0528",
+        "head_sha": "d3387d4b7b29beb033d02b4ecc083092fad6f0d8",
+        "updated_at": "2026-06-01T02:25:07.000Z",
+        "latest_activity_at": "2026-06-01T02:25:07.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "b2476affdd969bb69e70623dee518900c753a31f97a547ab4c66cae5392bb2c4",
+        "review_threads_fingerprint": "411708cad0e2d927c297fe425b687d453a058f5e79b72cba0e01a58674e0527e",
+        "comments_fingerprint": "a7e3540ffec24d8d9f0cde0842660374856bd2ff0deb169f3497d074de1d8e56",
+        "ledger_bucket": "maintained",
+        "last_action": "maintained",
+        "last_heavy_reviewed_head_sha": "d3387d4b7b29beb033d02b4ecc083092fad6f0d8",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": []
+      },
+      "1886": {
+        "number": 1886,
+        "title": "tool/agent: restore live session for subagents",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1886",
+        "author": "bytethm",
+        "state": "OPEN",
+        "is_draft": true,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "fix-agent-tool-live-session",
+        "head_sha": "5fe3ac90981b5dc61197869ec6e00597a8f98aff",
+        "updated_at": "2026-05-29T13:21:33.000Z",
+        "latest_activity_at": "2026-05-29T13:21:33.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "d9b687e485bc4f03e357e79fdbe8bc840902f4331b0e3a7ad2c92b8401d20618",
+        "review_threads_fingerprint": "fbf05ea6df0fd61328bf9cb2586ae2c1a42a80aa5743905a7365136ad69a8f9e",
+        "comments_fingerprint": "093d7f638d12c779e937eeb17104fbac1c98ad8d405fba935295733465168762",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "5fe3ac90981b5dc61197869ec6e00597a8f98aff",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": []
+      },
+      "1888": {
+        "number": 1888,
+        "title": "session/summary: add detailed continuity summaries",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1888",
+        "author": "Rememorio",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "preserve_user_messages",
+        "head_sha": "b7ba2f2a90c7a2be2d153858bc286b5c4def08b5",
+        "updated_at": "2026-05-30T02:41:36.000Z",
+        "latest_activity_at": "2026-05-30T02:41:36.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "d9b687e485bc4f03e357e79fdbe8bc840902f4331b0e3a7ad2c92b8401d20618",
+        "review_threads_fingerprint": "0625601cb8edd04957a78f38ee490bae9a9a64151a59abcae5ed3374f51f704f",
+        "comments_fingerprint": "67fd193d0170c5884477c93a5a39df707ab3e6773958cade4955f16008335ed8",
+        "ledger_bucket": "blocked",
+        "last_action": "blocked",
+        "last_heavy_reviewed_head_sha": "b7ba2f2a90c7a2be2d153858bc286b5c4def08b5",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "human_review",
+            "summary": "2 current unresolved human review thread(s) remain.",
+            "verification": "latest review-thread refresh found 2 current unresolved human thread(s)."
+          }
+        ]
+      },
+      "1890": {
+        "number": 1890,
+        "title": "codeexecutor/container: honor RunProgramSpec.CleanEnv in RunProgram",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1890",
+        "author": "bytethm",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "feat/codeexecutor-container-cleanenv",
+        "head_sha": "e5ed317eb458be706d65f8724b3015c96deb9a7a",
+        "updated_at": "2026-05-29T11:02:25.000Z",
+        "latest_activity_at": "2026-05-29T11:02:25.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "d9b687e485bc4f03e357e79fdbe8bc840902f4331b0e3a7ad2c92b8401d20618",
+        "review_threads_fingerprint": "5562e4f66d6f95cf31369880ad0b32babb52bea7dec2c4681fa10e86c143a57e",
+        "comments_fingerprint": "368f956b749a2992f0319d84bcba53a16b2ab2451a1e05def30ae4f807a491f8",
+        "ledger_bucket": "blocked",
+        "last_action": "blocked",
+        "last_heavy_reviewed_head_sha": "e5ed317eb458be706d65f8724b3015c96deb9a7a",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "human_review",
+            "summary": "2 current unresolved human review thread(s) remain.",
+            "verification": "latest review-thread refresh found 2 current unresolved human thread(s)."
+          }
+        ]
+      },
+      "1891": {
+        "number": 1891,
+        "title": "WIP: tool/openviking - add OpenViking context tools integration",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1891",
+        "author": "hyprh",
+        "state": "OPEN",
+        "is_draft": true,
+        "is_wip": true,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "work_openviking-integration",
+        "head_sha": "80812d015619d8d48e5c9ac847086d1a153d5f7d",
+        "updated_at": "2026-05-30T09:08:10.000Z",
+        "latest_activity_at": "2026-05-30T09:08:10.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "96c9e8737566aab786a8859fd876829b66d1d971112311dcad5b9164f4595a44",
+        "review_threads_fingerprint": "c233fdf4d180d00b8cac660e1c881e249d79f0a3bce85267005baa9b3fffed79",
+        "comments_fingerprint": "9332e73e95081078d20a4392a04c55569c2ba83319caaaf48ac647759bcfcecc",
+        "ledger_bucket": "skipped",
+        "last_action": "skipped",
+        "last_heavy_reviewed_head_sha": "80812d015619d8d48e5c9ac847086d1a153d5f7d",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "codecov/patch: FAILURE",
+            "url": "https://app.codecov.io/gh/trpc-group/trpc-agent-go/pull/1891"
+          }
+        ]
+      },
+      "1892": {
+        "number": 1892,
+        "title": "examples: tidy promptiter examples",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1892",
+        "author": "Flash-LHR",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "promptiter-examples",
+        "head_sha": "772d8b976222c86498c3ddb96cb86804b6bbfb77",
+        "updated_at": "2026-05-29T15:36:23.000Z",
+        "latest_activity_at": "2026-05-29T15:36:23.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "67cfc7cbfff9f5ad59b4d0eb7e86365e86b0d31aad3c3f6f5055179219e4e84c",
+        "review_threads_fingerprint": "0dde9a707c36f8ff0fd6011fab2afcf4dca83f782a3f3f20d9b3fa2be64cc8c9",
+        "comments_fingerprint": "cff3e7e9c3cc4966b5fc5da7dfc9b8d5c66efa7d27c4d86bbe5512f9ebe13c86",
+        "ledger_bucket": "commented",
+        "last_action": "commented",
+        "last_heavy_reviewed_head_sha": "772d8b976222c86498c3ddb96cb86804b6bbfb77",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "path": "examples/evaluation/promptiter/server/README.md",
+            "line": 257,
+            "url": "https://github.com/trpc-group/trpc-agent-go/pull/1892#discussion_r3331522158",
+            "summary": "restricted-run sample 的 evalCaseIds 仍是旧 ID。"
+          }
+        ]
+      },
+      "1893": {
+        "number": 1893,
+        "title": "session: store pgvector timestamps in UTC",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1893",
+        "author": "Rememorio",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "pgvector_utc_times",
+        "head_sha": "77745e2f38a47fa660648d449c5d6e65a751214e",
+        "updated_at": "2026-05-31T08:52:18.000Z",
+        "latest_activity_at": "2026-05-31T08:52:18.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "b2476affdd969bb69e70623dee518900c753a31f97a547ab4c66cae5392bb2c4",
+        "review_threads_fingerprint": "01ffa3cf5225698ef04deef69e31c2e36b346102bb9f996570a56ef97a6a20b0",
+        "comments_fingerprint": "10ce9187a8c458e8f578244b273d681aa7ceae920e888fd7790d8843c8ac2c7e",
+        "ledger_bucket": "blocked",
+        "last_action": "blocked",
+        "last_heavy_reviewed_head_sha": "77745e2f38a47fa660648d449c5d6e65a751214e",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "human_review",
+            "summary": "2 current unresolved human review thread(s) remain.",
+            "verification": "latest review-thread refresh found 2 current unresolved human thread(s)."
+          }
+        ]
+      },
+      "1894": {
+        "number": 1894,
+        "title": "fix(model/gemini): inject skip validator for cross-provider function calls",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1894",
+        "author": "sks",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "fix/gemini-thought-signature-upstream",
+        "head_sha": "f8c31c4f87d2b028642f5c361969536995d60d12",
+        "updated_at": "2026-05-31T20:40:41.000Z",
+        "latest_activity_at": "2026-05-31T20:40:41.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "b2476affdd969bb69e70623dee518900c753a31f97a547ab4c66cae5392bb2c4",
+        "review_threads_fingerprint": "150241d30f2aa892d6aa6f6528f73d5c578224e788655c8826b1f1ecf1a6c0d7",
+        "comments_fingerprint": "419a6da834aa7e18abe431f58fbc4658ed43a12cc657c9d8fa068d743cc15bc7",
+        "ledger_bucket": "commented",
+        "last_action": "commented",
+        "last_heavy_reviewed_head_sha": "f8c31c4f87d2b028642f5c361969536995d60d12",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "path": "model/gemini/gemini.go",
+            "line": 780,
+            "url": "https://github.com/trpc-group/trpc-agent-go/pull/1894#discussion_r3331510020",
+            "summary": "第二个及之后的并行跨 provider tool call 仍可能缺 skip validator。"
+          }
+        ]
+      },
+      "1895": {
+        "number": 1895,
+        "title": "session: align SQL backend timestamps to UTC",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1895",
+        "author": "Rememorio",
+        "state": "OPEN",
+        "is_draft": false,
+        "is_wip": false,
+        "labels": [],
+        "base_ref": "main",
+        "head_ref": "backend_utc_alignment",
+        "head_sha": "3a728955473d123fee175dc54da60d7c38466b66",
+        "updated_at": "2026-06-01T03:21:23.000Z",
+        "latest_activity_at": "2026-06-01T03:21:23.000Z",
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_fingerprint": "b2476affdd969bb69e70623dee518900c753a31f97a547ab4c66cae5392bb2c4",
+        "review_threads_fingerprint": "86328e66d7a7bf04c8a0186c6915bc28f1314580280f854fc4f1e4c118425621",
+        "comments_fingerprint": "9a0e1a2373fabc0fbc6016faa14a77619eebc7b34ee27b15bea32743dd3863bd",
+        "ledger_bucket": "blocked",
+        "last_action": "blocked",
+        "last_heavy_reviewed_head_sha": "3a728955473d123fee175dc54da60d7c38466b66",
+        "last_verified_at": "2026-06-01T11:52:46+08:00",
+        "planning_reasons": [
+          "no_previous_state"
+        ],
+        "blockers": [
+          {
+            "kind": "human_review",
+            "summary": "One current human review thread remains unresolved; author replied fixed, but the thread was still open at final refresh.",
+            "verification": "latest review-thread refresh found 1 current unresolved human thread(s)."
+          }
+        ]
+      }
+    }
+  },
+  "approved": [],
+  "commented": [
+    {
+      "number": 1894,
+      "title": "fix(model/gemini): inject skip validator for cross-provider function calls",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1894",
+      "author": "sks",
+      "status": "commented",
+      "technical_background": "Gemini 会校验 function call 的 thought signature；跨 provider 回放历史 tool call 时没有真实 Gemini signature，需要用 Google 约定的 skip validator token 避免 400。",
+      "problem": "当前实现按 `msg.ToolCalls` 的索引只给第一个 tool call 加 skip token，但转换逻辑会把每个 tool call 追加成独立 Gemini content。",
+      "problem_framing": "这不是测试覆盖风格问题，而是原问题在并行 tool call 场景下仍可能复现。",
+      "root_cause": "`convertMessageContent` 对每个 tool call 调用 `append(contents, ...)`，所以第二个及之后的 tool call 仍可能是各自 content 的第一个 functionCall，却没有 skip token。",
+      "approach": "已在 `model/gemini/gemini.go:780` 留 inline comment，建议把同一步的 function-call parts 合并到一个 content，或给每个没有真实 signature 的已发出 function-call content 都加 skip token。",
+      "alternative_designs": "合并 parts 更贴近“一步多个 call”的语义；逐 content 注入 skip token 改动更小，但需要确认 Gemini API 是否接受每个 content 的 first call 都带 skip。",
+      "tradeoffs": "保守修法会多触碰转换结构，但可以覆盖并行 tool call；小修法行数少，但要靠测试证明。",
+      "design_assessment": "CI 全绿；未 approve，等待作者修复并补并行 tool call 测试。",
+      "modules": "model/gemini",
+      "api_surface": "内部转换逻辑，无导出 API 改动。",
+      "change_inventory": "新增 skip validator 常量，调整 Gemini tool call 转换参数，补单个 cross-provider call 测试。",
+      "semantic_changes": "跨 provider tool call 历史回放到 Gemini 时，缺失 thought signature 的 call 会尝试绕过 validator。",
+      "module_impact": "影响 Gemini provider 的历史消息转换。",
+      "cross_module_impact": "多 provider agent 或 replay 场景会受影响。",
+      "behavior_impact": "并行 tool call 仍可能触发 Gemini 400。",
+      "tests_docs": "CI 绿；需要补第二个并行 tool call 也能通过的测试。",
+      "attention_points": "我也复核了 CodeRabbit 的相近提示，结论一致。",
+      "outcome": "留下 1 条 inline comment。",
+      "risk": "中。修复不完整会让原线上错误在并行 tool call 下继续发生。",
+      "ci_state": "head=f8c31c4；CI 全绿",
+      "inline_comments": [
+        {
+          "path": "model/gemini/gemini.go",
+          "line": 780,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1894#discussion_r3331510020",
+          "summary": "第二个及之后的并行跨 provider tool call 仍可能缺 skip validator。"
+        }
+      ]
+    },
+    {
+      "number": 1892,
+      "title": "examples: tidy promptiter examples",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1892",
+      "author": "Flash-LHR",
+      "status": "commented",
+      "technical_background": "promptiter examples 的 README 是用户复制请求体运行评测的入口；evalCaseIds 必须和 evalset 中真实 ID 对齐。",
+      "problem": "restricted-run 示例仍写 `case_1`、`case_2`、`case_3`，但本 PR 已把 eval case ID 改成 `train_01_...` / `validation_01_...` 形式。",
+      "problem_framing": "这是文档示例的可运行性问题，用户按 README 操作会筛不到目标 case。",
+      "root_cause": "数据集 ID 重命名后，README 的请求体示例没有同步更新。",
+      "approach": "已在 `examples/evaluation/promptiter/server/README.md:257` 附近留 inline comment，建议替换成当前 evalset 的真实 ID 或明确标占位。",
+      "alternative_designs": "可以使用真实 train/validation ID；如果文档想表达模板，也要明确说明这些 ID 是 placeholder。",
+      "tradeoffs": "真实 ID 更能保证 example 可复制运行；placeholder 更通用但会降低新手可操作性。",
+      "design_assessment": "改动集中在 examples；go-apidiff skipped 是 examples-only 的软门禁，本轮未作为硬阻塞。",
+      "modules": "examples/evaluation/promptiter",
+      "api_surface": "无导出 API 改动。",
+      "change_inventory": "整理 promptiter 三套 examples、README 和 evalset 数据。",
+      "semantic_changes": "示例评测 case 命名体系变化。",
+      "module_impact": "影响 promptiter examples 的文档可执行性。",
+      "cross_module_impact": "无生产模块影响。",
+      "behavior_impact": "复制 README 请求可能选不到任何真实 case。",
+      "tests_docs": "CI 仅 `go-apidiff` skipped；示例 README 需要同步 case ID。",
+      "attention_points": "最终刷新仍有 8 条 CodeRabbit bot-only open threads；本轮没有重复 bot comment，只提交人工复核后确认会影响 README 可运行性的 stale evalCaseIds 问题。",
+      "outcome": "留下 1 条 inline comment。",
+      "risk": "中低。不会破坏库代码，但会破坏示例的真实使用路径。",
+      "ci_state": "head=772d8b9；go-apidiff=SKIPPED",
+      "inline_comments": [
+        {
+          "path": "examples/evaluation/promptiter/server/README.md",
+          "line": 257,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1892#discussion_r3331522158",
+          "summary": "restricted-run sample 的 evalCaseIds 仍是旧 ID。"
+        }
+      ]
+    }
+  ],
+  "blocked": [
+    {
+      "number": 1895,
+      "title": "session: align SQL backend timestamps to UTC",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1895",
+      "author": "Rememorio",
+      "status": "blocked",
+      "technical_background": "候选 PR 的基础检查已复核，但仍存在未处理的人类 review 状态。",
+      "problem": "存在 current unresolved human review threads；本轮不抢跑 approve/merge。",
+      "problem_framing": "MyCR 可以继续审 diff，但不会绕过仍打开的人类 review 对话来合入。",
+      "root_cause": "review thread 尚未 resolve 或等待原 reviewer 复核。",
+      "approach": "记录阻塞状态，下一次增量 run 通过 thread fingerprint 判断是否需要重新重审。",
+      "alternative_designs": "若 thread 被 resolve 且无新 CI/comment 变化，下次会 carry-forward；若有变化则重新进入 heavy review。",
+      "tradeoffs": "避免重复扫完整 diff，同时不降低人类 review gate。",
+      "design_assessment": "未 approve/merge。",
+      "modules": "见 PR diff。",
+      "api_surface": "未在本轮展开。",
+      "change_inventory": "未在本轮展开。",
+      "semantic_changes": "未在本轮展开。",
+      "module_impact": "未在本轮展开。",
+      "cross_module_impact": "未在本轮展开。",
+      "behavior_impact": "未在本轮展开。",
+      "tests_docs": "CI 全绿",
+      "attention_points": "",
+      "outcome": "阻塞，等待 unresolved human review thread 处理。",
+      "risk": "中。",
+      "ci_state": "head=3a72895；CI 全绿；reviewDecision=REVIEW_REQUIRED",
+      "inline_comments": [],
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "One current human review thread remains unresolved; author replied fixed, but the thread was still open at final refresh.",
+          "verification": "latest review-thread refresh found 1 current unresolved human thread(s)."
+        }
+      ],
+      "readiness_audit": "CI 已从 pending 变为全绿；最终 comments/threads 刷新仍显示一个人类 thread 未 resolve，因此不 approve。"
+    },
+    {
+      "number": 1893,
+      "title": "session: store pgvector timestamps in UTC",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1893",
+      "author": "Rememorio",
+      "status": "blocked",
+      "technical_background": "候选 PR 的基础检查已复核，但仍存在未处理的人类 review 状态。",
+      "problem": "存在 current unresolved human review threads；本轮不抢跑 approve/merge。",
+      "problem_framing": "MyCR 可以继续审 diff，但不会绕过仍打开的人类 review 对话来合入。",
+      "root_cause": "review thread 尚未 resolve 或等待原 reviewer 复核。",
+      "approach": "记录阻塞状态，下一次增量 run 通过 thread fingerprint 判断是否需要重新重审。",
+      "alternative_designs": "若 thread 被 resolve 且无新 CI/comment 变化，下次会 carry-forward；若有变化则重新进入 heavy review。",
+      "tradeoffs": "避免重复扫完整 diff，同时不降低人类 review gate。",
+      "design_assessment": "未 approve/merge。",
+      "modules": "见 PR diff。",
+      "api_surface": "未在本轮展开。",
+      "change_inventory": "未在本轮展开。",
+      "semantic_changes": "未在本轮展开。",
+      "module_impact": "未在本轮展开。",
+      "cross_module_impact": "未在本轮展开。",
+      "behavior_impact": "未在本轮展开。",
+      "tests_docs": "CI 全绿",
+      "attention_points": "",
+      "outcome": "阻塞，等待 unresolved human review thread 处理。",
+      "risk": "中。",
+      "ci_state": "head=77745e2；CI 全绿；reviewDecision=REVIEW_REQUIRED",
+      "inline_comments": [],
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "2 current unresolved human review thread(s) remain.",
+          "verification": "latest review-thread refresh found 2 current unresolved human thread(s)."
+        }
+      ],
+      "readiness_audit": "最终 comments/threads 刷新仍显示人类 thread 未 resolve。"
+    },
+    {
+      "number": 1890,
+      "title": "codeexecutor/container: honor RunProgramSpec.CleanEnv in RunProgram",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1890",
+      "author": "bytethm",
+      "status": "blocked",
+      "technical_background": "候选 PR 的基础检查已复核，但仍存在未处理的人类 review 状态。",
+      "problem": "存在 current unresolved human review threads；本轮不抢跑 approve/merge。",
+      "problem_framing": "MyCR 可以继续审 diff，但不会绕过仍打开的人类 review 对话来合入。",
+      "root_cause": "review thread 尚未 resolve 或等待原 reviewer 复核。",
+      "approach": "记录阻塞状态，下一次增量 run 通过 thread fingerprint 判断是否需要重新重审。",
+      "alternative_designs": "若 thread 被 resolve 且无新 CI/comment 变化，下次会 carry-forward；若有变化则重新进入 heavy review。",
+      "tradeoffs": "避免重复扫完整 diff，同时不降低人类 review gate。",
+      "design_assessment": "未 approve/merge。",
+      "modules": "见 PR diff。",
+      "api_surface": "未在本轮展开。",
+      "change_inventory": "未在本轮展开。",
+      "semantic_changes": "未在本轮展开。",
+      "module_impact": "未在本轮展开。",
+      "cross_module_impact": "未在本轮展开。",
+      "behavior_impact": "未在本轮展开。",
+      "tests_docs": "CI 全绿",
+      "attention_points": "",
+      "outcome": "阻塞，等待 unresolved human review thread 处理。",
+      "risk": "中。",
+      "ci_state": "head=e5ed317；CI 全绿；reviewDecision=REVIEW_REQUIRED",
+      "inline_comments": [],
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "2 current unresolved human review thread(s) remain.",
+          "verification": "latest review-thread refresh found 2 current unresolved human thread(s)."
+        }
+      ],
+      "readiness_audit": "最终 comments/threads 刷新仍显示人类 thread 未 resolve。"
+    },
+    {
+      "number": 1888,
+      "title": "session/summary: add detailed continuity summaries",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1888",
+      "author": "Rememorio",
+      "status": "blocked",
+      "technical_background": "候选 PR 的基础检查已复核，但仍存在未处理的人类 review 状态。",
+      "problem": "存在 current unresolved human review threads；本轮不抢跑 approve/merge。",
+      "problem_framing": "MyCR 可以继续审 diff，但不会绕过仍打开的人类 review 对话来合入。",
+      "root_cause": "review thread 尚未 resolve 或等待原 reviewer 复核。",
+      "approach": "记录阻塞状态，下一次增量 run 通过 thread fingerprint 判断是否需要重新重审。",
+      "alternative_designs": "若 thread 被 resolve 且无新 CI/comment 变化，下次会 carry-forward；若有变化则重新进入 heavy review。",
+      "tradeoffs": "避免重复扫完整 diff，同时不降低人类 review gate。",
+      "design_assessment": "未 approve/merge。",
+      "modules": "见 PR diff。",
+      "api_surface": "未在本轮展开。",
+      "change_inventory": "未在本轮展开。",
+      "semantic_changes": "未在本轮展开。",
+      "module_impact": "未在本轮展开。",
+      "cross_module_impact": "未在本轮展开。",
+      "behavior_impact": "未在本轮展开。",
+      "tests_docs": "CI 全绿",
+      "attention_points": "",
+      "outcome": "阻塞，等待 unresolved human review thread 处理。",
+      "risk": "中。",
+      "ci_state": "head=b7ba2f2；CI 全绿；reviewDecision=REVIEW_REQUIRED",
+      "inline_comments": [],
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "2 current unresolved human review thread(s) remain.",
+          "verification": "latest review-thread refresh found 2 current unresolved human thread(s)."
+        }
+      ],
+      "readiness_audit": "最终 comments/threads 刷新仍显示人类 thread 未 resolve。"
+    },
+    {
+      "number": 1884,
+      "title": "feat: implement e2b sandbox Pause/Resume via standard connect endpoint",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1884",
+      "author": "AllesOderNicht",
+      "status": "blocked",
+      "technical_background": "候选 PR 的基础检查已复核，但仍存在未处理的人类 review 状态。",
+      "problem": "存在 current unresolved human review threads；本轮不抢跑 approve/merge。",
+      "problem_framing": "MyCR 可以继续审 diff，但不会绕过仍打开的人类 review 对话来合入。",
+      "root_cause": "review thread 尚未 resolve 或等待原 reviewer 复核。",
+      "approach": "记录阻塞状态，下一次增量 run 通过 thread fingerprint 判断是否需要重新重审。",
+      "alternative_designs": "若 thread 被 resolve 且无新 CI/comment 变化，下次会 carry-forward；若有变化则重新进入 heavy review。",
+      "tradeoffs": "避免重复扫完整 diff，同时不降低人类 review gate。",
+      "design_assessment": "未 approve/merge。",
+      "modules": "见 PR diff。",
+      "api_surface": "未在本轮展开。",
+      "change_inventory": "未在本轮展开。",
+      "semantic_changes": "未在本轮展开。",
+      "module_impact": "未在本轮展开。",
+      "cross_module_impact": "未在本轮展开。",
+      "behavior_impact": "未在本轮展开。",
+      "tests_docs": "CI 全绿",
+      "attention_points": "",
+      "outcome": "阻塞，等待 unresolved human review thread 处理。",
+      "risk": "中。",
+      "ci_state": "head=5ce6e50；CI 全绿；reviewDecision=REVIEW_REQUIRED",
+      "inline_comments": [],
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "2 current unresolved human review thread(s) remain.",
+          "verification": "latest review-thread refresh found 2 current unresolved human thread(s)."
+        }
+      ],
+      "readiness_audit": "最终 comments/threads 刷新仍显示人类 thread 未 resolve。"
+    },
+    {
+      "number": 1859,
+      "title": "memory/tencentdb: add TencentDB Agent Memory integration",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1859",
+      "author": "Rememorio",
+      "status": "blocked",
+      "technical_background": "候选 PR 的基础检查已复核，但仍存在未处理的人类 review 状态。",
+      "problem": "存在 current unresolved human review threads；本轮不抢跑 approve/merge。",
+      "problem_framing": "MyCR 可以继续审 diff，但不会绕过仍打开的人类 review 对话来合入。",
+      "root_cause": "review thread 尚未 resolve 或等待原 reviewer 复核。",
+      "approach": "记录阻塞状态，下一次增量 run 通过 thread fingerprint 判断是否需要重新重审。",
+      "alternative_designs": "若 thread 被 resolve 且无新 CI/comment 变化，下次会 carry-forward；若有变化则重新进入 heavy review。",
+      "tradeoffs": "避免重复扫完整 diff，同时不降低人类 review gate。",
+      "design_assessment": "未 approve/merge。",
+      "modules": "见 PR diff。",
+      "api_surface": "未在本轮展开。",
+      "change_inventory": "未在本轮展开。",
+      "semantic_changes": "未在本轮展开。",
+      "module_impact": "未在本轮展开。",
+      "cross_module_impact": "未在本轮展开。",
+      "behavior_impact": "未在本轮展开。",
+      "tests_docs": "CI 全绿",
+      "attention_points": "",
+      "outcome": "阻塞，等待 unresolved human review thread 处理。",
+      "risk": "中。",
+      "ci_state": "head=dc1a3ac；CI 全绿；reviewDecision=REVIEW_REQUIRED",
+      "inline_comments": [],
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "2 current unresolved human review thread(s) remain.",
+          "verification": "latest review-thread refresh found 2 current unresolved human thread(s)."
+        }
+      ],
+      "readiness_audit": "最终 comments/threads 刷新仍显示人类 thread 未 resolve。"
+    },
+    {
+      "number": 1856,
+      "title": "session: add portable event window loading",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1856",
+      "author": "Rememorio",
+      "status": "blocked",
+      "technical_background": "候选 PR 的基础检查已复核，但仍存在未处理的人类 review 状态。",
+      "problem": "存在 current unresolved human review threads；本轮不抢跑 approve/merge。",
+      "problem_framing": "MyCR 可以继续审 diff，但不会绕过仍打开的人类 review 对话来合入。",
+      "root_cause": "review thread 尚未 resolve 或等待原 reviewer 复核。",
+      "approach": "记录阻塞状态，下一次增量 run 通过 thread fingerprint 判断是否需要重新重审。",
+      "alternative_designs": "若 thread 被 resolve 且无新 CI/comment 变化，下次会 carry-forward；若有变化则重新进入 heavy review。",
+      "tradeoffs": "避免重复扫完整 diff，同时不降低人类 review gate。",
+      "design_assessment": "未 approve/merge。",
+      "modules": "见 PR diff。",
+      "api_surface": "未在本轮展开。",
+      "change_inventory": "未在本轮展开。",
+      "semantic_changes": "未在本轮展开。",
+      "module_impact": "未在本轮展开。",
+      "cross_module_impact": "未在本轮展开。",
+      "behavior_impact": "未在本轮展开。",
+      "tests_docs": "CI 全绿",
+      "attention_points": "",
+      "outcome": "阻塞，等待 unresolved human review thread 处理。",
+      "risk": "中。",
+      "ci_state": "head=29f6f0d；CI 全绿；reviewDecision=REVIEW_REQUIRED",
+      "inline_comments": [],
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "4 current unresolved human review thread(s) remain.",
+          "verification": "latest review-thread refresh found 4 current unresolved human thread(s)."
+        }
+      ],
+      "readiness_audit": "最终 comments/threads 刷新仍显示人类 thread 未 resolve。"
+    },
+    {
+      "number": 1768,
+      "title": "feat(sandbox): add secure Linux sandbox for code execution based on bubblewrap",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1768",
+      "author": "liuzengh",
+      "status": "blocked",
+      "technical_background": "候选 PR 的基础检查已复核，但仍存在未处理的人类 review 状态。",
+      "problem": "GitHub reviewDecision=CHANGES_REQUESTED，且存在 unresolved human review threads。",
+      "problem_framing": "MyCR 可以继续审 diff，但不会绕过仍打开的人类 review 对话来合入。",
+      "root_cause": "review thread 尚未 resolve 或等待原 reviewer 复核。",
+      "approach": "记录阻塞状态，下一次增量 run 通过 thread fingerprint 判断是否需要重新重审。",
+      "alternative_designs": "若 thread 被 resolve 且无新 CI/comment 变化，下次会 carry-forward；若有变化则重新进入 heavy review。",
+      "tradeoffs": "避免重复扫完整 diff，同时不降低人类 review gate。",
+      "design_assessment": "未 approve/merge。",
+      "modules": "见 PR diff。",
+      "api_surface": "未在本轮展开。",
+      "change_inventory": "未在本轮展开。",
+      "semantic_changes": "未在本轮展开。",
+      "module_impact": "未在本轮展开。",
+      "cross_module_impact": "未在本轮展开。",
+      "behavior_impact": "未在本轮展开。",
+      "tests_docs": "CI 全绿",
+      "attention_points": "",
+      "outcome": "阻塞，等待 unresolved human review thread 处理。",
+      "risk": "高。仍为 CHANGES_REQUESTED。",
+      "ci_state": "head=146124a；CI 全绿；reviewDecision=CHANGES_REQUESTED",
+      "inline_comments": [],
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "6 current unresolved human review thread(s) remain.",
+          "verification": "latest review-thread refresh found 6 current unresolved human thread(s)."
+        }
+      ],
+      "readiness_audit": "最终 comments/threads 刷新仍显示人类 thread 未 resolve。"
+    }
+  ],
+  "maintained": [
+    {
+      "number": 1885,
+      "title": "internal/flow: add pre-LLM latency diagnostics",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1885",
+      "author": "WineChord",
+      "status": "maintained",
+      "technical_background": "该 PR 是 WineChord 自己的 pre-LLM latency diagnostics 维护项，MyCR 只做直接审计，不提交 self-approval 或 LGTM。",
+      "problem": "需要确认是否存在应当直接修复的 correctness 问题。",
+      "problem_framing": "own PR 不能靠自己 approve/merge；只能确认风险或直接推修复。",
+      "root_cause": "不适用，本轮没有发现需要修复的问题。",
+      "approach": "复核 runner/internal flow/model/openclaw 相关 diff，并让并行审阅返回独立结论。",
+      "alternative_designs": "无需变更。",
+      "tradeoffs": "保留现状，等待他人 review。",
+      "design_assessment": "CI 全绿，无 unresolved thread。",
+      "modules": "agent, internal/flow/llmflow, runner, model, openclaw/internal/skills",
+      "api_surface": "新增 latency diagnostics 相关事件/runner 行为。",
+      "change_inventory": "增加 pre-LLM latency diagnostics 的采集、传播和测试。",
+      "semantic_changes": "增强诊断可观测性，不改变常规模型调用语义。",
+      "module_impact": "影响 runner 与 llmflow 诊断路径。",
+      "cross_module_impact": "OpenClaw skill repository 相关测试也随之覆盖。",
+      "behavior_impact": "正常执行路径应保持兼容。",
+      "tests_docs": "GitHub checks 全绿；未在本地 target dirty worktree 上做改动。",
+      "attention_points": "不发表 self-review comment，不 approve，不 merge。",
+      "outcome": "确认无需直接修复。",
+      "risk": "低到中。诊断链路跨模块，但现有 CI 覆盖通过。",
+      "ci_state": "head=d3387d4；CI 全绿",
+      "inline_comments": [],
+      "direct_fixes": [],
+      "self_review_policy": "Own PR audited only; no LGTM, approval, merge, or review comment was submitted by WineChord."
+    }
+  ],
+  "skipped_groups": [
+    {
+      "reason": "Draft / WIP / 明确未准备好",
+      "items": [
+        {
+          "number": 1891,
+          "title": "WIP: tool/openviking - add OpenViking context tools integration",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1891",
+          "author": "hyprh",
+          "skip_reason": "draft；codecov/patch=FAILURE；本轮不审。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "codecov/patch: FAILURE",
+              "url": "https://app.codecov.io/gh/trpc-group/trpc-agent-go/pull/1891"
+            }
+          ]
+        },
+        {
+          "number": 1886,
+          "title": "tool/agent: restore live session for subagents",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1886",
+          "author": "bytethm",
+          "skip_reason": "draft；本轮不审。",
+          "blockers": []
+        },
+        {
+          "number": 1865,
+          "title": "session: recover compacted tool results",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1865",
+          "author": "Rememorio",
+          "skip_reason": "draft；本轮不审。",
+          "blockers": []
+        },
+        {
+          "number": 1857,
+          "title": "memory/mem0: advance checkpoint after successful ingest",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1857",
+          "author": "print-happy",
+          "skip_reason": "draft；本轮不审。",
+          "blockers": []
+        },
+        {
+          "number": 1778,
+          "title": "examples: add RLM (Recursive Language Model) demo",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1778",
+          "author": "hyprh",
+          "skip_reason": "draft；check examples (4/4)=FAILURE；check examples (4/4)=FAILURE；go-apidiff=SKIPPED；go test (openclaw/go.mod)=FAILURE；本轮不审。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "check examples (4/4): FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25799479098/job/75785246777"
+            },
+            {
+              "kind": "ci",
+              "summary": "check examples (4/4): FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25799477617/job/75785241348"
+            },
+            {
+              "kind": "ci",
+              "summary": "go-apidiff: SKIPPED",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25799477617/job/75785241841"
+            },
+            {
+              "kind": "ci",
+              "summary": "go test (openclaw/go.mod): FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25799479098/job/75789813879"
+            },
+            {
+              "kind": "ci",
+              "summary": "coverage: SKIPPED",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25799479098/job/75799934195"
+            }
+          ]
+        },
+        {
+          "number": 1710,
+          "title": "a2a: add input schema",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1710",
+          "author": "liuzengh",
+          "skip_reason": "draft；本轮不审。",
+          "blockers": []
+        },
+        {
+          "number": 1683,
+          "title": "tool/workspaceexec: add workspace-scoped file tools sharing workspace_exec state",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1683",
+          "author": "bytethm",
+          "skip_reason": "draft；merge conflict；lint=FAILURE；codecov/patch=FAILURE；本轮不审。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "lint: FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24817886004/job/72635989932"
+            },
+            {
+              "kind": "ci",
+              "summary": "codecov/patch: FAILURE",
+              "url": "https://app.codecov.io/gh/trpc-group/trpc-agent-go/pull/1683"
+            }
+          ]
+        },
+        {
+          "number": 1678,
+          "title": "agent: centralize invoke_agent telemetry in RunWithPlugins",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1678",
+          "author": "liuzengh",
+          "skip_reason": "draft；merge conflict；check go mod tidy=FAILURE；go test (agent/dify/go.mod)=FAILURE；go test (agent/n8n/go.mod)=FAILURE；go test (memory/mysql/go.mod)=FAILURE；本轮不审。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "check go mod tidy: FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673219531"
+            },
+            {
+              "kind": "ci",
+              "summary": "go test (agent/dify/go.mod): FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673387653"
+            },
+            {
+              "kind": "ci",
+              "summary": "go test (agent/n8n/go.mod): FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673387612"
+            },
+            {
+              "kind": "ci",
+              "summary": "go test (memory/mysql/go.mod): FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673387668"
+            },
+            {
+              "kind": "ci",
+              "summary": "go test (memory/mysqlvec/go.mod): FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673387738"
+            },
+            {
+              "kind": "ci",
+              "summary": "go test (memory/pgvector/go.mod): FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673387699"
+            },
+            {
+              "kind": "ci",
+              "summary": "go test (memory/postgres/go.mod): FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673387746"
+            },
+            {
+              "kind": "ci",
+              "summary": "go test (memory/redis/go.mod): FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673387791"
+            },
+            {
+              "kind": "ci",
+              "summary": "go test (memory/sqlite/go.mod): FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673387713"
+            },
+            {
+              "kind": "ci",
+              "summary": "go test (memory/sqlitevec/go.mod): FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72673387759"
+            },
+            {
+              "kind": "ci",
+              "summary": "coverage: SKIPPED",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/24829254531/job/72675792547"
+            }
+          ]
+        },
+        {
+          "number": 1651,
+          "title": "evolution: add async skill-extraction pipeline for agent self-evolution",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1651",
+          "author": "Rememorio",
+          "skip_reason": "draft；本轮不审。",
+          "blockers": []
+        },
+        {
+          "number": 1526,
+          "title": "model: add ModelMaxOutputTokens map and ResolveMaxOutputTokens helper",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1526",
+          "author": "sks",
+          "skip_reason": "draft；codecov/patch=FAILURE；本轮不审。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "codecov/patch: FAILURE",
+              "url": "https://app.codecov.io/gh/trpc-group/trpc-agent-go/pull/1526"
+            }
+          ]
+        },
+        {
+          "number": 1509,
+          "title": "[WIP] session: support concurrent queued execution",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1509",
+          "author": "hyprh",
+          "skip_reason": "merge conflict；test@PULL_REQUEST=FAILURE；本轮不审。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "test@PULL_REQUEST: FAILURE",
+              "url": "https://devops.woa.com/console/pipeline/pcgtrpcproject/p-837b330efe0f44cf94ee6e2eec36fd03/detail/b-cd7cf040a6a5407d88e4eebf75e90d0d"
+            }
+          ]
+        },
+        {
+          "number": 1380,
+          "title": "[WIP] fix(agent): always register InstructionProcessor to support run-time WithInstruction",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1380",
+          "author": "hyprh",
+          "skip_reason": "merge conflict；本轮不审。",
+          "blockers": []
+        }
+      ]
+    },
+    {
+      "reason": "CI / mergeability 阻塞",
+      "items": [
+        {
+          "number": 1826,
+          "title": "docs: Add FAQ section",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1826",
+          "author": "meichuanyi",
+          "skip_reason": "CLAAssistant=FAILURE；本轮不审。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "CLAAssistant: FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/26139008730/job/76880322264"
+            }
+          ]
+        },
+        {
+          "number": 1801,
+          "title": "docs/mkdocs/zh/fix/agent.md: fix typo",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1801",
+          "author": "GongNanyue",
+          "skip_reason": "CLAAssistant=FAILURE；go test (openclaw/go.mod)=FAILURE；coverage=SKIPPED；本轮不审。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "CLAAssistant: FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25804853890/job/75804601828"
+            },
+            {
+              "kind": "ci",
+              "summary": "go test (openclaw/go.mod): FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25804853410/job/75805702757"
+            },
+            {
+              "kind": "ci",
+              "summary": "coverage: SKIPPED",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25804853410/job/75809308258"
+            }
+          ]
+        },
+        {
+          "number": 1776,
+          "title": "docs: add FAQ section",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1776",
+          "author": "meichuanyi",
+          "skip_reason": "CLAAssistant=FAILURE；go test (tool/claudecode/go.mod)=FAILURE；coverage=SKIPPED；本轮不审。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "CLAAssistant: FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25643940693/job/75269098706"
+            },
+            {
+              "kind": "ci",
+              "summary": "go test (tool/claudecode/go.mod): FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25643940731/job/75269112915"
+            },
+            {
+              "kind": "ci",
+              "summary": "coverage: SKIPPED",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25643940731/job/75269674425"
+            }
+          ]
+        },
+        {
+          "number": 1764,
+          "title": "examples: add graph RAG code search demo and viewer",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1764",
+          "author": "hyprh",
+          "skip_reason": "check examples (1/4)=FAILURE；check examples build script (1/4)=FAILURE；本轮不审。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "check examples (1/4): FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25546096213/job/74982582483"
+            },
+            {
+              "kind": "ci",
+              "summary": "check examples build script (1/4): FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/25546096213/job/74982582490"
+            }
+          ]
+        },
+        {
+          "number": 1736,
+          "title": "all: add deferred tool set",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1736",
+          "author": "liuzengh",
+          "skip_reason": "merge conflict；test@PULL_REQUEST=FAILURE；本轮不审。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "test@PULL_REQUEST: FAILURE",
+              "url": "https://devops.woa.com/console/pipeline/pcgtrpcproject/p-837b330efe0f44cf94ee6e2eec36fd03/detail/b-16bf238ec83841f4951849fbb26fbf5b"
+            }
+          ]
+        },
+        {
+          "number": 1483,
+          "title": "tool/subtask: add dynamic agent creation tools",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1483",
+          "author": "bytethm",
+          "skip_reason": "merge conflict；本轮不审。",
+          "blockers": []
+        },
+        {
+          "number": 1460,
+          "title": "improve nano-pdf skill description + add skill-review-and-optimize CI",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1460",
+          "author": "fernandezbaptiste",
+          "skip_reason": "GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE；本轮不审。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST: FAILURE",
+              "url": "https://codecc.woa.com/codecc/GITHUB_983515771/task/list?pipelineId=p-b73072596edb4474a19815ef3e8e1c01&buildId=b-08471d11c71543d4b75107205ba05c1d&from=check_run"
+            }
+          ]
+        },
+        {
+          "number": 1446,
+          "title": "feat(a2a): add StructuredOutput → DataPart converter for custom event…",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1446",
+          "author": "SummerLv",
+          "skip_reason": "merge conflict；CLAAssistant=FAILURE；GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE；codecov/patch=FAILURE；本轮不审。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "CLAAssistant: FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/23231644959/job/67526257200"
+            },
+            {
+              "kind": "ci",
+              "summary": "GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST: FAILURE",
+              "url": "https://codecc.woa.com/codecc/GITHUB_983515771/task/list?pipelineId=p-b73072596edb4474a19815ef3e8e1c01&buildId=b-f53636524c0c462bbdd3c375549e3a24&from=check_run"
+            },
+            {
+              "kind": "ci",
+              "summary": "codecov/patch: FAILURE",
+              "url": "https://app.codecov.io/gh/trpc-group/trpc-agent-go/pull/1446"
+            }
+          ]
+        },
+        {
+          "number": 1400,
+          "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+          "author": "liuzengh",
+          "skip_reason": "go-apidiff=FAILURE；go-apidiff=FAILURE；go-apidiff=FAILURE；codecov/patch=FAILURE；本轮不审。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "go-apidiff: FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/23000148213/job/66790396523"
+            },
+            {
+              "kind": "ci",
+              "summary": "go-apidiff: FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/23011691221/job/66823732231"
+            },
+            {
+              "kind": "ci",
+              "summary": "go-apidiff: FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/23012343072/job/66826132480"
+            },
+            {
+              "kind": "ci",
+              "summary": "codecov/patch: FAILURE",
+              "url": "https://app.codecov.io/gh/trpc-group/trpc-agent-go/pull/1400"
+            }
+          ]
+        },
+        {
+          "number": 1183,
+          "title": "internal/util: add util for streaming parsing of JSON returned by LLM",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1183",
+          "author": "hongxiuzhe",
+          "skip_reason": "CLAAssistant=FAILURE；CLAAssistant=FAILURE；CLAAssistant=FAILURE；lint=FAILURE；本轮不审。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "CLAAssistant: FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/21628484500/job/62334701007"
+            },
+            {
+              "kind": "ci",
+              "summary": "CLAAssistant: FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/23011748334/job/66823949328"
+            },
+            {
+              "kind": "ci",
+              "summary": "CLAAssistant: FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/23012436475/job/66826471051"
+            },
+            {
+              "kind": "ci",
+              "summary": "lint: FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/21628485211/job/62334702973"
+            },
+            {
+              "kind": "ci",
+              "summary": "lint: FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/23011748924/job/66823951471"
+            },
+            {
+              "kind": "ci",
+              "summary": "lint: FAILURE",
+              "url": "https://github.com/trpc-group/trpc-agent-go/actions/runs/23012436298/job/66826470503"
+            },
+            {
+              "kind": "ci",
+              "summary": "codecov/patch: FAILURE",
+              "url": "https://app.codecov.io/gh/trpc-group/trpc-agent-go/pull/1183"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "follow_up": [
+    {
+      "number": 1894,
+      "title": "fix(model/gemini): inject skip validator for cross-provider function calls",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1894",
+      "author": "sks",
+      "status": "blocked",
+      "outcome": "留下 1 条 inline comment。",
+      "risk": "中。修复不完整会让原线上错误在并行 tool call 下继续发生。",
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "第二个及之后的并行跨 provider tool call 仍可能缺 skip validator。",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1894#discussion_r3331510020",
+          "path": "model/gemini/gemini.go",
+          "line": 780
+        }
+      ]
+    },
+    {
+      "number": 1892,
+      "title": "examples: tidy promptiter examples",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1892",
+      "author": "Flash-LHR",
+      "status": "blocked",
+      "outcome": "留下 1 条 inline comment。",
+      "risk": "中低。不会破坏库代码，但会破坏示例的真实使用路径。",
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "restricted-run sample 的 evalCaseIds 仍是旧 ID。",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1892#discussion_r3331522158",
+          "path": "examples/evaluation/promptiter/server/README.md",
+          "line": 257
+        }
+      ]
+    },
+    {
+      "number": 1895,
+      "title": "session: align SQL backend timestamps to UTC",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1895",
+      "author": "Rememorio",
+      "status": "blocked",
+      "outcome": "阻塞，等待 unresolved human review thread 处理。",
+      "risk": "中。",
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "One current human review thread remains unresolved; author replied fixed, but the thread was still open at final refresh.",
+          "verification": "latest review-thread refresh found 1 current unresolved human thread(s)."
+        }
+      ]
+    },
+    {
+      "number": 1893,
+      "title": "session: store pgvector timestamps in UTC",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1893",
+      "author": "Rememorio",
+      "status": "blocked",
+      "outcome": "阻塞，等待 unresolved human review thread 处理。",
+      "risk": "中。",
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "2 current unresolved human review thread(s) remain.",
+          "verification": "latest review-thread refresh found 2 current unresolved human thread(s)."
+        }
+      ]
+    },
+    {
+      "number": 1890,
+      "title": "codeexecutor/container: honor RunProgramSpec.CleanEnv in RunProgram",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1890",
+      "author": "bytethm",
+      "status": "blocked",
+      "outcome": "阻塞，等待 unresolved human review thread 处理。",
+      "risk": "中。",
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "2 current unresolved human review thread(s) remain.",
+          "verification": "latest review-thread refresh found 2 current unresolved human thread(s)."
+        }
+      ]
+    },
+    {
+      "number": 1888,
+      "title": "session/summary: add detailed continuity summaries",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1888",
+      "author": "Rememorio",
+      "status": "blocked",
+      "outcome": "阻塞，等待 unresolved human review thread 处理。",
+      "risk": "中。",
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "2 current unresolved human review thread(s) remain.",
+          "verification": "latest review-thread refresh found 2 current unresolved human thread(s)."
+        }
+      ]
+    },
+    {
+      "number": 1884,
+      "title": "feat: implement e2b sandbox Pause/Resume via standard connect endpoint",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1884",
+      "author": "AllesOderNicht",
+      "status": "blocked",
+      "outcome": "阻塞，等待 unresolved human review thread 处理。",
+      "risk": "中。",
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "2 current unresolved human review thread(s) remain.",
+          "verification": "latest review-thread refresh found 2 current unresolved human thread(s)."
+        }
+      ]
+    },
+    {
+      "number": 1859,
+      "title": "memory/tencentdb: add TencentDB Agent Memory integration",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1859",
+      "author": "Rememorio",
+      "status": "blocked",
+      "outcome": "阻塞，等待 unresolved human review thread 处理。",
+      "risk": "中。",
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "2 current unresolved human review thread(s) remain.",
+          "verification": "latest review-thread refresh found 2 current unresolved human thread(s)."
+        }
+      ]
+    },
+    {
+      "number": 1856,
+      "title": "session: add portable event window loading",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1856",
+      "author": "Rememorio",
+      "status": "blocked",
+      "outcome": "阻塞，等待 unresolved human review thread 处理。",
+      "risk": "中。",
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "4 current unresolved human review thread(s) remain.",
+          "verification": "latest review-thread refresh found 4 current unresolved human thread(s)."
+        }
+      ]
+    },
+    {
+      "number": 1768,
+      "title": "feat(sandbox): add secure Linux sandbox for code execution based on bubblewrap",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1768",
+      "author": "liuzengh",
+      "status": "blocked",
+      "outcome": "阻塞，等待 unresolved human review thread 处理。",
+      "risk": "高。仍为 CHANGES_REQUESTED。",
+      "blockers": [
+        {
+          "kind": "human_review",
+          "summary": "6 current unresolved human review thread(s) remain.",
+          "verification": "latest review-thread refresh found 6 current unresolved human thread(s)."
+        }
+      ]
+    }
+  ],
+  "timeline": [
+    {
+      "time": "11:22",
+      "text": "拉取 33 个 open PR 的轻量列表；heavy GraphQL 一次 504 后改用轻量字段和 per-PR 状态刷新。"
+    },
+    {
+      "time": "11:23",
+      "text": "增量 planner 对比上一份报告：previous run_state 缺失，因此 33/33 进入 heavy_review，force_full_sweep=true。"
+    },
+    {
+      "time": "11:29",
+      "text": "审阅 #1894 并留下 Gemini parallel tool-call skip validator 问题。"
+    },
+    {
+      "time": "11:35",
+      "text": "审阅 #1892 并留下 promptiter README stale evalCaseIds 问题。"
+    },
+    {
+      "time": "11:40",
+      "text": "审计 own PR #1885，确认无需直接修复；未 self-approve、未 merge、未评论。"
+    },
+    {
+      "time": "11:46",
+      "text": "#1895 checks 刷新为全绿；复核最新 diff 与 threads，因仍有 unresolved human thread 未 approve。"
+    },
+    {
+      "time": "11:52",
+      "text": "刷新全部 PR 的 checks/comments/review threads，生成稳定 run_state 指纹；self-check 显示无变化时下轮 33 个 PR 均 carry_forward。"
+    }
+  ]
+}
