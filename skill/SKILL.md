@@ -35,29 +35,56 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    Own PRs are not skipped by default. They enter the own-PR maintenance path
    below: review them for real issues, but never post review comments, approve,
    or merge them from this run.
-3. List all open PRs and collect metadata for each PR:
-   title, author, labels, draft state, mergeability, requested reviewers, head
-   SHA, base branch, review threads, review submissions, commit statuses, and
-   pull-request workflow runs.
-   For review threads, keep a thread-level audit, not only the aggregate
-   GitHub `reviewDecision`: thread id or URL, reviewer login, author login,
-   review state, file and line, resolved/outdated state, latest author reply,
-   latest reviewer reply, whether the thread still maps to the current diff,
-   and the concrete reason it is still actionable or no longer actionable.
-   For every candidate that will appear in the reviewed-PR section, also build
-   a PR-content summary from the PR description, changed files, and diff. This
-   summary must describe what the PR itself changes, not what the reviewer did.
-   Capture the original problem or user/developer need, the new behavior or API
-   shape, the concrete packages/files/modules touched, the important added,
-   modified, or removed code paths, data/control flow changes, compatibility
-   impact, docs/examples/tests added, and any design tradeoffs visible from the
-   diff. Gather enough source detail to let the final report stand alone as an
-   engineering brief; do not rely on vague title-level summaries.
-   Maintain a run-level reviewability ledger for every open PR. Each PR must
-   end the scan in exactly one auditable bucket: processed, eligible candidate,
-   intentionally not reached, or blocked by a concrete gate. Do not allow an
-   open PR to disappear from the run because of candidate ordering, stale
-   aggregate review state, vague soft-CI uncertainty, or a broad skip group.
+3. Start with incremental planning, but keep a lightweight full-open-PR ledger:
+   - Collect a cheap index for every open PR before doing any expensive diff,
+     thread, log, source, or report-writing work. The index must include at
+     least title, author, labels, draft/WIP state, base branch, head SHA,
+     mergeability, review decision, updated/latest-activity time, commit/check
+     fingerprint, review-thread fingerprint, and comment/review fingerprint.
+   - Compare that index with the latest successful run-state snapshot by using
+     `node scripts/mycr-incremental-plan.mjs --current <current-index.json>
+     --previous <previous-report-or-state.json> --output <plan.json>` from the
+     MyCR workspace when a previous state exists. Use a small overlap window
+     instead of a strict timestamp boundary so updates that happen during the
+     prior run are not missed. If the previous state is missing, unreadable, too
+     old, or does not contain the needed fingerprints, fall back to the old
+     conservative behavior and treat all open PRs as `heavy_review`.
+   - A PR enters the heavy path when it is new, its head SHA changed, CI/check
+     fingerprint changed, review/comment/thread fingerprint changed, readiness
+     markers changed, mergeability/base changed, it was previously
+     `not_reached`, it has activity after the overlapped watermark that was not
+     already seen in the previous snapshot, or the run is doing a periodic full
+     sweep. Missing required fingerprints must also promote the PR to the heavy
+     path. A PR with an unchanged concrete blocker can be carried forward in the
+     ledger, but only as a carried-forward blocker with its previous evidence
+     and `last_verified_at`; never approve, merge, post comments, or mark an
+     own PR maintained from carried-forward data alone.
+   - For every PR in the `heavy_review` queue, collect the full metadata needed
+     for the existing gates: requested reviewers, review threads, review
+     submissions, commit statuses, pull-request workflow runs, mergeability,
+     changed files, and diff/source details. For review threads, keep a
+     thread-level audit, not only the aggregate GitHub `reviewDecision`: thread
+     id or URL, reviewer login, author login, review state, file and line,
+     resolved/outdated state, latest author reply, latest reviewer reply,
+     whether the thread still maps to the current diff, and the concrete reason
+     it is still actionable or no longer actionable.
+   - For every candidate that will appear in the reviewed-PR section, also
+     build a PR-content summary from the PR description, changed files, and
+     diff. This summary must describe what the PR itself changes, not what the
+     reviewer did. Capture the original problem or user/developer need, the new
+     behavior or API shape, the concrete packages/files/modules touched, the
+     important added, modified, or removed code paths, data/control flow
+     changes, compatibility impact, docs/examples/tests added, and any design
+     tradeoffs visible from the diff. Gather enough source detail to let the
+     final report stand alone as an engineering brief; do not rely on vague
+     title-level summaries.
+   - Maintain a run-level reviewability ledger for every open PR. Each PR must
+     end the scan in exactly one auditable bucket: processed, heavy-review
+     eligible candidate, carried-forward unchanged blocker, intentionally not
+     reached, or blocked by a concrete gate. Do not allow an open PR to
+     disappear from the run because of incremental planning, candidate ordering,
+     stale aggregate review state, vague soft-CI uncertainty, or a broad skip
+     group.
 4. Split PRs into two auditable processing paths before applying the candidate
    gates:
    - External PR review path: PRs not authored by an own login. These are the
@@ -233,6 +260,13 @@ In the final report:
   switchable to English, and include visual/interactive UI for status totals,
   reviewed PRs, skipped PR groups, comment details, CI/thread state, search,
   and status filtering.
+- Include the incremental planner result or equivalent fields in the JSON
+  summary as `incremental_plan`, and include the next run-state snapshot as
+  `run_state`. These fields are the workflow's memory: they should record the
+  lightweight open-PR index, planning reasons such as `head_sha_changed` or
+  `checks_changed`, carried-forward blockers, and the latest successful
+  verification time. The public report renderer may ignore these fields, but
+  future MyCR runs must be able to use them to avoid repeating expensive work.
 - The HTML report should feel like a polished engineering dashboard, inspired
   by high-quality developer tools such as GitHub/Graphite review timelines,
   Linear-style dense status lists, Vercel-style deployment/status cards, and
@@ -472,6 +506,20 @@ In the final report:
 
 - If `gh` has no valid GitHub auth, use the GitHub connector instead of blocking
   unless a required action is unavailable there.
+- Incremental planning is an optimization, not a correctness shortcut. The
+  cheap full-open-PR index must still be refreshed every run, and any missing
+  or suspicious planner input must make the run fall back to a conservative
+  heavy scan. Before submitting review comments, approving, merging, or pushing
+  own-PR fixes, refresh the PR's head SHA, checks, comments, and review threads
+  even if the incremental plan selected it correctly.
+- Use `scripts/mycr-incremental-plan.mjs` to compare the current lightweight
+  index with the latest archived report's `run_state`. The planner only
+  decides which PRs need expensive work; it does not decide review outcomes.
+  Treat `carry_forward` entries as reportable unchanged blockers, not as
+  permission to approve or merge.
+- Run a periodic full sweep when the prior state is older than the planner's
+  `--force-full-sweep-hours` threshold, or sooner if GitHub metadata looks
+  inconsistent. The default threshold is 24 hours.
 - For CI, check both combined commit statuses and GitHub Actions workflow runs.
   Treat pending, queued, in-progress, cancelled, timed out, skipped unexpectedly,
   or missing required checks as not ready.

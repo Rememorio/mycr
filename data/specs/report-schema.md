@@ -16,6 +16,9 @@ The archive page accepts the JSON shape produced by `mycr` reports.
 - `blocked`: PRs blocked after candidate processing.
 - `skipped_groups`: skipped PRs grouped by reason.
 - `follow_up`: PRs requiring later attention.
+- `incremental_plan`: optional machine-readable plan produced before the heavy
+  review pass.
+- `run_state`: optional machine-readable snapshot for the next incremental run.
 
 ## PR Entry Fields
 
@@ -69,3 +72,54 @@ Skipped entries should also include:
 
 The report archive page only requires a subset, but richer fields make the
 self-contained HTML report useful without opening GitHub.
+
+## Incremental Plan Fields
+
+`incremental_plan` may mirror the output from
+`scripts/mycr-incremental-plan.mjs`:
+
+- `schema_version`: planner schema version.
+- `generated_at`: when the lightweight index was evaluated.
+- `previous_generated_at`: previous run-state timestamp when available.
+- `overlap_watermark`: previous run start minus the configured overlap window.
+- `force_full_sweep`: whether every open PR was intentionally promoted to the
+  heavy path.
+- `totals`: counts for open PRs, heavy-review PRs, carried-forward PRs, and
+  PRs that disappeared since the previous state.
+- `queue`: one item per open PR with `number`, `action`, `reasons`, head SHA,
+  previous head SHA, and latest activity time.
+- `heavy_review`: queue subset that needs expensive diff, source, CI, thread,
+  subagent, or report-writing work.
+- `carry_forward`: queue subset whose concrete blocker can be carried forward
+  because the lightweight fingerprints did not change.
+
+Planner reasons should be discrete strings such as `new_pr`,
+`head_sha_changed`, `checks_changed`, `review_threads_changed`,
+`comments_changed`, `readiness_changed`, `previous_not_reached`,
+`updated_after_watermark`, `missing_required_fingerprint`, or
+`force_full_sweep`.
+
+## Run State Snapshot
+
+`run_state` is hidden workflow memory for the next run. It should be compact,
+stable, and safe to publish. Store only GitHub metadata and review-state facts,
+not local paths, private tokens, temporary files, or raw model prompts.
+
+Recommended fields:
+
+- `schema_version`
+- `generated_at`
+- `run_started_at`
+- `repo`
+- `overlap_watermark`
+- `pull_requests`: object keyed by PR number. Each item should include the
+  lightweight index fields used for change detection: title, author, labels,
+  draft/WIP state, base ref, head ref, head SHA, update/activity timestamps,
+  mergeability, review decision, check fingerprint, review-thread fingerprint,
+  comment/review fingerprint, ledger bucket, last action, last heavy-reviewed
+  head SHA, last verification time, planning reasons, and carried-forward
+  blockers when applicable.
+
+Do not let `run_state` replace final-action checks. A MyCR run must still fresh
+fetch head SHA, checks, comments, and review threads before posting comments,
+approving, merging, or pushing own-PR fixes.

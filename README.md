@@ -16,6 +16,10 @@ changes, report history, and the website can evolve through normal Git commits.
 - `scripts/archive-report.mjs`: copies a run JSON into the website archive and
   renders the matching HTML file.
 - `scripts/check-reports.mjs`: validates archived JSON/HTML pairs.
+- `scripts/mycr-incremental-plan.mjs`: compares a lightweight open-PR index
+  with the previous run state and produces the heavy-review queue.
+- `scripts/test-incremental-plan.mjs`: focused regression tests for the
+  incremental planner.
 - `src/data/reports/`: tracked source JSON for every MyCR run.
 - `public/reports/`: public JSON and HTML artifacts served by the site.
 - `src/pages/index.astro`: `/mycr` report archive dashboard.
@@ -29,6 +33,26 @@ npm install
 npm run dev -- --port 4321
 npm run verify
 ```
+
+## Incremental Planning
+
+MyCR should still build a lightweight ledger for every open PR on each run, but
+it can avoid expensive repeat work by comparing that index with the previous
+run's `run_state`:
+
+```sh
+node scripts/mycr-incremental-plan.mjs \
+  --current /path/to/current-open-pr-index.json \
+  --previous src/data/reports/mycr-YYYYmmdd-HHMMSS.json \
+  --output /path/to/incremental-plan.json
+```
+
+The planner emits `heavy_review` entries for PRs whose head, checks, comments,
+threads, readiness state, mergeability, or activity window changed. It emits
+`carry_forward` entries only when a prior concrete blocker can be reused without
+doing diff/thread/subagent work again. Carry-forward data is never enough to
+approve, merge, comment, or push fixes; those actions still require fresh PR
+metadata immediately before the action.
 
 To archive a newly generated run:
 

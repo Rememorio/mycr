@@ -41,6 +41,24 @@ merge conflict, unresolved human thread, or stale `Changes Requested` state.
 Never use aggregate GitHub states as the whole explanation when the exact
 thread, check, or conflict can be named.
 
+Reports may include `incremental_plan` and `run_state` fields. These fields are
+machine-readable workflow memory and may be ignored by the visual renderer, but
+they must remain safe to publish: no credentials, private local paths, raw model
+prompts, or temporary workspace details.
+
+## Incremental Planning Contract
+
+Incremental planning may reduce repeated heavy work, but it must not reduce
+review coverage:
+
+- Every run still builds a lightweight ledger for every open PR.
+- Changed, new, previously not-reached, or stale PRs are promoted into the
+  heavy-review path.
+- Unchanged PRs may be carried forward only as unchanged concrete blockers.
+- Any action that affects GitHub state still requires fresh head, CI, comment,
+  and review-thread metadata immediately before the action.
+- Missing or unreliable previous state falls back to a full heavy scan.
+
 ## Report UI Contract
 
 Self-contained HTML reports must be readable in a narrow editor preview as well
