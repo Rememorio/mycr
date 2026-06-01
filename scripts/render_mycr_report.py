@@ -455,6 +455,19 @@ h1 {{
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }}
+.comment-head {{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}}
+.comment-link {{
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}}
 .pr-readout {{
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -904,6 +917,9 @@ a:hover {{ color: #0a5d57; }}
 .comment {{
   background: #fff8ed;
   border-left-color: var(--accent-2);
+  color: #1f2937;
+}}
+.comment-head {{
   color: #1f2937;
 }}
 .pr-readout {{
@@ -1466,11 +1482,20 @@ function blockerKindLabel(kind) {{
   return (labels[lang].blockerKinds || {{}})[kind] || text(kind);
 }}
 
+function inlineCommentText(comment) {{
+  if (comment === undefined || comment === null) return "";
+  if (typeof comment !== "object" || Array.isArray(comment)) {{
+    return text(comment);
+  }}
+  return text(comment.body || comment.summary || comment.message || "");
+}}
+
 function allPrText(item) {{
   const comments = (item.inline_comments || []).map(comment => [
     comment.severity,
     comment.focus,
     comment.body,
+    comment.summary,
     comment.path
   ].map(value => text(value)).join(" ")).join(" ");
   const blockers = blockersSearchText(item.blockers);
@@ -1500,7 +1525,7 @@ function readingAdvice(item) {{
   const body = allPrText(item);
   const hasP1 = comments.some(comment =>
     /\\bP[01]\\b/i.test(text(comment.severity)) ||
-    /\\bP[01]\\b/i.test(text(comment.body))
+    /\\bP[01]\\b/i.test(inlineCommentText(comment))
   );
   const hasCriticalRisk = hasP1 ||
     /(security|安全|bypass|绕过|breaking|破坏性|unbounded|无界|丢失|重复|不稳定|兼容|api|go-apidiff|failure|失败|不能 merge|不能合入|race|并发)/i.test(body);
@@ -1714,14 +1739,26 @@ function renderReviewRail(item) {{
 function renderComments(item) {{
   const comments = item.inline_comments || [];
   if (!comments.length) return "";
-  const rendered = comments.map(comment => `
-    <div class="comment">
-      <strong>${{escapeHtml(comment.path || "")}}${{comment.line ? ":" + escapeHtml(comment.line) : ""}}</strong>
-      <div>${{formatRich(text(comment.body || comment))}}</div>
-      ${{comment.focus ? `<div><strong>${{labels[lang].focus}}:</strong> ${{escapeHtml(text(comment.focus))}}</div>` : ""}}
-      ${{comment.severity ? `<div><strong>${{labels[lang].severity}}:</strong> ${{escapeHtml(text(comment.severity))}}</div>` : ""}}
-    </div>
-  `).join("");
+  const rendered = comments.map(comment => {{
+    const data = typeof comment === "object" && comment !== null && !Array.isArray(comment)
+      ? comment
+      : {{ body: comment }};
+    const location = `${{escapeHtml(data.path || "")}}${{data.line ? ":" + escapeHtml(data.line) : ""}}`;
+    const source = data.url
+      ? `<a class="comment-link" href="${{escapeHtml(data.url)}}">GitHub</a>`
+      : "";
+    return `
+      <div class="comment">
+        <div class="comment-head">
+          <strong>${{location}}</strong>
+          ${{source}}
+        </div>
+        <div>${{formatRich(inlineCommentText(data))}}</div>
+        ${{data.focus ? `<div><strong>${{labels[lang].focus}}:</strong> ${{escapeHtml(text(data.focus))}}</div>` : ""}}
+        ${{data.severity ? `<div><strong>${{labels[lang].severity}}:</strong> ${{escapeHtml(text(data.severity))}}</div>` : ""}}
+      </div>
+    `;
+  }}).join("");
   return `<section class="comments-panel">
     <h4>${{labels[lang].inlineComments}}</h4>
     <div class="comment-list">${{rendered}}</div>

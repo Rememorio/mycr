@@ -36,6 +36,51 @@ function requireArray(data, field, problems, reportName) {
   }
 }
 
+function inlineCommentHasText(comment) {
+  if (typeof comment === "string") {
+    return comment.trim() !== "";
+  }
+  if (!comment || typeof comment !== "object" || Array.isArray(comment)) {
+    return false;
+  }
+  return [comment.body, comment.summary].some(
+    (value) => typeof value === "string" && value.trim() !== "",
+  );
+}
+
+function validateInlineComments(parsed, problems, reportName) {
+  const entries = [
+    ...asArray(parsed.approved),
+    ...asArray(parsed.commented),
+    ...asArray(parsed.maintained),
+    ...asArray(parsed.blocked),
+  ];
+
+  for (const entry of entries) {
+    const comments = entry?.inline_comments;
+    if (comments === undefined) {
+      continue;
+    }
+    if (!Array.isArray(comments)) {
+      problems.push(
+        `${reportName}: PR #${entry?.number || "unknown"} inline_comments must be an array`,
+      );
+      continue;
+    }
+    comments.forEach((comment, index) => {
+      if (!inlineCommentHasText(comment)) {
+        problems.push(
+          `${reportName}: PR #${entry?.number || "unknown"} inline_comments[${index}] has no body or summary`,
+        );
+      }
+    });
+  }
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
 async function validateReport(fileName, problems) {
   const sourceJsonPath = path.join(sourceReportDir, fileName);
   const publicJsonPath = path.join(publicReportDir, fileName);
@@ -61,6 +106,7 @@ async function validateReport(fileName, problems) {
   for (const field of requiredArrayFields) {
     requireArray(parsed, field, problems, fileName);
   }
+  validateInlineComments(parsed, problems, fileName);
 
   if (!(await exists(publicJsonPath))) {
     problems.push(`${fileName}: missing public JSON copy`);
