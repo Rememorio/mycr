@@ -8,8 +8,9 @@
     "build": "astro build",
     "preview": "astro preview --host 127.0.0.1",
     "test:incremental": "node scripts/test-incremental-plan.mjs",
+    "test:cache": "node scripts/test-cache-manifest.mjs",
     "check:reports": "node scripts/check-reports.mjs",
-    "verify": "npm run test:incremental && npm run check:reports && npm run build"
+    "verify": "npm run test:incremental && npm run test:cache && npm run check:reports && npm run build"
   },
   "devDependencies": {
     "@astrojs/sitemap": "^3.6.0",

@@ -37,28 +37,50 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    or merge them from this run.
 3. Start with incremental planning, but keep a lightweight full-open-PR ledger:
    - Collect a cheap index for every open PR before doing any expensive diff,
-     thread, log, source, or report-writing work. The index must include at
-     least title, author, labels, draft/WIP state, base branch, head SHA,
-     mergeability, review decision, updated/latest-activity time, commit/check
-     fingerprint, review-thread fingerprint, and comment/review fingerprint.
+     thread-body, log, source, or report-writing work. This index is a cache
+     invalidation input, not a review artifact. It must include at least title,
+     author, labels, draft/WIP state, base branch, head SHA, mergeability,
+     review decision, updated/latest-activity time, commit/check fingerprint,
+     review-thread fingerprint, and comment/review fingerprint. Build those
+     fingerprints from stable IDs, authors, states, timestamps, check names and
+     conclusions, head SHAs, and changed-file path summaries. Do not put full
+     PR bodies, full review/comment bodies, diff hunks, source files, workflow
+     logs, or long CodeRabbit comments into the cheap index.
    - Compare that index with the latest successful run-state snapshot by using
      `node scripts/mycr-incremental-plan.mjs --current <current-index.json>
      --previous <previous-report-or-state.json> --output <plan.json>` from the
      MyCR workspace when a previous state exists. Use a small overlap window
      instead of a strict timestamp boundary so updates that happen during the
-     prior run are not missed. If the previous state is missing, unreadable, too
-     old, or does not contain the needed fingerprints, fall back to the old
-     conservative behavior and treat all open PRs as `heavy_review`.
+     prior run are not missed. Keep the default
+     `--force-full-sweep-action probe`: an old but otherwise unchanged PR
+     should enter `refresh_probe`, not `heavy_review`. Use
+     `--force-full-sweep-action heavy` only when the user explicitly asks for a
+     full code re-review or the metadata looks corrupt. If the previous state
+     is missing, unreadable, or does not contain the needed fingerprints, fall
+     back to the conservative behavior and treat all open PRs as
+     `heavy_review`.
+   - After planning, generate a cache manifest with
+     `node scripts/mycr-cache-manifest.mjs --plan <plan.json> --output
+     <cache-manifest.json>`. For `carry_forward` and `refresh_probe` entries
+     whose `metadata_cache_key` matches the previous key, reuse the previous
+     full metadata/report-entry cache and do not read diffs, source, full
+     comments, full threads, logs, or subagent output. For `refresh_probe`,
+     refresh only the cheap index fields; if the probe changes any fingerprint
+     or cache key, rerun the planner and promote that PR to `heavy_review`.
+     For `heavy_review`, fetch full metadata once and write it under the
+     manifest's full-metadata cache path so the next run can reuse it.
    - A PR enters the heavy path when it is new, its head SHA changed, CI/check
      fingerprint changed, review/comment/thread fingerprint changed, readiness
      markers changed, mergeability/base changed, it was previously
      `not_reached`, it has activity after the overlapped watermark that was not
-     already seen in the previous snapshot, or the run is doing a periodic full
-     sweep. Missing required fingerprints must also promote the PR to the heavy
-     path. A PR with an unchanged concrete blocker can be carried forward in the
-     ledger, but only as a carried-forward blocker with its previous evidence
-     and `last_verified_at`; never approve, merge, post comments, or mark an
-     own PR maintained from carried-forward data alone.
+     already seen in the previous snapshot, or a `refresh_probe` discovers a
+     changed cache key. Missing required fingerprints must also promote the PR
+     to the heavy path. A periodic freshness sweep by itself is only a
+     `refresh_probe`; it is not a reason to reread the diff or re-run xhigh
+     review. A PR with an unchanged concrete blocker can be carried forward in
+     the ledger, but only as a carried-forward blocker with its previous
+     evidence and `last_verified_at`; never approve, merge, post comments, or
+     mark an own PR maintained from carried-forward data alone.
    - For every PR in the `heavy_review` queue, collect the full metadata needed
      for the existing gates: requested reviewers, review threads, review
      submissions, commit statuses, pull-request workflow runs, mergeability,
@@ -517,9 +539,14 @@ In the final report:
   decides which PRs need expensive work; it does not decide review outcomes.
   Treat `carry_forward` entries as reportable unchanged blockers, not as
   permission to approve or merge.
-- Run a periodic full sweep when the prior state is older than the planner's
-  `--force-full-sweep-hours` threshold, or sooner if GitHub metadata looks
-  inconsistent. The default threshold is 24 hours.
+- Run a periodic lightweight freshness probe when the prior state is older than
+  the planner's `--force-full-sweep-hours` threshold, or sooner if GitHub
+  metadata looks inconsistent. The default threshold is 24 hours, but the
+  default action is `probe`, not full heavy review. A freshness probe refreshes
+  only cheap index fields and reuses the full-metadata cache if the
+  `metadata_cache_key` stays unchanged. Use full heavy sweep only for corrupt
+  metadata, missing fingerprints, explicit user requests, or changed cache
+  keys.
 - For CI, check both combined commit statuses and GitHub Actions workflow runs.
   Treat pending, queued, in-progress, cancelled, timed out, skipped unexpectedly,
   or missing required checks as not ready.

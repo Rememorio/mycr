@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -5,12 +6,18 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const schemaVersion = 1;
 const defaultOverlapMinutes = 10;
 const defaultForceFullSweepHours = 24;
+const defaultForceFullSweepAction = "probe";
 const jsonIndent = 2;
 const minuteInMilliseconds = 60 * 1000;
 const hourInMilliseconds = 60 * minuteInMilliseconds;
 
 const actionHeavyReview = "heavy_review";
 const actionCarryForward = "carry_forward";
+const actionRefreshProbe = "refresh_probe";
+
+const cacheModeRefreshFullMetadata = "refresh_full_metadata";
+const cacheModeRefreshProbe = "refresh_lightweight_probe";
+const cacheModeReusePreviousResult = "reuse_previous_result";
 
 const reasonNoPreviousState = "no_previous_state";
 const reasonNewPr = "new_pr";
@@ -38,7 +45,9 @@ function usage() {
       "",
       "Options:",
       "  --overlap-minutes <n>          Re-scan activity newer than previous start minus this overlap. Default: 10",
-      "  --force-full-sweep-hours <n>   Re-scan every open PR when the previous state is older than this. Default: 24",
+      "  --force-full-sweep-hours <n>   Run stale-state freshness handling when the previous state is older than this. Default: 24",
+      "  --force-full-sweep-action <probe|heavy>",
+      "                                Use a lightweight refresh probe for stale unchanged PRs, or force heavy review. Default: probe",
     ].join("\n"),
   );
 }
@@ -50,6 +59,7 @@ function parseArgs(argv) {
     outputPath: "",
     overlapMinutes: defaultOverlapMinutes,
     forceFullSweepHours: defaultForceFullSweepHours,
+    forceFullSweepAction: defaultForceFullSweepAction,
   };
 
   const args = [...argv];
@@ -81,6 +91,10 @@ function parseArgs(argv) {
       );
       continue;
     }
+    if (arg === "--force-full-sweep-action") {
+      parsed.forceFullSweepAction = parseForceFullSweepAction(args.shift());
+      continue;
+    }
     throw new Error(`unexpected argument: ${arg}`);
   }
 
@@ -89,6 +103,13 @@ function parseArgs(argv) {
   }
 
   return parsed;
+}
+
+function parseForceFullSweepAction(value) {
+  if (value === "probe" || value === "heavy") {
+    return value;
+  }
+  throw new Error("--force-full-sweep-action must be probe or heavy");
 }
 
 function parseNonNegativeNumber(value, flagName) {
@@ -145,6 +166,10 @@ function stableStringify(value) {
     return `{${fields.join(",")}}`;
   }
   return JSON.stringify(value);
+}
+
+function shortHash(value) {
+  return createHash("sha256").update(value).digest("hex").slice(0, 24);
 }
 
 function normalizeLabels(pr) {
@@ -223,6 +248,7 @@ function normalizePullRequest(pr) {
       "comments",
       "reviews",
     ]),
+    metadata_cache_key: asString(pr.metadata_cache_key ?? pr.metadataCacheKey),
   };
 }
 
@@ -253,6 +279,8 @@ function extractRunState(value) {
   for (const pr of normalizePullRequests(state)) {
     pullRequests[String(pr.number)] = {
       ...pr,
+      metadata_cache_key:
+        pr.metadata_cache_key || metadataCacheKey(pr),
       ledger_bucket: asString(pr.ledger_bucket ?? pr.ledgerBucket),
       last_action: asString(pr.last_action ?? pr.lastAction),
       last_heavy_reviewed_head_sha: asString(
@@ -262,6 +290,8 @@ function extractRunState(value) {
       blockers: asArray(pr.blockers),
     };
   }
+
+  mergeReportOutcomes(pullRequests, value);
 
   return {
     generated_at: normalizeDate(
@@ -274,6 +304,99 @@ function extractRunState(value) {
   };
 }
 
+function mergeReportOutcomes(pullRequests, source) {
+  for (const outcome of collectReportOutcomes(source)) {
+    const pr = pullRequests[String(outcome.number)];
+    if (!pr) {
+      continue;
+    }
+    pr.ledger_bucket = outcome.ledger_bucket || pr.ledger_bucket;
+    pr.last_action = outcome.last_action || pr.last_action;
+    pr.last_outcome = outcome.outcome || pr.last_outcome || "";
+    pr.last_risk = outcome.risk || pr.last_risk || "";
+    if (outcome.blockers.length > 0) {
+      pr.blockers = outcome.blockers;
+    }
+  }
+}
+
+function collectReportOutcomes(source) {
+  if (!source || typeof source !== "object") {
+    return [];
+  }
+
+  const outcomes = [];
+  for (const item of asArray(source.approved)) {
+    outcomes.push(reportOutcome(item, "processed", "approved"));
+  }
+  for (const item of asArray(source.commented)) {
+    outcomes.push(reportOutcome(item, "blocked", "commented"));
+  }
+  for (const item of asArray(source.maintained)) {
+    outcomes.push(reportOutcome(item, "processed", "maintained"));
+  }
+  for (const item of asArray(source.blocked)) {
+    outcomes.push(reportOutcome(item, "blocked", "blocked"));
+  }
+  for (const item of asArray(source.follow_up)) {
+    outcomes.push(reportOutcome(item, "blocked", asString(item.status) || "follow_up"));
+  }
+
+  for (const group of asArray(source.skipped_groups)) {
+    const groupReason = asString(group.reason);
+    for (const item of asArray(group.items)) {
+      const skipReason = asString(item.skip_reason);
+      const notReached = isNotReachedText(`${groupReason} ${skipReason}`);
+      outcomes.push(
+        reportOutcome(
+          item,
+          notReached ? "not_reached" : "blocked",
+          notReached ? "not_reached" : "skipped",
+        ),
+      );
+    }
+  }
+
+  return outcomes.filter((outcome) => outcome.number > 0);
+}
+
+function reportOutcome(item, ledgerBucket, lastAction) {
+  return {
+    number: asNumber(item?.number),
+    ledger_bucket: ledgerBucket,
+    last_action: lastAction,
+    outcome: asString(item?.outcome),
+    risk: asString(item?.risk),
+    blockers: normalizeReportBlockers(item),
+  };
+}
+
+function normalizeReportBlockers(item) {
+  const blockers = asArray(item?.blockers);
+  if (blockers.length > 0) {
+    return blockers;
+  }
+
+  return asArray(item?.inline_comments)
+    .map((comment) => {
+      if (!comment || typeof comment !== "object" || Array.isArray(comment)) {
+        return {};
+      }
+      return {
+        kind: "human_review",
+        summary: asString(comment.summary || comment.body),
+        url: asString(comment.url),
+        path: asString(comment.path),
+        line: asNumber(comment.line),
+      };
+    })
+    .filter((blocker) => blocker.summary || blocker.url);
+}
+
+function isNotReachedText(value) {
+  return /not[_ -]?reached|未进入|未处理|未触达/iu.test(asString(value));
+}
+
 function readinessFingerprint(pr) {
   return stableStringify({
     state: pr.state,
@@ -281,6 +404,22 @@ function readinessFingerprint(pr) {
     is_wip: pr.is_wip,
     labels: pr.labels,
   });
+}
+
+function metadataCacheKey(pr) {
+  return shortHash(
+    stableStringify({
+      number: pr.number,
+      base_ref: pr.base_ref,
+      head_sha: pr.head_sha,
+      mergeable: pr.mergeable,
+      review_decision: pr.review_decision,
+      readiness: readinessFingerprint(pr),
+      checks_fingerprint: pr.checks_fingerprint,
+      review_threads_fingerprint: pr.review_threads_fingerprint,
+      comments_fingerprint: pr.comments_fingerprint,
+    }),
+  );
 }
 
 function reasonIfChanged(reasons, current, previous, field, reason) {
@@ -344,10 +483,6 @@ function planPullRequest(current, previous, options) {
     };
   }
 
-  if (options.forceFullSweep) {
-    reasons.push(reasonForceFullSweep);
-  }
-
   if (hasMissingRequiredFingerprint(current, previous)) {
     reasons.push(reasonMissingFingerprint);
   }
@@ -389,10 +524,30 @@ function planPullRequest(current, previous, options) {
     };
   }
 
+  if (options.forceFullSweep) {
+    return {
+      action:
+        options.forceFullSweepAction === "heavy"
+          ? actionHeavyReview
+          : actionRefreshProbe,
+      reasons: [reasonForceFullSweep],
+    };
+  }
+
   return {
     action: actionCarryForward,
     reasons: [reasonUnchanged],
   };
+}
+
+function cacheModeForAction(action) {
+  if (action === actionHeavyReview) {
+    return cacheModeRefreshFullMetadata;
+  }
+  if (action === actionRefreshProbe) {
+    return cacheModeRefreshProbe;
+  }
+  return cacheModeReusePreviousResult;
 }
 
 function makePlan(currentSnapshot, previousSnapshot, options = {}) {
@@ -404,6 +559,8 @@ function makePlan(currentSnapshot, previousSnapshot, options = {}) {
   const overlapMinutes = options.overlapMinutes ?? defaultOverlapMinutes;
   const forceFullSweepHours =
     options.forceFullSweepHours ?? defaultForceFullSweepHours;
+  const forceFullSweepAction =
+    options.forceFullSweepAction ?? defaultForceFullSweepAction;
   const watermark = makeWatermark(previousState, overlapMinutes);
   const forceFullSweep = shouldForceFullSweep(
     previousState,
@@ -415,15 +572,22 @@ function makePlan(currentSnapshot, previousSnapshot, options = {}) {
     const previous = previousState.pull_requests[String(current.number)];
     const planned = planPullRequest(current, previous, {
       forceFullSweep,
+      forceFullSweepAction,
       hasPreviousState,
       watermark,
     });
+    const currentCacheKey = current.metadata_cache_key || metadataCacheKey(current);
+    const previousCacheKey =
+      previous?.metadata_cache_key || (previous ? metadataCacheKey(previous) : "");
     return {
       number: current.number,
       title: current.title,
       url: current.url,
       author: current.author,
       action: planned.action,
+      cache_mode: cacheModeForAction(planned.action),
+      metadata_cache_key: currentCacheKey,
+      previous_metadata_cache_key: previousCacheKey,
       reasons: planned.reasons,
       head_sha: current.head_sha,
       previous_head_sha: previous?.head_sha || "",
@@ -434,6 +598,7 @@ function makePlan(currentSnapshot, previousSnapshot, options = {}) {
   });
 
   const heavyReview = queue.filter((item) => item.action === actionHeavyReview);
+  const refreshProbe = queue.filter((item) => item.action === actionRefreshProbe);
   const carryForward = queue.filter((item) => item.action === actionCarryForward);
   const currentByNumber = new Set(queue.map((item) => String(item.number)));
   const closedOrMissing = Object.values(previousState.pull_requests)
@@ -453,9 +618,12 @@ function makePlan(currentSnapshot, previousSnapshot, options = {}) {
     const previous = previousState.pull_requests[String(current.number)];
     runStatePullRequests[String(current.number)] = {
       ...current,
+      metadata_cache_key: current.metadata_cache_key || metadataCacheKey(current),
       ledger_bucket:
         queueItem.action === actionHeavyReview
           ? "eligible_candidate"
+          : queueItem.action === actionRefreshProbe
+            ? "refresh_probe"
           : "carried_forward",
       last_action: queueItem.action,
       last_heavy_reviewed_head_sha:
@@ -475,14 +643,17 @@ function makePlan(currentSnapshot, previousSnapshot, options = {}) {
     previous_generated_at: previousState.generated_at,
     overlap_watermark: watermark,
     force_full_sweep: forceFullSweep,
+    force_full_sweep_action: forceFullSweepAction,
     totals: {
       open: queue.length,
       heavy_review: heavyReview.length,
+      refresh_probe: refreshProbe.length,
       carry_forward: carryForward.length,
       closed_or_missing: closedOrMissing.length,
     },
     queue,
     heavy_review: heavyReview,
+    refresh_probe: refreshProbe,
     carry_forward: carryForward,
     closed_or_missing: closedOrMissing,
     run_state: {
@@ -512,6 +683,7 @@ async function main() {
   const plan = makePlan(currentSnapshot, previousSnapshot, {
     overlapMinutes: args.overlapMinutes,
     forceFullSweepHours: args.forceFullSweepHours,
+    forceFullSweepAction: args.forceFullSweepAction,
   });
   const output = `${JSON.stringify(plan, null, jsonIndent)}\n`;
 
@@ -536,7 +708,9 @@ if (
 export {
   actionCarryForward,
   actionHeavyReview,
+  actionRefreshProbe,
   makePlan,
+  metadataCacheKey,
   normalizePullRequest,
   reasonChecksChanged,
   reasonForceFullSweep,

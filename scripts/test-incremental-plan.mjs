@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import {
   actionCarryForward,
   actionHeavyReview,
+  actionRefreshProbe,
   makePlan,
+  metadataCacheKey,
   normalizePullRequest,
   reasonChecksChanged,
   reasonForceFullSweep,
@@ -176,8 +178,82 @@ function queueItem(plan, number = 100) {
     },
   );
   assert.equal(plan.force_full_sweep, true);
+  assert.equal(plan.force_full_sweep_action, "probe");
+  assert.equal(queueItem(plan).action, actionRefreshProbe);
+  assert.equal(queueItem(plan).cache_mode, "refresh_lightweight_probe");
+  assert.ok(queueItem(plan).reasons.includes(reasonForceFullSweep));
+  assert.equal(plan.totals.refresh_probe, 1);
+}
+
+{
+  const basePr = pr();
+  const plan = makePlan(
+    currentSnapshot([basePr]),
+    previousSnapshot([basePr], {
+      generated_at: "2026-05-31T08:00:00.000Z",
+      run_started_at: "2026-05-31T08:00:00.000Z",
+    }),
+    {
+      overlapMinutes: 10,
+      forceFullSweepHours: 24,
+      forceFullSweepAction: "heavy",
+    },
+  );
+  assert.equal(plan.force_full_sweep, true);
+  assert.equal(plan.force_full_sweep_action, "heavy");
   assert.equal(queueItem(plan).action, actionHeavyReview);
   assert.ok(queueItem(plan).reasons.includes(reasonForceFullSweep));
+}
+
+{
+  const basePr = pr();
+  const normalized = normalizePullRequest(basePr);
+  const plan = makePlan(currentSnapshot([basePr]), previousSnapshot([basePr]), {
+    overlapMinutes: 10,
+    forceFullSweepHours: 24,
+  });
+  assert.equal(queueItem(plan).metadata_cache_key, metadataCacheKey(normalized));
+  assert.equal(
+    plan.run_state.pull_requests["100"].metadata_cache_key,
+    metadataCacheKey(normalized),
+  );
+}
+
+{
+  const basePr = pr();
+  const report = {
+    run_state: previousSnapshot([basePr]).run_state,
+    skipped_groups: [
+      {
+        reason: "Existing unresolved human review threads",
+        items: [
+          {
+            number: 100,
+            title: basePr.title,
+            blockers: [
+              {
+                kind: "human_review",
+                summary: "Reviewer asked for a current-line fix.",
+                url: "https://github.com/trpc-group/trpc-agent-go/pull/100#discussion",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+  const plan = makePlan(currentSnapshot([basePr]), report, {
+    overlapMinutes: 10,
+    forceFullSweepHours: 24,
+  });
+  assert.equal(queueItem(plan).action, actionCarryForward);
+  assert.deepEqual(plan.run_state.pull_requests["100"].blockers, [
+    {
+      kind: "human_review",
+      summary: "Reviewer asked for a current-line fix.",
+      url: "https://github.com/trpc-group/trpc-agent-go/pull/100#discussion",
+    },
+  ]);
 }
 
 console.log("validated incremental planner behavior");

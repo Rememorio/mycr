@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .astro/
+.mycr-cache/
+.mycr-run-*/
 .DS_Store
 npm-debug.log*
 yarn-debug.log*
