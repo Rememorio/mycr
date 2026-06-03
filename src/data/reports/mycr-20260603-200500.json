@@ -1,0 +1,953 @@
+{
+  "title": "MyCR Review Report 2026-06-03 20:20",
+  "repo": "trpc-group/trpc-agent-go",
+  "generated_at": "2026-06-03T20:20:00+08:00",
+  "overview": "本轮从 40 个 open PR 的轻量索引开始。由于 GitHub GraphQL cheap-index 502，REST fallback 触发 fingerprint schema 迁移，planner 将 40 个 PR 全部提升为 heavy_review；实际处理时优先选择 CI 绿、旧评论可验证和 own-PR 维护项。结果：#1892 已 resolve 旧线程、LGTM 并 squash merge；#1910 提交 1 条新行级评论；#1900 与 #1865 的本轮评论已被作者修复并验证，其中 #1900 本轮线程已 resolve、#1865 全部线程已 resolve，但两者新 head CI 仍 pending；own PR #1913 直接修复文档并 push，最终只剩 coverage queued；own PR #1885 刷新为绿且无 unresolved threads。",
+  "timeline": [
+    {
+      "time": "19:10",
+      "text": "Built lightweight open PR index through REST fallback after GraphQL 502; planner promoted 40 PRs to heavy_review."
+    },
+    {
+      "time": "19:23",
+      "text": "Reviewed #1910, ran targeted tests, posted ToolSet session activation comment."
+    },
+    {
+      "time": "19:40",
+      "text": "Reviewed #1900, verified prior fixed thread, posted summary trigger consistency comment."
+    },
+    {
+      "time": "19:50",
+      "text": "Reviewed #1865, verified prior ToolCallID fix, posted remaining truncation marker comment."
+    },
+    {
+      "time": "19:56",
+      "text": "Reviewed #1892, resolved verified old thread, approved LGTM, squash-merged."
+    },
+    {
+      "time": "20:00",
+      "text": "Maintained own PR #1913 by pushing docs fix; #1885 refreshed as green/no unresolved threads."
+    },
+    {
+      "time": "20:15",
+      "text": "#1913 CI refresh: failing=0, pending=1 (coverage)."
+    },
+    {
+      "time": "20:20",
+      "text": "#1900/#1865 authors pushed fixes after MyCR comments; verified both targeted fixes locally, but new CI is still pending."
+    }
+  ],
+  "skill_evolution": [
+    "记录新增 backlog：REST fallback fingerprint schema 不一致导致全量 heavy_review，需要统一 collector schema 和 migration guard。",
+    "本轮再次验证 final processed-PR audit 需要脚本化；当前仍由临时 Node/GraphQL 查询拼装。",
+    "Own-PR broad OpenClaw tests 出现环境型失败，已在 backlog 继续跟踪 structured test outcome。"
+  ],
+  "incremental_plan": {
+    "source": "scripts/mycr-incremental-plan.mjs",
+    "open_prs": 40,
+    "heavy_review": 40,
+    "refresh_probe": 0,
+    "carry_forward": 0,
+    "closed_or_missing": [
+      1906,
+      1908
+    ],
+    "note": "All open PRs were promoted because fallback fingerprints differed from the previous report schema."
+  },
+  "run_state": {
+    "run_dir": ".mycr-run-20260603T111014Z",
+    "authenticated_reviewer": "WineChord",
+    "target_checkout_dirty": "Main checkout had user edits in docs/mkdocs/en/tool.md and docs/mkdocs/zh/tool.md; all PR work used separate worktrees.",
+    "actions": {
+      "inline_comments": [
+        1910,
+        1900,
+        1865
+      ],
+      "approved_and_merged": [
+        1892
+      ],
+      "own_pr_fixed": [
+        1913
+      ],
+      "own_pr_refreshed": [
+        1885
+      ]
+    }
+  },
+  "approved": [
+    {
+      "number": 1892,
+      "title": "examples: tidy promptiter examples",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1892",
+      "author": "Flash-LHR",
+      "status": "merged",
+      "technical_background": "PromptIter examples 需要保持代码、README 请求样例、evalset ID 和 metrics schema 一致，否则用户复制 README 请求会跑不出真实 case。",
+      "problem": "旧 review thread 指出 restricted-run 示例仍使用 `case_1/case_2/case_3`，而 PR 已重命名 eval cases。",
+      "problem_framing": "这是 example correctness 问题：文档里的请求必须能筛到实际 evalset 中存在的 case。",
+      "root_cause": "README 示例 ID 没有随 evalset 重命名一起更新。",
+      "approach": "验证 diff 中 restricted-run 示例已改为 `train_01_nba_nuggets_blowout`、`train_08_cricket_last_over_chase`、`validation_01_nba_empty_48`，并确认这些 ID 在 train/validation data 中存在。随后 resolve 旧线程、approve 并 squash merge。",
+      "alternative_designs": "也可以删除 restricted-run 示例，但保留可运行示例更适合用户验证 API。",
+      "tradeoffs": "本轮只验证 example consistency 和编译测试，不运行真实模型优化全流程。",
+      "design_assessment": "改动主要是 examples/evaluation/promptiter 的整理；数据、README 和 Go package 测试一致，子审查无发现。",
+      "modules": "examples/evaluation/promptiter/{syncrun,asyncrun,server,multinode}",
+      "api_surface": "Example-only; no library API change。",
+      "change_inventory": "整理 PromptIter sports recap examples、evalset/metrics JSON、README 请求和并行参数。",
+      "semantic_changes": "示例从泛化 case_n ID 改为语义化 sports recap eval IDs。",
+      "module_impact": "影响 PromptIter examples 的可复制运行体验。",
+      "cross_module_impact": "不影响 runtime library。",
+      "behavior_impact": "README restricted-run 请求现在能选中真实 train/validation cases。",
+      "tests_docs": "本地 `go test ./promptiter/...` 通过。GitHub checks 和 `codecov/patch` 均 SUCCESS。",
+      "attention_points": "最终 refresh: state=MERGED, unresolved threads=0。",
+      "outcome": "旧线程已 resolve；提交 `LGTM` approval；已 squash merge。",
+      "risk": "低。example/data 文档整理，已验证 ID 和 tests。",
+      "ci_state": "Final refresh: state=MERGED, reviewDecision=APPROVED, codecov/patch=SUCCESS, merge commit=b22744db824825f2bf2cd0ab9e5bd96d1dd126c6。",
+      "inline_comments": []
+    }
+  ],
+  "commented": [
+    {
+      "number": 1910,
+      "title": "{agent/llmagent, internal/flow, docs, examples}: add tool activation",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1910",
+      "author": "Flash-LHR",
+      "status": "commented",
+      "technical_background": "该 PR 为 llmagent 增加基于技能加载的 ToolSet activation 机制，并把 invocation/session 级激活记录合入实际可用工具集。这个链路会影响模型能否在本轮看见特定工具。",
+      "problem": "session activation records 在应用时只校验 ToolSet 名称是否存在，没有确认该记录仍被当前 `WithToolActivationOnSkillLoad` 规则允许。",
+      "problem_framing": "session 级状态是跨轮持久化的输入，不应该比当前代码配置拥有更高权限。旧记录或被注入记录如果能绕过当前规则，就会让模型看到本轮不应启用的工具。",
+      "root_cause": "`activeToolActivationSets` 在合并 records 时只查 `available[name]`，没有用规范化后的当前 activation rules 校验 mode/lifetime/tool set，也没有验证 session key 和 payload 的一致性。",
+      "approach": "提交 1 条 inline comment，要求在应用持久化记录前按当前 activation rules 过滤。",
+      "alternative_designs": "也可以在写入 session record 时绑定规则版本，但最小修复是在读取/apply 时重新校验当前配置。",
+      "tradeoffs": "读取时校验会让配置收紧立即生效；代价是 activation applier 需要保留足够的规则索引。",
+      "design_assessment": "功能方向合理，测试覆盖了不少激活模式；但当前持久化记录信任边界过宽，不能 approve。",
+      "modules": "agent/llmagent, internal/flow/llmflow, internal/flow/toolsnapshot",
+      "api_surface": "`WithToolActivationOnSkillLoad` 和相关 session activation 行为。",
+      "change_inventory": "新增 activation rules、records、ToolSet selection、tests 和 example。",
+      "semantic_changes": "技能加载后可以按配置让指定 ToolSet 在当前 invocation 或 session 生命周期内可见。",
+      "module_impact": "直接影响 llmagent 工具可见性。",
+      "cross_module_impact": "session state 和 invocation records 会改变后续 flow 里传给模型的工具集合。",
+      "behavior_impact": "修复前旧 session record 可能激活当前规则不再允许的 ToolSet。",
+      "tests_docs": "本地 targeted tests 通过：`go test ./agent/llmagent ./internal/flow/llmflow ./internal/flow/processor ./internal/flow/toolsnapshot`；example package 也通过。GitHub checks 绿。",
+      "attention_points": "Final refresh: state=OPEN, reviewDecision=REVIEW_REQUIRED, unresolved threads=1。",
+      "outcome": "提交 1 条 inline comment；未 approve。",
+      "risk": "中高。问题涉及跨轮工具授权边界，可能让模型获得超出当前配置的工具。",
+      "ci_state": "Final refresh: state=OPEN, reviewDecision=REVIEW_REQUIRED, unresolved threads=1，checks green。",
+      "inline_comments": [
+        {
+          "path": "agent/llmagent/tool_activation.go",
+          "line": 693,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1910#discussion_r3348098541",
+          "summary": "Session activation records can activate ToolSets no longer allowed by current activation rules.",
+          "focus": "session activation trust boundary",
+          "severity": "P1",
+          "body": "Session activation records are trusted here after only checking the ToolSet name, so a stale or injected session record can activate a tool set that no current `WithToolActivationOnSkillLoad` rule allows. Filter persisted records against the normalized current activation rules (including mode/lifetime/tool set), and reject mismatched session-key payloads before applying them.\n\n<details><summary>中文</summary>\n这里的 session 激活记录只校验 ToolSet 名称就会被信任，因此过期或被写入的 session 记录可以激活当前 `WithToolActivationOnSkillLoad` 规则并未允许的工具集。请先按当前规范化后的激活规则校验持久化记录（包括 mode/lifetime/tool set），并在 session key 与 payload 不匹配时拒绝应用。\n</details>"
+        }
+      ]
+    },
+    {
+      "number": 1900,
+      "title": "session: decouple summary threshold formatting",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1900",
+      "author": "Rememorio",
+      "status": "commented",
+      "technical_background": "该 PR 为 session summary 增加 tool call/result formatter，让摘要触发和摘要输入可以忽略某些工具内容。",
+      "problem": "`hasSummarizableContent` 只影响 token-threshold 注入的检查输入，不会整体阻止 `ShouldSummarize`。",
+      "problem_framing": "如果用户用 formatter 把所有摘要输入排空，后续非 token 检查仍可能触发 summary，最终 `Summarize` 会因为没有 conversation text 失败。",
+      "root_cause": "`ShouldSummarizeWithContext` 运行 checks 前没有先确认 summary input 仍有可摘要文本；content gate 被放在 `buildCheckSession` 内部，只覆盖 token threshold。",
+      "approach": "提交 1 条 inline comment，建议在 `ShouldSummarizeWithContext` 运行 checks 前用 `hasSummarizableContent` 做整体 gate。",
+      "alternative_designs": "也可以把文档和测试收窄为只保证 token-threshold 抑制，但这不符合 formatter “移除摘要输入”的直觉语义。",
+      "tradeoffs": "提前 gate 会让非 token threshold 在空摘要输入时返回 false，避免后续空文本错误；代价是行为更严格。",
+      "design_assessment": "formatter API 有价值，旧 review thread 增补的 tool-call-only 测试已经处理；剩余问题是触发路径语义不完整。",
+      "modules": "session/summary, tool/mcpbroker",
+      "api_surface": "summary formatter options and summarization trigger behavior。",
+      "change_inventory": "新增 tool call/result formatter、相关测试和 docs。",
+      "semantic_changes": "summary token estimation 和 summarization input 可以被 formatter 改写。",
+      "module_impact": "影响 summary trigger 和 summary generation 的一致性。",
+      "cross_module_impact": "tool/mcpbroker 等工具结果可通过 formatter 从 summary 中排除。",
+      "behavior_impact": "修复前 non-token checks 仍可能在空摘要输入上触发，导致 summary 调用失败。",
+      "tests_docs": "After author push, local targeted tests passed: `go test ./session/summary ./tool/mcpbroker`. New GitHub CI still pending.",
+      "attention_points": "Author pushed `8d9e9d5a` and replied fixed on the MyCR thread. Verified `ShouldSummarizeWithContext` now gates on effective summarizable input and resolved the MyCR thread. Three older fixed threads remain unresolved in GitHub UI; new CI pending=94, failing=0.",
+      "outcome": "本轮评论已由作者修复并已 resolve；由于新 head CI 仍 pending，未 approve。",
+      "risk": "中。问题会把一个应当“无需摘要”的 session 变成运行时错误。",
+      "ci_state": "Final refresh after author push: head=8d9e9d5a78d52231673fca81ef6cb81ae6deea61, unresolved=3, pending=94, failing=0.",
+      "inline_comments": [
+        {
+          "path": "session/summary/summarizer.go",
+          "line": 375,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1900#discussion_r3348137925",
+          "summary": "Formatter-empty summary input can still pass non-token summarization checks.",
+          "focus": "summary trigger consistency",
+          "severity": "P2",
+          "body": "This only suppresses the token-threshold input, not `ShouldSummarize` as a whole. With a formatter that removes all summary input plus `WithEventThreshold(0)` or another non-token check, `ShouldSummarize` can still return true and the later `Summarize` call fails with empty conversation text; either gate `ShouldSummarizeWithContext` on `hasSummarizableContent` before running checks, or narrow the docs/tests to token-threshold-only suppression.\n\n<details><summary>中文</summary>\n这里仅抑制了 token-threshold 输入，并没有整体抑制 `ShouldSummarize`。如果 formatter 把摘要输入全部排空，同时使用 `WithEventThreshold(0)` 或其他非 token check，`ShouldSummarize` 仍可能返回 true，随后 `Summarize` 会因为 conversation text 为空而失败。建议在运行 checks 前让 `ShouldSummarizeWithContext` 先用 `hasSummarizableContent` 做 gate，或者把文档和测试收窄为只保证 token-threshold 抑制。\n</details>"
+        }
+      ]
+    },
+    {
+      "number": 1865,
+      "title": "session: recover compacted tool results",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1865",
+      "author": "Rememorio",
+      "status": "commented",
+      "technical_background": "该 PR 修复 context compaction 后通过 `session_load` 恢复被压缩工具结果的能力，尤其是缺少 EventID 时用 ToolCallID 兜底。",
+      "problem": "placeholder/marker helper 已支持 ToolCallID-only，但 `truncateMiddleWithRef` 选择 marker 时仍只看 `EventID`。",
+      "problem_framing": "context compaction 有两条路径：完全替换为 placeholder，或在超大内容中间插入 truncation marker。两条路径都必须携带恢复句柄，否则用户刚修的 ToolCallID fallback 只覆盖一半场景。",
+      "root_cause": "`truncateMiddleWithRef` 的条件仍是 `if ref.EventID != \"\"`，导致 ToolCallID-only ref 在截断路径上回退为普通 `characters truncated` marker。",
+      "approach": "提交 1 条 inline comment，要求改为 EventID 或 ToolCallID 任一存在即输出 recoverable marker，并补 truncation-path 测试。",
+      "alternative_designs": "也可以让 `recoverableTruncationMarker` 自己决定是否 recoverable，并始终调用它；这会进一步减少条件重复。",
+      "tradeoffs": "扩大 recoverable marker 条件会让 marker 稍长，但换来恢复能力一致。",
+      "design_assessment": "作者已经修掉旧评论里 placeholder 路径的 ToolCallID fallback；剩余问题是同一恢复语义在截断路径仍不完整。",
+      "modules": "internal/flow/processor, internal/session/tool/recall, agent/graphagent, examples/context_compaction_recovery",
+      "api_surface": "context compaction recovery marker semantics。",
+      "change_inventory": "新增 ToolCallID fallback、session_load 恢复逻辑、tests 和 context compaction recovery example。",
+      "semantic_changes": "压缩后的工具结果可以通过 event_id 或 tool_call_id 找回原始内容。",
+      "module_impact": "影响 processor 在上下文压缩时给模型留下的恢复线索。",
+      "cross_module_impact": "session tool recall 依赖这些线索定位原始工具结果。",
+      "behavior_impact": "修复前 ToolCallID-only 的超大工具结果在截断路径仍不可恢复。",
+      "tests_docs": "After author push, local targeted tests passed: `go test ./internal/flow/processor ./internal/session/tool/recall ./agent/graphagent`. New GitHub CI still pending.",
+      "attention_points": "Author pushed `37fc7a054` and resolved all threads. Verified truncation path now uses recoverable marker when EventID or ToolCallID is present, and added truncation test. New CI pending=21, failing=0.",
+      "outcome": "本轮评论已由作者修复并已 resolve；由于新 head CI 仍 pending，未 approve。",
+      "risk": "中。问题会让一部分被压缩工具结果仍无法通过 session_load 找回。",
+      "ci_state": "Final refresh after author push: head=37fc7a0543d054ef3e938afa86b581b1a268f4f1, unresolved=0, pending=21, failing=0.",
+      "inline_comments": [
+        {
+          "path": "internal/flow/processor/context_compact.go",
+          "line": 726,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1865#discussion_r3348176698",
+          "summary": "Truncation marker path still drops ToolCallID-only recovery handles.",
+          "focus": "context compaction recovery",
+          "severity": "P2",
+          "body": "`truncateMiddleWithRef` still only emits the recoverable marker when `EventID` is present. Oversized tool results that only have `ToolCallID` therefore fall back to the generic truncation marker, so `session_load` cannot discover the `tool_call_id` fallback even though the placeholder path was fixed. Switch this condition to use a recoverable marker when either `EventID` or `ToolCallID` is present, and add a truncation-path test for the ToolCallID-only case.\n\n<details><summary>中文</summary>\n这里仍然只有 `EventID` 存在时才输出可恢复截断标记。对于只有 `ToolCallID` 的超大工具结果，截断路径会退回普通 marker，导致 `session_load` 无法发现 `tool_call_id` fallback，虽然 placeholder 路径已经修好了。建议在 `EventID` 或 `ToolCallID` 任一存在时都使用 recoverable marker，并补一个 ToolCallID-only 的截断路径测试。\n</details>"
+        }
+      ]
+    }
+  ],
+  "maintained": [
+    {
+      "number": 1913,
+      "title": "openclaw: expose gateway run options",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1913",
+      "author": "WineChord",
+      "status": "maintained",
+      "technical_background": "OpenClaw custom binaries 可以通过 runtime options 在 gateway run 前注入 `agent.RunOption`，用于请求级 instruction、tools 或 runtime state。",
+      "problem": "own-PR 子审查发现 EXTENDING 文档把 `WithExternalTools` 描述成前端可执行 tool call 并继续发送 tool result 的协议，但 stock gateway 不暴露完整 tool-call continuation surface。",
+      "problem_framing": "文档不能承诺当前 gateway protocol 不支持的调用闭环，否则下游自定义 binary 会按文档接入后拿不到可执行 tool-call payload。",
+      "root_cause": "文档把 agent 层 external tools 语义直接套到了 OpenClaw gateway 层，而 gateway response 只有 reply/progress 等用户面字段。",
+      "approach": "直接修复 own PR 分支：把示例改为 `agent.WithAdditionalTools` 的 server-side request-scoped tools，并明确 stock gateway 不支持把 `WithExternalTools` 当作 frontend tool-calling protocol。",
+      "alternative_designs": "另一个方向是新增 gateway protocol 的 tool-call event 和 tool-result continuation request，但这超出本 PR 范围。",
+      "tradeoffs": "文档收窄后不再展示前端执行工具闭环，但准确反映当前实现；真正的 external tool protocol 可单独设计。",
+      "design_assessment": "runtime option API 本身测试通过；修复集中在文档承诺边界。",
+      "modules": "openclaw/app, openclaw/EXTENDING.md, openclaw README docs",
+      "api_surface": "`app.WithGatewayRunOptions`, `app.WithGatewayRunOptionResolver`, `GatewayRunOptionInput`。",
+      "change_inventory": "PR 原本新增 gateway run options；本轮追加 1 个文档修正 commit `73186c764`。",
+      "semantic_changes": "自定义 OpenClaw binary 可以按请求注入静态或动态 run options。",
+      "module_impact": "影响 OpenClaw gateway run option extension points。",
+      "cross_module_impact": "可把 channel extensions 映射成 agent run options。",
+      "behavior_impact": "代码行为未变；文档不再误导前端执行 external tool。",
+      "tests_docs": "本地 `go test ./app` 通过。更宽的 `go test ./...` 在 untouched packages 出现 macOS `/var` vs `/private/var`、HOME 和 watch 时序类环境失败，未归因于本 PR。",
+      "direct_fixes": [
+        "Pushed `73186c764 openclaw: clarify gateway run tools docs` to `WineChord/openclaw_external_tools`."
+      ],
+      "self_review_policy": "Own PR path: no self-approval, no self-merge, no PR review comment; valid finding was fixed directly on the branch。",
+      "attention_points": "Final CI after push: pending=1 (coverage), failing=0, head=73186c76494c428490bcb805d95df310acdbd3e7。",
+      "outcome": "直接修复并 push；GitHub CI 只剩 coverage queued，暂无失败。",
+      "risk": "低到中。代码面较小，但公开 extension docs 会影响下游 custom binary 接入方式。",
+      "ci_state": "After push: pending=1 (coverage), failing=0; targeted local test passed。",
+      "inline_comments": []
+    },
+    {
+      "number": 1885,
+      "title": "internal/flow: add pre-LLM latency diagnostics",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1885",
+      "author": "WineChord",
+      "status": "maintained",
+      "technical_background": "Own PR 增加 pre-LLM latency diagnostics，触及 invocation、runner、llmflow、processor 和 OpenClaw debug/stat 展示。",
+      "problem": "本轮没有发现新 actionable issue；需要按 own-PR path 刷新状态但不能自评、自批或自合并。",
+      "problem_framing": "own PR 的目标是维护质量，不制造自 review 信号。",
+      "root_cause": "无新增问题；本轮 planner 因 fingerprint migration 把它重新提升为 heavy，但最终状态无变化。",
+      "approach": "刷新 head、checks、threads；未做代码修改。",
+      "alternative_designs": "如果后续外部 review 给出真实问题，应直接修 branch，而不是回复自评评论。",
+      "tradeoffs": "本轮不重复跑全量大测试，依赖最新 GitHub checks 和已有报告上下文。",
+      "design_assessment": "当前 head `d5cfe7d` checks 全绿，无 unresolved threads。",
+      "modules": "agent, runner, internal/flow, openclaw latency diagnostics",
+      "api_surface": "latency diagnostic event/state surfaces。",
+      "change_inventory": "本轮无新增代码变更。",
+      "semantic_changes": "无本轮新增。",
+      "module_impact": "无本轮新增。",
+      "cross_module_impact": "无本轮新增。",
+      "behavior_impact": "无本轮新增。",
+      "tests_docs": "Final refresh: GitHub checks all green, unresolved threads=0。",
+      "direct_fixes": [],
+      "self_review_policy": "Own PR path: maintained only; no self-approval, no self-merge。",
+      "attention_points": "继续等待外部 review。",
+      "outcome": "记录为 maintained，无直接修复。",
+      "risk": "低。本轮只是状态刷新。",
+      "ci_state": "Final refresh: state=OPEN, reviewDecision=REVIEW_REQUIRED, unresolved threads=0，checks green。",
+      "inline_comments": []
+    }
+  ],
+  "blocked": [
+    {
+      "number": 1897,
+      "title": "{agent/codex, docs, examples}: add Codex CLI agent",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1897",
+      "author": "Flash-LHR",
+      "status": "blocked",
+      "skip_reason": "存在已验证的当前阻塞点，暂不进入 approval review。",
+      "blockers": [
+        {
+          "kind": "review_thread",
+          "reviewer": "WineChord",
+          "path": "agent/codex/codex_agent.go",
+          "line": 241,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1897#discussion_r3345969929",
+          "latest_response": "这个风险判断是合理的。之前尝试过按 stderr 文案识别 stale/missing thread，但这种方式不稳定，已经在 801609d6 回退，不会保留这类猜测逻辑。这个 PR 里先不继续扩大 resume fallback 策略；如果 Codex CLI 后续提供结构化、稳定的 not-found 信号，再基于该信号做安全 fallback，或者单独调整为 resume 失败不重放 prompt。",
+          "summary": "Resume 失败后仍存在 fresh `codex exec` 重放 prompt 路径，作者解释与当前 diff 不一致。",
+          "verification": "Diff still documents and tests “If resume fails, start fresh codex exec”; risk remains for prompts already consumed before non-zero exit."
+        }
+      ],
+      "readiness_audit": "CI green, but current unresolved human thread is still actionable; not reviewed further and no PR reply was posted."
+    },
+    {
+      "number": 1400,
+      "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+      "author": "liuzengh",
+      "status": "blocked",
+      "skip_reason": "存在已验证的当前阻塞点，暂不进入 approval review。",
+      "blockers": [
+        {
+          "kind": "review_thread",
+          "reviewer": "Flash-LHR",
+          "path": "artifact/service.go",
+          "line": 53,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400#discussion_r2922076748",
+          "latest_response": "这里给公开的 `artifact.Service` 直接加 `Head` 会让现有自定义实现全部编译失败，属于破坏性升级。要不要改成单独扩展接口，或先提供辅助函数再逐步推广？",
+          "summary": "Public artifact.Service 新增 `Head` 方法仍是 API compatibility blocker。",
+          "verification": "Latest thread remains a concrete changed-line compatibility issue."
+        }
+      ],
+      "readiness_audit": "Gate audit: draft=false, wip=false, hard_non_green=none, unresolved_human=1."
+    },
+    {
+      "number": 1483,
+      "title": "tool/subtask: add dynamic agent creation tools",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1483",
+      "author": "bytethm",
+      "status": "blocked",
+      "skip_reason": "存在已验证的当前阻塞点，暂不进入 approval review。",
+      "blockers": [
+        {
+          "kind": "review_thread",
+          "reviewer": "sandyskies",
+          "path": "docs/mkdocs/zh/multiagent.md",
+          "line": 634,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1483#discussion_r3043437420",
+          "latest_response": "这里的结论是这个PR先单纯做动态Agent的任务创建，深度探索类的 deep Agents 再另外开发。",
+          "summary": "PR 仍有 merge conflict，并有 unresolved human threads。",
+          "verification": "Mergeable state is conflict/dirty; not reviewable."
+        }
+      ],
+      "readiness_audit": "Gate audit: draft=false, wip=false, hard_non_green=none, unresolved_human=5."
+    },
+    {
+      "number": 1768,
+      "title": "feat(sandbox): add secure Linux sandbox for code execution based on bubblewrap",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1768",
+      "author": "liuzengh",
+      "status": "blocked",
+      "skip_reason": "存在已验证的当前阻塞点，暂不进入 approval review。",
+      "blockers": [
+        {
+          "kind": "review_thread",
+          "reviewer": "liuzengh",
+          "path": "codeexecutor/sandbox/docs/README.md",
+          "line": 1,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1768#discussion_r3273649864",
+          "latest_response": "目前可能没有考虑代码执行在 sandbox （bwrap）里面调用启动异步进程，后续继续和之前的进程通信的情况，tty 考虑后台任务的场景：执行两次工具调用，第一次启动一个异步任务例如爬取很多网页，第二次检查该异步任务是否ok。 第二次能查看到第一次的进程吗？ ",
+          "summary": "async process/tty design review threads remain unresolved。",
+          "verification": "Unresolved design threads still affect runtime behavior."
+        }
+      ],
+      "readiness_audit": "Gate audit: draft=false, wip=false, hard_non_green=none, unresolved_human=6."
+    },
+    {
+      "number": 1884,
+      "title": "feat: implement e2b sandbox Pause/Resume via standard connect endpoint",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1884",
+      "author": "AllesOderNicht",
+      "status": "blocked",
+      "skip_reason": "存在已验证的当前阻塞点，暂不进入 approval review。",
+      "blockers": [
+        {
+          "kind": "review_thread",
+          "reviewer": "Flash-LHR",
+          "path": "codeexecutor/e2b/internal/codeinterpreter/sandbox.go",
+          "line": 74,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1884#discussion_r3316993417",
+          "latest_response": "`Create` still drops `trafficAccessToken`, so created sandboxes miss `E2B-Traffic-Access-Token`. Fill it from the create response too. <details><summary>中文</summary> `Create` 仍会丢弃 `trafficAccessToken`，导致新建沙箱缺少 `E2B-Traff",
+          "summary": "E2B trafficAccessToken 和 pause/close state loss review blockers remain unresolved。",
+          "verification": "Current thread audit still shows actionable review blockers."
+        }
+      ],
+      "readiness_audit": "Gate audit: draft=false, wip=false, hard_non_green=none, unresolved_human=2."
+    },
+    {
+      "number": 1886,
+      "title": "tool/agent: restore live session for subagents",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1886",
+      "author": "bytethm",
+      "status": "blocked",
+      "skip_reason": "存在已验证的当前阻塞点，暂不进入 approval review。",
+      "blockers": [
+        {
+          "kind": "review_thread",
+          "reviewer": "Flash-LHR",
+          "path": "tool/agent/agent_tool.go",
+          "line": 305,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1886#discussion_r3318377639",
+          "latest_response": "This can replace an isolated swarm member session with the root live session, so AgentTool reads the wrong history. Refresh the live-session holder when cloning with a new session. <details><summary>中文</summary> 这会把隔离的 s",
+          "summary": "live session holder clone review blocker remains unresolved。",
+          "verification": "Thread-level audit still shows current issue."
+        }
+      ],
+      "readiness_audit": "Gate audit: draft=false, wip=false, hard_non_green=none, unresolved_human=1."
+    },
+    {
+      "number": 1891,
+      "title": "tool/openviking : add OpenViking context tools integration",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1891",
+      "author": "hyprh",
+      "status": "blocked",
+      "skip_reason": "存在已验证的当前阻塞点，暂不进入 approval review。",
+      "blockers": [
+        {
+          "kind": "review_thread",
+          "reviewer": "WineChord",
+          "path": "tool/openviking/openviking.go",
+          "line": 156,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1891#discussion_r3338592706",
+          "latest_response": "Please keep these tools filterable even while preserving the unprefixed `viking_*` names. `llmagent` marks refreshed ToolSet tools as user tools by seeing `*itool.NamedTool`; `NewNamedToolSet` returns the raw tools when ",
+          "summary": "tool filterability/profile validation review blockers remain unresolved。",
+          "verification": "Thread-level audit still shows current issue."
+        }
+      ],
+      "readiness_audit": "Gate audit: draft=false, wip=false, hard_non_green=none, unresolved_human=2."
+    },
+    {
+      "number": 1894,
+      "title": "fix(model/gemini): inject skip validator for cross-provider function calls",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1894",
+      "author": "sks",
+      "status": "blocked",
+      "skip_reason": "存在已验证的当前阻塞点，暂不进入 approval review。",
+      "blockers": [
+        {
+          "kind": "review_thread",
+          "reviewer": "WineChord",
+          "path": "model/gemini/gemini.go",
+          "line": 813,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1894#discussion_r3338538122",
+          "latest_response": "This now stamps `skip_thought_signature_validator` onto every unsigned tool call, which also rewrites normal Gemini parallel calls where only the first `functionCall` part carries a real signature and later parts are int",
+          "summary": "Gemini thought-signature validator skip option still has unresolved behavior discussion。",
+          "verification": "Thread-level audit still shows current issue."
+        }
+      ],
+      "readiness_audit": "Gate audit: draft=false, wip=false, hard_non_green=none, unresolved_human=1."
+    },
+    {
+      "number": 1896,
+      "title": "knowledge: add LLM query enhancer and session context passing",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1896",
+      "author": "hyprh",
+      "status": "blocked",
+      "skip_reason": "存在已验证的当前阻塞点，暂不进入 approval review。",
+      "blockers": [
+        {
+          "kind": "review_thread",
+          "reviewer": "WineChord",
+          "path": "knowledge/tool/searchtool.go",
+          "line": 416,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1896#discussion_r3346004010",
+          "latest_response": "This still keeps only the first non-empty text `ContentPart`, so a multi-part text message gives the query enhancer an incomplete history turn. Please concatenate all non-empty text parts before returning the conversatio",
+          "summary": "query enhancer 多 ContentPart 拼接 review blocker remains unresolved。",
+          "verification": "Thread-level audit still shows current issue from previous MyCR comment."
+        }
+      ],
+      "readiness_audit": "Gate audit: draft=false, wip=false, hard_non_green=none, unresolved_human=1."
+    },
+    {
+      "number": 1904,
+      "title": "codeexecutor/e2b: honor RunProgramSpec.CleanEnv in RunProgram",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1904",
+      "author": "bytethm",
+      "status": "blocked",
+      "skip_reason": "存在已验证的当前阻塞点，暂不进入 approval review。",
+      "blockers": [
+        {
+          "kind": "review_thread",
+          "reviewer": "Flash-LHR",
+          "path": "codeexecutor/e2b/e2b.go",
+          "line": 544,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1904#discussion_r3341049999",
+          "latest_response": "e2b policy mode is now open, but the docs still say e2b fails closed. Update the EN and ZH codeexecutor docs to list e2b as `SupportsCleanEnv` capable. <details><summary>中文</summary> e2b 策略模式现已打开，但文档仍写着 e2b 会失败关闭。请更新中英文 ",
+          "summary": "E2B policy docs still describe fails-closed behavior after mode changed open。",
+          "verification": "Current docs review thread remains actionable."
+        }
+      ],
+      "readiness_audit": "Gate audit: draft=false, wip=false, hard_non_green=none, unresolved_human=1."
+    },
+    {
+      "number": 1909,
+      "title": "tool/agent: add dynamic AgentTool with scoped capabilities",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1909",
+      "author": "bytethm",
+      "status": "blocked",
+      "skip_reason": "存在已验证的当前阻塞点，暂不进入 approval review。",
+      "blockers": [
+        {
+          "kind": "review_thread",
+          "reviewer": "Flash-LHR",
+          "path": "tool/agent/dynamic_tool.go",
+          "line": 770,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1909#discussion_r3345638552",
+          "latest_response": "With a template and no skill boundary, this leaves template skills mounted when the model sends `skills`, so the child can use skills outside the dynamic boundary. Return `patchSkills=true` for template calls here. <deta",
+          "summary": "Hard CI failures plus unresolved skill-boundary thread。",
+          "verification": "lint/CodeRabbit/go-apidiff/codecov state made it not reviewable this run."
+        }
+      ],
+      "readiness_audit": "Gate audit: draft=false, wip=false, hard_non_green=[object Object],[object Object], unresolved_human=1."
+    },
+    {
+      "number": 1911,
+      "title": "knowledge: add Python AST graph support and improve edge resolution",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1911",
+      "author": "hyprh",
+      "status": "blocked",
+      "skip_reason": "存在已验证的当前阻塞点，暂不进入 approval review。",
+      "blockers": [
+        {
+          "kind": "review_thread",
+          "reviewer": "Flash-LHR",
+          "path": "knowledge/source/repo/graph_source.go",
+          "line": 70,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1911#discussion_r3345856668",
+          "latest_response": "Missing Go reader registration now returns an empty graph instead of the previous `missingReaderError`, so existing callers can silently lose all Go nodes. Keep the old error path for Go files and only skip languages wit",
+          "summary": "Hard CI failures plus unresolved reader registration/Python 3.8 threads。",
+          "verification": "check file size/lint/codecov and current review threads block review."
+        }
+      ],
+      "readiness_audit": "Gate audit: draft=false, wip=false, hard_non_green=[object Object],[object Object], unresolved_human=2."
+    }
+  ],
+  "skipped_groups": [
+    {
+      "reason": "CI blocked PRs",
+      "items": [
+        {
+          "number": 1183,
+          "title": "internal/util: add util for streaming parsing of JSON returned by LLM",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1183",
+          "author": "hongxiuzhe",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Non-green hard CI gate; not reviewed this run。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: CLAAssistant, lint."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: nonGreen=CLAAssistant, codecov/patch, lint."
+        },
+        {
+          "number": 1446,
+          "title": "feat(a2a): add StructuredOutput → DataPart converter for custom event…",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1446",
+          "author": "SummerLv",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Non-green hard CI gate; not reviewed this run。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: CLAAssistant, GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: nonGreen=CLAAssistant, codecov/patch, GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST."
+        },
+        {
+          "number": 1460,
+          "title": "improve nano-pdf skill description + add skill-review-and-optimize CI",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1460",
+          "author": "fernandezbaptiste",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Non-green hard CI gate; not reviewed this run。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: nonGreen=GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST."
+        },
+        {
+          "number": 1736,
+          "title": "all: add deferred tool set",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1736",
+          "author": "liuzengh",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Non-green hard CI gate; not reviewed this run。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: test@PULL_REQUEST."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: nonGreen=test@PULL_REQUEST."
+        },
+        {
+          "number": 1776,
+          "title": "docs: add FAQ section",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1776",
+          "author": "meichuanyi",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Non-green hard CI gate; not reviewed this run。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: CLAAssistant, go test (tool/claudecode/go.mod)."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: nonGreen=CLAAssistant, go test (tool/claudecode/go.mod)."
+        },
+        {
+          "number": 1801,
+          "title": "docs/mkdocs/zh/fix/agent.md: fix typo",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1801",
+          "author": "GongNanyue",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Non-green hard CI gate; not reviewed this run。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: CLAAssistant, Cleanup artifacts, go test (openclaw/go.mod)."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: nonGreen=CLAAssistant, Cleanup artifacts, go test (openclaw/go.mod)."
+        },
+        {
+          "number": 1826,
+          "title": "docs: Add FAQ section",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1826",
+          "author": "meichuanyi",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Non-green hard CI gate; not reviewed this run。",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: CLAAssistant."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: nonGreen=CLAAssistant."
+        }
+      ]
+    },
+    {
+      "reason": "Draft or WIP PRs",
+      "items": [
+        {
+          "number": 1380,
+          "title": "[WIP] fix(agent): always register InstructionProcessor to support run-time WithInstruction",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1380",
+          "author": "hyprh",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Draft/WIP gate active; not suitable for approval review this run。",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR title/label marks it WIP."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: draft=false, wip=true, nonGreen=none."
+        },
+        {
+          "number": 1509,
+          "title": "[WIP] session: support concurrent queued execution",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1509",
+          "author": "hyprh",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Draft/WIP gate active; not suitable for approval review this run。",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR title/label marks it WIP."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: draft=false, wip=true, nonGreen=test@PULL_REQUEST."
+        },
+        {
+          "number": 1526,
+          "title": "model: add ModelMaxOutputTokens map and ResolveMaxOutputTokens helper",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1526",
+          "author": "sks",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Draft/WIP gate active; not suitable for approval review this run。",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: draft=true, wip=false, nonGreen=codecov/patch."
+        },
+        {
+          "number": 1651,
+          "title": "evolution: add async skill-extraction pipeline for agent self-evolution",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1651",
+          "author": "Rememorio",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Draft/WIP gate active; not suitable for approval review this run。",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: draft=true, wip=false, nonGreen=none."
+        },
+        {
+          "number": 1678,
+          "title": "agent: centralize invoke_agent telemetry in RunWithPlugins",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1678",
+          "author": "liuzengh",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Draft/WIP gate active; not suitable for approval review this run。",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: draft=true, wip=false, nonGreen=check go mod tidy, go test (agent/dify/go.mod), go test (agent/n8n/go.mod), go test (memory/mysql/go.mod), go test (memory/mysqlvec/go.mod), go test (memory/pgvector/go.mod), go test (memory/postgres/go.mod), go test (memory/redis/go.mod), go test (memory/sqlite/go.mod), go test (memory/sqlitevec/go.mod)."
+        },
+        {
+          "number": 1683,
+          "title": "tool/workspaceexec: add workspace-scoped file tools sharing workspace_exec state",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1683",
+          "author": "bytethm",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Draft/WIP gate active; not suitable for approval review this run。",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: draft=true, wip=false, nonGreen=codecov/patch, lint."
+        },
+        {
+          "number": 1710,
+          "title": "a2a: add input schema",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1710",
+          "author": "liuzengh",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Draft/WIP gate active; not suitable for approval review this run。",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: draft=true, wip=false, nonGreen=none."
+        },
+        {
+          "number": 1778,
+          "title": "examples: add RLM (Recursive Language Model) demo",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1778",
+          "author": "hyprh",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Draft/WIP gate active; not suitable for approval review this run。",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: draft=true, wip=false, nonGreen=check examples (4/4), go test (openclaw/go.mod)."
+        },
+        {
+          "number": 1857,
+          "title": "memory/mem0: advance checkpoint after successful ingest",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1857",
+          "author": "print-happy",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Draft/WIP gate active; not suitable for approval review this run。",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: draft=true, wip=false, nonGreen=none."
+        },
+        {
+          "number": 1899,
+          "title": "openclaw: add explicit user memory scope",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1899",
+          "author": "WineChord",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Draft/WIP gate active; not suitable for approval review this run。",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: draft=true, wip=false, nonGreen=none."
+        },
+        {
+          "number": 1901,
+          "title": "WIP: knowledge: deprecate legacy OCR path",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1901",
+          "author": "hyprh",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Draft/WIP gate active; not suitable for approval review this run。",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: draft=true, wip=true, nonGreen=none."
+        },
+        {
+          "number": 1903,
+          "title": "{agent, event, tool/agent, server/agui}: propagate ToolCallID to sub-agent events ",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1903",
+          "author": "bytethm",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Draft/WIP gate active; not suitable for approval review this run。",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: draft=true, wip=false, nonGreen=none."
+        },
+        {
+          "number": 1905,
+          "title": "WIP: fix knowledge module versions",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1905",
+          "author": "hyprh",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Draft/WIP gate active; not suitable for approval review this run。",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: draft=true, wip=true, nonGreen=none."
+        },
+        {
+          "number": 1912,
+          "title": "agent/llmagent: add built-in read-only explorer agent",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1912",
+          "author": "bytethm",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Draft/WIP gate active; not suitable for approval review this run。",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft."
+            }
+          ],
+          "readiness_audit": "Lightweight audit: draft=true, wip=false, nonGreen=codecov/patch."
+        }
+      ]
+    },
+    {
+      "reason": "Reviewable but not reached",
+      "items": [
+        {
+          "number": 1859,
+          "title": "memory/tencentdb: add TencentDB Agent Memory integration",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1859",
+          "author": "Rememorio",
+          "status": "skipped",
+          "planning_reasons": [],
+          "skip_reason": "Green CI and author fixed replies were identified, but capacity went to three new comments, one merge, and one own-PR branch fix; carry into next run。",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Reviewable candidate not reached before final CI/report deadline."
+            }
+          ],
+          "readiness_audit": "Gate audit showed CI green and unresolved human threads with latest fixed replies; needs full diff review next."
+        }
+      ]
+    }
+  ],
+  "follow_up": [
+    {
+      "number": 1913,
+      "title": "openclaw: expose gateway run options",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1913",
+      "author": "WineChord",
+      "status": "blocked",
+      "reason": "Own PR branch fix pushed; only coverage remains queued, no failures at final refresh."
+    },
+    {
+      "number": 1859,
+      "title": "memory/tencentdb: add TencentDB Agent Memory integration",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1859",
+      "author": "Rememorio",
+      "status": "blocked",
+      "reason": "Reviewable but not reached; old fixed replies need full diff review in next run."
+    },
+    {
+      "number": 1897,
+      "title": "{agent/codex, docs, examples}: add Codex CLI agent",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1897",
+      "author": "Flash-LHR",
+      "status": "blocked",
+      "reason": "Resume failure fallback concern remains valid in current diff."
+    },
+    {
+      "number": 1900,
+      "title": "session: decouple summary threshold formatting",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1900",
+      "author": "Rememorio",
+      "status": "blocked",
+      "reason": "Author fixed and MyCR thread was resolved; wait for new head CI to finish, then review remaining older fixed threads before approval."
+    },
+    {
+      "number": 1865,
+      "title": "session: recover compacted tool results",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1865",
+      "author": "Rememorio",
+      "status": "blocked",
+      "reason": "Author fixed and all threads are resolved; wait for new head CI to finish before possible approval."
+    }
+  ]
+}
