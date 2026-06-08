@@ -46,6 +46,10 @@
     {
       "time": "2026-06-08T13:54:09+08:00",
       "event": "Archived report artifacts and refreshed MyCR evolution backlog."
+    },
+    {
+      "time": "2026-06-08T13:58:00+08:00",
+      "event": "#1911 checks refreshed green during the final sweep; review comments remain unresolved."
     }
   ],
   "approved": [
@@ -242,7 +246,7 @@
       "attention_points": "Final refresh: state=OPEN, reviewDecision=REVIEW_REQUIRED, unresolved threads=3.",
       "outcome": "提交 3 条 inline comment；未 approve。",
       "risk": "高。入口发现、模块发布和 graph correctness 都影响真实用户路径。",
-      "ci_state": "Final refresh: state=OPEN, reviewDecision=REVIEW_REQUIRED, bad checks=1.",
+      "ci_state": "Final refresh: state=OPEN, reviewDecision=REVIEW_REQUIRED, bad checks=0.",
       "inline_comments": [
         {
           "path": "knowledge/document/reader/python/python_reader.go",
