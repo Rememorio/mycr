@@ -31,6 +31,7 @@ Keep entries concrete enough that a later agent can implement or reject them.
 | 2026-06-08 | Run state | The previous report lacked reusable `run_state.pull_requests`, so the planner promoted all 32 open PRs to `heavy_review`. | Make report generation include normalized `run_state.pull_requests` from planner output and verify future reports have a non-empty pull request map. | Open |
 | 2026-06-08 | Review comments | Collecting submitted review comment URLs initially used query parameters as request fields, causing a GitHub API 422 response. | Add a repo helper for GET pull review comments with pagination, author/time filtering, and saved comment URLs. | Open |
 | 2026-06-08 | Local test portability | macOS sandbox tests exposed a `/var` to `/private/var` symlink canonicalization failure, and MyCR had to separate genuine cross-platform regressions from Linux-only sandbox checks. | Add OS-aware local test classification and capture GOOS or unsupported-module notes in the report ledger. | Open |
+| 2026-06-09 | Targeted review mode | A user asked MyCR to process only one GitHub pull review comment URL, and the run needed manual comment/thread fetching, current-head verification, and report assembly. | Add a helper that accepts a pull review comment URL, resolves the PR/thread, verifies whether the finding still applies on the latest head, optionally resolves fixed own threads, and emits a targeted report skeleton. | Open |
 
 ## Parking Lot
 

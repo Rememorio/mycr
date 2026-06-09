@@ -1,0 +1,152 @@
+{
+  "title": "MyCR Targeted Review Report - PR #1931 review thread r3377279072",
+  "generated_at": "2026-06-09T09:26:46+08:00",
+  "repo": "trpc-group/trpc-agent-go",
+  "overview": "本轮按用户指定只处理 trpc-group/trpc-agent-go PR #1931 的单条 review thread：https://github.com/trpc-group/trpc-agent-go/pull/1931#discussion_r3377279072。该 thread 由 WineChord 于 2026-06-09T01:22:53Z 评论在 README.md:180，内容为“这里好像和下面对不上”。复核当前 head 0ee63a3e579e1da5834e19989df9b1cfd8f2d05e 后确认问题仍然存在：英文 README 目录项写成 `Featured Articles` 并指向 `#featured-articles`，但正文实际标题是 `### Blog`；中文 README 同类目录项写成 `精选文章`，但正文实际标题是 `### 博客`。该问题会让 README 目录链接跳不到对应小节，属于有效文档导航问题。PR 当前非 draft、可合并，status rollup 155 项全绿；本轮只复核指定 thread，没有新增重复评论、没有提交 LGTM approval、没有 merge，也没有改动目标仓库。",
+  "incremental_plan": {
+    "source": "manual_targeted_review_thread",
+    "repo": "trpc-group/trpc-agent-go",
+    "open_prs": null,
+    "scoped_review_threads": 1,
+    "heavy_review": 1,
+    "refresh_probe": 0,
+    "carry_forward": 0,
+    "note": "用户显式要求只走指定 review comment，因此本轮没有执行全量 open-PR ledger、candidate approval 或 merge 路径。当前报告只记录 PR #1931 的指定 thread 复核结论。"
+  },
+  "run_state": {
+    "schema_version": "mycr-targeted-thread-v1",
+    "repo": "trpc-group/trpc-agent-go",
+    "generated_at": "2026-06-09T09:26:46+08:00",
+    "run_started_at": "2026-06-09T09:19:00+08:00",
+    "authenticated_reviewer": "WineChord",
+    "scope": "single_review_thread",
+    "pull_requests": {
+      "1931": {
+        "number": 1931,
+        "title": "docs/mkdocs: add blog article",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1931",
+        "author": "Flash-LHR",
+        "base_ref": "main",
+        "head_ref": "docs/mkdocs-add-blog-translations",
+        "head_owner": "Flash-LHR",
+        "head_sha": "0ee63a3e579e1da5834e19989df9b1cfd8f2d05e",
+        "state": "OPEN",
+        "is_draft": false,
+        "mergeable": "MERGEABLE",
+        "review_decision": "REVIEW_REQUIRED",
+        "updated_at": "2026-06-09T01:22:53Z",
+        "check_summary": {
+          "success": 155,
+          "non_green": 0
+        },
+        "targeted_thread": {
+          "thread_id": "PRRT_kwDOOp9Ce86IAOmI",
+          "comment_id": 3377279072,
+          "comment_node_id": "PRRC_kwDOOp9Ce87JTTBg",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1931#discussion_r3377279072",
+          "path": "README.md",
+          "line": 180,
+          "author": "WineChord",
+          "body": "这里好像和下面对不上",
+          "is_resolved": false,
+          "is_outdated": false,
+          "latest_reply_count": 0,
+          "verification": "Current head still has README.md TOC `Featured Articles` pointing at `#featured-articles`, while the actual heading is `### Blog`; README.zh_CN.md has the same `精选文章` versus `### 博客` mismatch."
+        }
+      }
+    },
+    "actions": [
+      {
+        "type": "verify_existing_review_thread",
+        "pr": 1931,
+        "thread_url": "https://github.com/trpc-group/trpc-agent-go/pull/1931#discussion_r3377279072",
+        "result": "valid_unfixed"
+      }
+    ]
+  },
+  "approved": [],
+  "commented": [
+    {
+      "number": 1931,
+      "title": "docs/mkdocs: add blog article",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/1931",
+      "author": "Flash-LHR",
+      "head_sha": "0ee63a3e579e1da5834e19989df9b1cfd8f2d05e",
+      "status": "commented",
+      "planning_reasons": [
+        "user_targeted_review_thread"
+      ],
+      "updated_at": "2026-06-09T01:22:53Z",
+      "technical_background": "README 里的目录是一个普通 Markdown 链接列表。每个目录项的 `#anchor` 必须能对应到下面真实标题生成的锚点；否则读者点击目录时，浏览器找不到目标位置。GitHub 会根据标题文字生成 anchor，例如 `### Blog` 对应 `#blog`，`### Featured Articles` 才对应 `#featured-articles`。中文 README 也一样：`### 博客` 对应 `#博客`，而不是 `#精选文章`。",
+      "problem": "PR #1931 给 README 增加 blog 文章入口，但目录和正文标题没有保持一致。英文目录新增 `Featured Articles`，正文实际是 `### Blog`；中文目录新增 `精选文章`，正文实际是 `### 博客`。这会让 README 目录链接失效，用户从目录跳转时看不到新增文章列表。",
+      "problem_framing": "这是一个文档导航一致性问题。根因不是文章内容本身，而是新增章节时同时维护了手写目录和正文标题，两处文案没有同步。",
+      "root_cause": "README 的 TOC 不是由当前正文标题自动生成，或者自动生成后又调整了正文标题；因此目录项锚点和实际标题锚点分叉。",
+      "approach": "本轮只复核既有 WineChord review thread，确认它仍映射到当前 diff 且未被作者回复或修复。最小修法是统一目录项和正文标题：推荐把 TOC 改成 `Blog`/`博客`，分别指向 `#blog`/`#博客`；也可以反向把正文标题改成 `Featured Articles`/`精选文章`。",
+      "alternative_designs": "方案一是改 TOC，保留正文 `Blog`/`博客`，优点是和 PR 主题、MkDocs blog 导航一致；方案二是改正文标题，保留 `Featured Articles`/`精选文章`，优点是强调这些是精选入口。两者都能修复锚点，关键是中英文 README 要同步。",
+      "tradeoffs": "改 TOC 更小且更贴近现有正文语义；改正文标题也可接受，但会让 section 标题从通用 blog 入口变成精选文章入口。无论选哪种，都不影响 Go API 或运行时行为。",
+      "design_assessment": "既有 review comment 是有效问题，属于合入前应修的轻量文档质量项。推荐作者在下一次 commit 中同步修复 README.md 和 README.zh_CN.md。",
+      "modules": "README.md, README.zh_CN.md",
+      "api_surface": "No Go exported API or runtime behavior changes; the affected surface is README navigation anchors.",
+      "change_inventory": "PR 新增 README blog/article links；当前缺陷只涉及目录项文案和锚点。英文 README.md:180 应与 line 219 的 `### Blog` 对齐；中文 README.zh_CN.md:172 应与 line 211 的 `### 博客` 对齐。",
+      "semantic_changes": "如果不修复，文档读者从目录进入新增文章列表时会跳转失败；修复后只改变 README 导航体验，不改变代码语义。",
+      "module_impact": "直接影响 README.md 和 README.zh_CN.md。MkDocs 文档和 Go 包代码不受影响。",
+      "cross_module_impact": "无跨 Go module 影响；间接影响 GitHub README 读者发现新增 blog 文章的路径。",
+      "behavior_impact": "Before: TOC link points to a non-existent heading anchor. After: TOC link lands on the blog/article list.",
+      "tests_docs": "未改动目标仓库文件；未运行本地测试。复核依据是 GitHub API 当前 head 内容、review thread 状态，以及 PR status rollup 全绿。",
+      "attention_points": "Thread remains unresolved and not outdated. No author reply was present at final refresh.",
+      "outcome": "确认既有 WineChord inline comment 仍有效；未新增重复评论，未 approve，未 merge。",
+      "risk": "低到中。问题不会破坏构建或运行时，但会破坏 README 目录跳转，影响新增 blog 入口的可发现性。",
+      "ci_state": "PR status rollup shows 155 successful checks and no non-green checks at review time.",
+      "inline_comments": [
+        {
+          "path": "README.md",
+          "line": 180,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1931#discussion_r3377279072",
+          "summary": "The README TOC entry points to `#featured-articles`, but the actual subsection is `### Blog`; the zh README has the same `精选文章` versus `### 博客` mismatch.",
+          "focus": "README TOC anchor consistency",
+          "severity": "P2",
+          "body": "这里好像和下面对不上",
+          "thread_state": "unresolved_not_outdated"
+        }
+      ]
+    }
+  ],
+  "maintained": [],
+  "skipped_groups": [],
+  "blocked": [],
+  "follow_up": [
+    {
+      "priority": "medium",
+      "text": "等待作者同步修复 README.md 与 README.zh_CN.md 的目录项或正文标题；修复后可 resolve 指定 thread。"
+    },
+    {
+      "priority": "low",
+      "text": "本轮不是完整 PR review，不代表 PR #1931 已通过 MyCR 全量审批。"
+    }
+  ],
+  "timeline": [
+    {
+      "time": "2026-06-09T09:19:00+08:00",
+      "event": "Started user-scoped MyCR run for PR #1931 review comment r3377279072 only."
+    },
+    {
+      "time": "2026-06-09T09:21:00+08:00",
+      "event": "Fetched review comment metadata and confirmed thread PRRT_kwDOOp9Ce86IAOmI is unresolved and not outdated."
+    },
+    {
+      "time": "2026-06-09T09:24:00+08:00",
+      "event": "Verified README.md and README.zh_CN.md still have TOC/title anchor mismatches on the current head."
+    },
+    {
+      "time": "2026-06-09T09:26:46+08:00",
+      "event": "Recorded targeted MyCR report without posting duplicate comments, approving, merging, or editing the target repository."
+    }
+  ],
+  "skill_evolution": [
+    {
+      "area": "Targeted review mode",
+      "observation": "A user-scoped single review-thread run currently requires manual gh/GraphQL collection and manual report assembly.",
+      "proposed_change": "Add a MyCR helper that accepts a pull review comment URL, fetches the thread/current head/checks, verifies whether the issue is fixed, and emits a targeted report skeleton."
+    }
+  ]
+}
