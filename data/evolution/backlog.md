@@ -32,6 +32,7 @@ Keep entries concrete enough that a later agent can implement or reject them.
 | 2026-06-08 | Review comments | Collecting submitted review comment URLs initially used query parameters as request fields, causing a GitHub API 422 response. | Add a repo helper for GET pull review comments with pagination, author/time filtering, and saved comment URLs. | Open |
 | 2026-06-08 | Local test portability | macOS sandbox tests exposed a `/var` to `/private/var` symlink canonicalization failure, and MyCR had to separate genuine cross-platform regressions from Linux-only sandbox checks. | Add OS-aware local test classification and capture GOOS or unsupported-module notes in the report ledger. | Open |
 | 2026-06-09 | Targeted review mode | A user asked MyCR to process only one GitHub pull review comment URL, and the run needed manual comment/thread fetching, current-head verification, and report assembly. | Add a helper that accepts a pull review comment URL, resolves the PR/thread, verifies whether the finding still applies on the latest head, optionally resolves fixed own threads, and emits a targeted report skeleton. | Open |
+| 2026-06-18 | Report assembly | A full sweep with no GitHub mutations still required manual synthesis of blocked candidate narratives from the ledger, review-thread audits, and subagent outputs. | Add a blocked-run report generator that consumes the normalized open-PR index, check summary, thread audit, and subagent result notes, then emits `blocked` and `skipped_groups` report sections without hand-stitching. | Open |
 
 ## Parking Lot
 
