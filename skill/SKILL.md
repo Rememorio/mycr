@@ -40,12 +40,14 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
      thread-body, log, source, or report-writing work. This index is a cache
      invalidation input, not a review artifact. It must include at least title,
      author, labels, draft/WIP state, base branch, head SHA, mergeability,
-     review decision, updated/latest-activity time, commit/check fingerprint,
-     review-thread fingerprint, and comment/review fingerprint. Build those
+     review decision, locked state and active lock reason, updated/latest-activity
+     time, commit/check fingerprint, review-thread fingerprint, and
+     comment/review fingerprint. Build those
      fingerprints from stable IDs, authors, states, timestamps, check names and
-     conclusions, head SHAs, and changed-file path summaries. Do not put full
-     PR bodies, full review/comment bodies, diff hunks, source files, workflow
-     logs, or long CodeRabbit comments into the cheap index.
+     conclusions, head SHAs, close/reopen/lock/unlock timeline events, and
+     changed-file path summaries. Do not put full PR bodies, full
+     review/comment bodies, diff hunks, source files, workflow logs, or long
+     CodeRabbit comments into the cheap index.
    - Compare that index with the latest successful run-state snapshot by using
      `node scripts/mycr-incremental-plan.mjs --current <current-index.json>
      --previous <previous-report-or-state.json> --output <plan.json>` from the
@@ -134,6 +136,15 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
      before starting review, except the soft CI cases described below
    - pending, queued, in-progress, cancelled, timed out, missing required
      checks, or failures outside the soft CI cases mean do not review yet
+   - CI readiness must be computed from the current head's effective latest
+     checks, not from an undeduplicated `statusCheckRollup` that may include
+     historical runs left behind by close/reopen cycles. Prefer `gh pr checks
+     --watch=false`, current commit status, or latest check-suite/check-run
+     data grouped by check name and workflow for the current head. If
+     `statusCheckRollup` contains both an old failure and a newer success for
+     the same effective check on the same head, treat the newer effective check
+     as authoritative and record the stale rollup discrepancy instead of
+     skipping the PR as CI-failed.
    - if the only non-green checks are `go-apidiff` and/or `codecov/patch`,
      do not skip automatically. Inspect the PR diff, PR description, reviewer
      discussion, and the concrete apidiff/codecov information. Treat the PR as
@@ -171,6 +182,16 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    - comments previously raised by us, `Flash-LHR`, or on our behalf must be
      verified against the latest head; if fixed, proceed even if the thread was
      not clicked resolved, and resolve our own/on-behalf threads when allowed
+   - locked pull-request conversations must be tracked explicitly. A lock that
+     limits comments to collaborators is not automatically a review blocker for
+     an authenticated maintainer/collaborator, but it is a comment-delivery
+     risk and can block bot/non-collaborator comments. Before posting inline
+     comments or approving a locked PR, verify the authenticated account's
+     repository permission and, after posting, verify the review/comment URLs.
+     If GitHub rejects the review because the conversation is locked or
+     otherwise write-restricted, report a first-class comment-delivery blocker
+     with the attempted target and requeue the PR after unlock; do not let the
+     review silently disappear from the report.
    - after the first gate pass, run a second pass over all non-draft, non-WIP
      external PRs. Any PR with green CI or only acceptable soft-CI failures, no
      merge conflict, and no verified live blocker must be either reviewed in
