@@ -27,9 +27,29 @@ Reviewed entries should include:
 - `number`, `title`, `url`, `author`, `status`
 - `technical_background`
 - `problem`
+- `necessity_assessment`: for bugfixes or linked problem reports, whether the
+  source problem is `confirmed`, `plausible_but_unproven`,
+  `contradicted_or_stale`, or `product_decision_needed`, with a short human
+  explanation.
+- `evidence_checked`: source problem reports, PR discussion, logs, raw payloads,
+  reproduction steps, current-base behavior, tests, docs, or maintainer
+  statements checked before judging the premise.
+- `reproduction_on_base`: whether the problem was reproduced or otherwise
+  verified against the current target base, and why direct reproduction was not
+  practical if it was skipped.
+- `issue_evidence_gaps`: missing evidence that prevents a confident approval,
+  such as raw provider payloads, a minimal current-base reproduction, or an
+  explicit contract decision.
 - `problem_framing`
 - `root_cause`
 - `approach`
+- `implementation_derivation`: why the edited code path and patch scope follow
+  from the confirmed problem evidence, or what part of that chain remains
+  uncertain.
+- `solution_fit_assessment`: whether the chosen code behavior, public API,
+  option, default, documentation, example, or migration path is the right
+  control surface for the underlying user pain, not merely the literal proposed
+  fix.
 - `alternative_designs`
 - `tradeoffs`
 - `design_assessment`
@@ -58,7 +78,10 @@ Skipped entries should also include:
 - `blockers`: optional array of discrete blocker facts. Prefer this over a
   broad paragraph when a PR is excluded. Each object may include:
   - `kind`: `ci`, `human_review`, `bot_review`, `merge_conflict`,
-    `draft_wip`, `own_pr`, `soft_ci`, `not_reached`, or `other`.
+    `draft_wip`, `own_pr`, `soft_ci`, `necessity`,
+    `insufficient_evidence`, `stale_issue`, `implementation_scope`,
+    `solution_fit`,
+    `not_reached`, or `other`.
   - `summary`: the exact blocker, such as a check name, conflict state, or
     unresolved review request.
   - `reviewer`: reviewer login for human or bot review blockers.

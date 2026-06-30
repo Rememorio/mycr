@@ -102,6 +102,39 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
      tradeoffs visible from the diff. Gather enough source detail to let the
      final report stand alone as an engineering brief; do not rely on vague
      title-level summaries.
+   - For every bugfix, behavior fix, compatibility fix, or PR that claims to
+     close a linked issue, build a problem-evidence summary before treating it
+     as a review candidate. Read the linked issue or source problem report,
+     the PR body, maintainer/author discussion, test evidence, logs, payloads,
+     and the current base-branch code path needed to judge whether the problem
+     still exists on the target base. Classify the premise as
+     `confirmed`, `plausible_but_unproven`, `contradicted_or_stale`, or
+     `product_decision_needed`. CI green, a plausible diff, generated tests, or
+     an implementation that matches the original reporter's proposed fix are
+     not enough by themselves to establish necessity.
+   - Treat source-problem evidence as a first-class gate. A candidate can be
+     approved or merged only when the problem premise is confirmed, or when it
+     is an explicitly scoped feature/design change whose motivation is clear
+     from the PR discussion. If the latest base behavior, authoritative logs,
+     maintainer discussion, or upstream/provider behavior contradicts the
+     claimed bug, block it as `contradicted_or_stale`. If the issue report lacks
+     the raw request/response/event data, base-branch reproduction, or code-path
+     link needed to identify the root cause, block it as
+     `plausible_but_unproven` and ask for the smallest missing evidence instead
+     of approving a speculative fix. If the change is a policy/product decision
+     rather than a correctness fix, block or defer it until the intended
+     contract is stated.
+   - Separate the user's reported pain from any proposed implementation in the
+     issue or PR. A linked issue, bot linked-issue check, or author-proposed fix
+     can describe a real symptom while still suggesting the wrong control
+     surface. Judge whether the submitted solution is a good fit for the
+     underlying product/API/runtime contract: does it preserve useful defaults,
+     avoid misleading mode switches, keep configuration semantics coherent, and
+     solve the pain at the right abstraction layer? If the literal requested
+     implementation would make the API less clear or less maintainable, prefer
+     a better design such as clearer docs, an explicit narrowly scoped option,
+     or a separate contract decision; block the PR as `solution_fit` when the
+     mismatch affects merge readiness.
    - Maintain a run-level reviewability ledger for every open PR. Each PR must
      end the scan in exactly one auditable bucket: processed, heavy-review
      eligible candidate, carried-forward unchanged blocker, intentionally not
@@ -132,6 +165,17 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    - title and labels do not indicate WIP
    - PR is not draft and is ready for review
    - base branch is the repository default branch unless the user said otherwise
+   - for bugfixes and linked-issue fixes, the source problem has sufficient
+     current evidence on the target base. A PR whose premise is only inferred
+     from the diff, copied from a suggested issue fix, or supported only by
+     branch-local tests must remain blocked until the current base behavior and
+     root-cause path are verified. A stale, non-reproducible, or contradicted
+     problem premise is a hard approval and merge blocker even when CI is green.
+   - the implementation approach is a reasonable fit for the confirmed problem
+     and the repository's public contract. Do not approve a PR merely because it
+     satisfies the issue's literal proposed fix or a bot's linked-issue check if
+     that fix uses the wrong knob, weakens default behavior, hides a contract
+     decision in documentation, or broadens semantics beyond the actual need.
    - all commit statuses and workflow runs for the current head SHA are green
      before starting review, except the soft CI cases described below
    - pending, queued, in-progress, cancelled, timed out, missing required
@@ -236,19 +280,41 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    candidate with reasoning effort `xhigh`. Give it the PR number, repo, diff
    access instructions, and ask for a code-review result only; do not let the
    subagent post comments, approve, merge, or modify files.
-9. Ask the subagent to focus on design, compatibility, likely bugs, cross-module
-   impact, severity, and the smallest correct fix. Require findings to include
-   `path`, changed-side `line` or `position`, concise English body, Chinese
-   translation, and why the issue matters.
+9. Ask the subagent to first assess problem necessity and implementation
+   derivation, then code quality. It must state whether the PR's claimed
+   problem is confirmed on the current base, what evidence supports or
+   contradicts it, which code path explains the root cause, and whether the
+   chosen implementation follows from that evidence. Then ask it to focus on
+   design, compatibility, likely bugs, cross-module impact, severity, and the
+   smallest correct fix. Require code findings to include `path`, changed-side
+   `line` or `position`, concise English body, Chinese translation, and why the
+   issue matters. Allow a non-inline `necessity` or `implementation_scope`
+   blocker when the problem premise or solution path is not sufficiently
+   established and no changed line is the right anchor. Allow a `solution_fit`
+   blocker when the user pain is real but the chosen API, default, option,
+   documentation, or runtime behavior is the wrong abstraction for that pain.
 10. Verify each returned finding against the current PR diff. Keep only concrete,
    actionable issues that can be anchored to changed lines. Discard style,
    preference, broad design commentary, or findings outside the diff unless the
-   changed line directly creates the risk.
+   changed line directly creates the risk. Verify each returned necessity or
+   implementation-scope blocker against the source issue/report, latest PR
+   discussion, and current base code path; keep it only when the missing or
+   contradicting evidence would make approval unsafe. Verify each returned
+   solution-fit blocker against the intended user pain, public contract,
+   alternative designs, and current implementation constraints; keep it when the
+   submitted approach would leave a confusing or brittle contract even if the
+   original symptom is real.
 11. For valid external-PR findings, submit a GitHub review with only inline file comments.
    Use the `flash-lhr-pr-comment` skill shape:
    one or two direct English sentences, then a Chinese translation in
    `<details><summary>中文</summary>...</details>`.
    Do not post a top-level PR comment when inline comments are available.
+   If the only valid blocker is a problem-evidence or implementation-scope
+   blocker, or a solution-fit blocker that cannot be anchored to a changed line,
+   do not invent an inline anchor. Leave one concise top-level PR review comment
+   asking for the missing reproduction, raw payload/log, current-base
+   verification, better control surface, or contract decision, and report the PR
+   as blocked; do not approve or merge.
 12. If an external PR has no valid findings, approve it with a GitHub pull-request
     review whose state is approve and whose body is exactly `LGTM`. This must
     be the same visible effect as a human submitting an approving review from
@@ -364,7 +430,10 @@ In the final report:
   trying to address. Include the old behavior or missing capability, why it
   matters, and the intended user-visible or maintainer-visible result. If the
   PR description does not state the problem directly, infer it from the diff
-  and say that it is inferred.
+  and say that it is inferred. Do not treat an inferred problem statement as
+  sufficient approval evidence by itself; separately record whether the source
+  problem is confirmed, unproven, contradicted, stale, or awaiting a product or
+  contract decision.
 - For every reviewed PR, add a problem-framing and root-cause analysis before
   or near the implementation discussion. Explain what the PR appears to treat
   as the underlying problem, what deeper root cause may be driving that problem,
@@ -372,6 +441,14 @@ In the final report:
   different angle. If there is a more fundamental architecture, API,
   lifecycle, observability, compatibility, or product-model issue underneath
   the immediate bug or feature request, say so plainly.
+- For every bugfix, behavior fix, compatibility fix, or linked-issue fix, add a
+  problem-evidence section. Record what source problem report, PR discussion,
+  logs, raw payloads, reproduction steps, base-branch behavior, tests, docs, or
+  maintainer statements were checked. State whether the issue reproduces or is
+  otherwise confirmed on the current target base. If evidence is missing,
+  stale, contradictory, or only proves behavior on the PR branch, say that
+  plainly and make it a blocker unless the PR is explicitly reframed as a
+  design/product change.
 - For "实现方式", describe the PR's design and implementation in enough detail
   that the user can understand the change without opening the PR diff. Mention
   the main packages/files touched, new public APIs or options, changed defaults,
@@ -385,6 +462,21 @@ In the final report:
   dimensions such as API simplicity, backward compatibility, correctness,
   safety, maintainability, extensibility, observability, runtime cost, test
   scope, migration cost, and how much complexity is pushed onto users.
+- For every reviewed PR, include a solution-fit assessment. Distinguish the
+  user pain or product need from any implementation suggested by the issue,
+  bot, or author. State whether the PR chose the right control surface: code
+  behavior, public API, option, default, documentation, example, migration note,
+  or a separate design decision. If the PR satisfies the literal issue request
+  but would create a confusing mode switch, misleading option semantics,
+  weaker default, hidden behavior change, or inappropriate operational
+  guarantee, treat that as a blocker or explicit residual risk.
+- For every reviewed PR, explain implementation derivation: why the chosen code
+  path is the right place to solve the confirmed problem, why the patch scope is
+  neither too broad nor too narrow, and which evidence connects the observed
+  symptom to this implementation. If the PR appears to patch a guessed cause,
+  broadens semantics beyond the reported scenario, or masks an upstream/proxy
+  contract violation without a stated compatibility policy, treat that as a
+  design blocker or follow-up risk depending on severity.
 - For every reviewed PR, include a design assessment. State whether the PR's
   chosen design is a good fit for the root problem, whether it reaches a
   reasonable local optimum across the relevant tradeoffs, and whether there may
@@ -463,9 +555,26 @@ In the final report:
   - beginner-friendly technical background for every important module and
     concept touched by the PR, including how those modules work and cooperate
   - what problem the PR tries to solve
+  - necessity assessment: whether the source problem is confirmed on the
+    current target base, plausible but unproven, contradicted/stale, or waiting
+    on a product or contract decision
+  - evidence checked: linked problem reports, discussion, logs, raw payloads,
+    reproduction steps, current-base behavior, tests, docs, or maintainer
+    statements used to validate the premise
+  - reproduction on base: whether the problem was reproduced or otherwise
+    verified against the latest target base, and any reason reproduction was not
+    practical
+  - evidence gaps: missing data that prevents a confident approval, such as raw
+    event payloads, authoritative provider behavior, or a minimal current-base
+    reproduction
   - the problem framing: what root cause the PR is addressing and whether the
     problem should be viewed from another angle
   - the implementation approach used by the PR
+  - implementation derivation: why the edited code path and patch scope follow
+    from the confirmed problem evidence
+  - solution-fit assessment: whether the chosen API/default/config/docs/control
+    surface is the right way to address the underlying user pain, not just the
+    literal requested fix
   - plausible alternative designs or implementation strategies
   - the key tradeoffs between the PR's design and those alternatives
   - a design assessment: whether the PR's chosen approach is close to optimal,
@@ -505,12 +614,15 @@ In the final report:
 - For each not-reviewed PR, include `blockers` when there is any blocker that
   can be described as a discrete fact. Each blocker should have `kind`
   (`ci`, `human_review`, `bot_review`, `merge_conflict`, `draft_wip`,
-  `own_pr`, `soft_ci`, `not_reached`, or `other`), `summary`, and, when
-  applicable, `reviewer`, `url`, `path`, `line`, `latest_response`, and
-  `verification`. A skipped item with `reviewDecision=CHANGES_REQUESTED` but
-  no live human-review blocker must say that explicitly, then list the real
-  remaining gate, such as `go-apidiff` soft-CI inspection, `codecov/patch`
-  merge blocker, CI pending, or "not reached this run".
+  `own_pr`, `soft_ci`, `necessity`, `insufficient_evidence`, `stale_issue`,
+  `implementation_scope`, `solution_fit`, `not_reached`, or `other`),
+  `summary`, and, when applicable, `reviewer`, `url`, `path`, `line`,
+  `latest_response`, and `verification`. A skipped item with
+  `reviewDecision=CHANGES_REQUESTED` but no live human-review blocker must say
+  that explicitly, then list the real remaining gate, such as `go-apidiff`
+  soft-CI inspection, `codecov/patch` merge blocker, missing source-problem
+  evidence, wrong solution/control surface, CI pending, or "not reached this
+  run".
 - If a skipped group is about human review, each item in that group must name
   the exact unresolved human thread. If no exact still-actionable human thread
   is found, the PR does not belong in that group.
@@ -597,8 +709,10 @@ In the final report:
   compatibility risk, or CI/test issue.
 - "WIP" includes labels or title markers such as `WIP`, `[WIP]`, and draft PRs.
 - "Ready for review" means not draft, not WIP, CI green or only acceptable
-  soft CI failures, and not blocked by a still-actionable human or verified bot
-  review issue.
+  soft CI failures, source-problem evidence is sufficient for the claimed
+  fix/design change, the chosen solution/control surface is a reasonable fit
+  for the underlying need, and the PR is not blocked by a still-actionable human
+  or verified bot review issue.
 - Never merge a PR that received new inline findings during this run.
 - Never merge a PR while `codecov/patch` is non-green, even if it has no review
   findings and has been approved with `LGTM`.
@@ -615,15 +729,34 @@ Use a prompt shaped like this for each candidate:
 ```text
 Review trpc-group/trpc-agent-go PR #<number> at xhigh depth.
 
-Focus only on changed behavior in this PR and directly related code. Prioritize
-design soundness, API and semantic compatibility, potential bugs, data races,
-streaming/session semantics, cross-module impact, and test gaps that expose real
-regression risk.
+First assess whether the PR's problem premise is established. Check the linked
+issue or source problem report, PR description and discussion, available logs or
+raw payloads, tests, and current base-branch code path. State whether the
+problem is confirmed on the current base, plausible but unproven,
+contradicted/stale, or waiting on a product/contract decision. Explain why the
+edited code path follows from that evidence, or why it does not.
+
+Separate the underlying user pain from any implementation proposed in the issue
+or PR. Assess whether the selected API, default, configuration option,
+documentation, or runtime control surface is the right fit, or whether a
+different design would preserve a clearer contract.
+
+Then focus only on changed behavior in this PR and directly related code.
+Prioritize design soundness, API and semantic compatibility, potential bugs,
+data races, streaming/session semantics, cross-module impact, and test gaps that
+expose real regression risk.
 
 Do not post comments, approve, merge, or edit files. Return only:
 - "no findings" if the PR is clean
+- or a `necessity` / `implementation_scope` blocker with the missing or
+  contradicting evidence and the smallest evidence needed to proceed
+- or a `solution_fit` blocker when the problem is real but the chosen control
+  surface, default, option, or documentation contract is not a good design fit
 - or a list of findings with path, changed-side line or diff position, exact
   problem, impact, and minimal fix
 
-Only report issues that would justify an inline review comment.
+Only report code issues that would justify an inline review comment. Necessity,
+implementation-scope, or solution-fit blockers may be unanchored when no changed
+line is the right place to ask for missing source-problem evidence or a better
+contract decision.
 ```

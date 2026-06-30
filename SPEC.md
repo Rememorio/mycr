@@ -41,6 +41,14 @@ merge conflict, unresolved human thread, or stale `Changes Requested` state.
 Never use aggregate GitHub states as the whole explanation when the exact
 thread, check, or conflict can be named.
 
+Bugfix and linked-problem PR entries must also be auditable for necessity. When
+the source problem is unverified, stale, contradicted by current base behavior,
+or missing the payload/log/reproduction evidence needed to locate the root
+cause, the report should use structured blocker kinds such as `necessity`,
+`insufficient_evidence`, `stale_issue`, `implementation_scope`, or
+`solution_fit` instead of letting a green CI run, plausible diff, or literal
+implementation of a requested fix imply merge readiness.
+
 Reports may include `incremental_plan` and `run_state` fields. These fields are
 machine-readable workflow memory and may be ignored by the visual renderer, but
 they must remain safe to publish: no credentials, private local paths, raw model
