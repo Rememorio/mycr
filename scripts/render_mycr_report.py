@@ -1081,9 +1081,15 @@ const labels = {{
     author: "作者",
     technicalBackground: "技术背景",
     problem: "解决的问题",
+    necessityAssessment: "必要性判断",
+    evidenceChecked: "已核验证据",
+    reproductionOnBase: "基线复现",
+    issueEvidenceGaps: "证据缺口",
     problemFraming: "问题本质与视角",
     rootCause: "根因判断",
     approach: "实现方式",
+    implementationDerivation: "实现推导链",
+    solutionFitAssessment: "方案适配性",
     alternativeDesigns: "可选设计方案",
     tradeoffs: "设计取舍",
     designAssessment: "设计评估",
@@ -1128,6 +1134,11 @@ const labels = {{
       draft_wip: "Draft/WIP",
       own_pr: "自己发起",
       soft_ci: "软门禁",
+      necessity: "必要性",
+      insufficient_evidence: "证据不足",
+      stale_issue: "问题已失效",
+      implementation_scope: "实现范围",
+      solution_fit: "方案适配性",
       not_reached: "本轮未处理",
       other: "其他"
     }},
@@ -1162,9 +1173,15 @@ const labels = {{
     author: "Author",
     technicalBackground: "Technical Background",
     problem: "Problem",
+    necessityAssessment: "Necessity Assessment",
+    evidenceChecked: "Evidence Checked",
+    reproductionOnBase: "Base Reproduction",
+    issueEvidenceGaps: "Evidence Gaps",
     problemFraming: "Problem Framing",
     rootCause: "Root Cause",
     approach: "Implementation",
+    implementationDerivation: "Implementation Derivation",
+    solutionFitAssessment: "Solution Fit",
     alternativeDesigns: "Alternative Designs",
     tradeoffs: "Tradeoffs",
     designAssessment: "Design Assessment",
@@ -1209,6 +1226,11 @@ const labels = {{
       draft_wip: "Draft/WIP",
       own_pr: "Own PR",
       soft_ci: "Soft CI",
+      necessity: "Necessity",
+      insufficient_evidence: "Insufficient Evidence",
+      stale_issue: "Stale Problem",
+      implementation_scope: "Implementation Scope",
+      solution_fit: "Solution Fit",
       not_reached: "Not Reached",
       other: "Other"
     }},
@@ -1419,7 +1441,13 @@ function matchesSearch(item, query) {{
     text(item.title),
     item.author,
     text(item.problem),
+    text(item.necessity_assessment),
+    text(item.evidence_checked),
+    text(item.reproduction_on_base),
+    text(item.issue_evidence_gaps),
     text(item.approach),
+    text(item.implementation_derivation),
+    text(item.solution_fit_assessment),
     text(item.outcome),
     text(item.skip_reason),
     text(item.group_reason),
@@ -1505,7 +1533,13 @@ function allPrText(item) {{
     item.title,
     item.author,
     item.problem,
+    item.necessity_assessment,
+    item.evidence_checked,
+    item.reproduction_on_base,
+    item.issue_evidence_gaps,
     item.approach,
+    item.implementation_derivation,
+    item.solution_fit_assessment,
     item.outcome,
     item.risk,
     item.ci_state,
@@ -1722,6 +1756,9 @@ function renderReviewRail(item) {{
   `;
   const facts = [
     factItem(labels[lang].outcome, item.outcome),
+    factItem(labels[lang].necessityAssessment, item.necessity_assessment),
+    factItem(labels[lang].reproductionOnBase, item.reproduction_on_base),
+    factItem(labels[lang].solutionFitAssessment, item.solution_fit_assessment),
     factItem(labels[lang].risk, item.risk),
     factItem(labels[lang].ci, item.ci_state),
     factItem(labels[lang].attentionPoints, item.attention_points),
@@ -1770,11 +1807,17 @@ function renderPrReadout(item) {{
     storyBlock(labels[lang].backgroundAndProblem, [
       storyLine(labels[lang].technicalBackground, item.technical_background),
       storyLine(labels[lang].problem, item.problem),
+      storyLine(labels[lang].necessityAssessment, item.necessity_assessment),
+      storyLine(labels[lang].evidenceChecked, item.evidence_checked),
+      storyLine(labels[lang].reproductionOnBase, item.reproduction_on_base),
+      storyLine(labels[lang].issueEvidenceGaps, item.issue_evidence_gaps),
       storyLine(labels[lang].problemFraming, item.problem_framing),
       storyLine(labels[lang].rootCause, item.root_cause)
     ], "hero-block"),
     storyBlock(labels[lang].solutionAndTradeoffs, [
       storyLine(labels[lang].approach, item.approach),
+      storyLine(labels[lang].implementationDerivation, item.implementation_derivation),
+      storyLine(labels[lang].solutionFitAssessment, item.solution_fit_assessment),
       storyLine(labels[lang].alternativeDesigns, item.alternative_designs),
       storyLine(labels[lang].tradeoffs, item.tradeoffs),
       storyLine(labels[lang].designAssessment, item.design_assessment)
@@ -1892,6 +1935,12 @@ function renderSkipGroups() {{
               <div>
                 <div><strong>${{labels[lang].blocker}}:</strong> ${{formatRich(text(item.skip_reason))}}</div>
                 ${{item.readiness_audit ? `<div class="skip-detail"><strong>${{labels[lang].readinessAudit}}:</strong> ${{formatRich(text(item.readiness_audit))}}</div>` : ""}}
+                ${{item.necessity_assessment ? `<div class="skip-detail"><strong>${{labels[lang].necessityAssessment}}:</strong> ${{formatRich(text(item.necessity_assessment))}}</div>` : ""}}
+                ${{item.evidence_checked ? `<div class="skip-detail"><strong>${{labels[lang].evidenceChecked}}:</strong> ${{formatRich(text(item.evidence_checked))}}</div>` : ""}}
+                ${{item.reproduction_on_base ? `<div class="skip-detail"><strong>${{labels[lang].reproductionOnBase}}:</strong> ${{formatRich(text(item.reproduction_on_base))}}</div>` : ""}}
+                ${{item.issue_evidence_gaps ? `<div class="skip-detail"><strong>${{labels[lang].issueEvidenceGaps}}:</strong> ${{formatRich(text(item.issue_evidence_gaps))}}</div>` : ""}}
+                ${{item.implementation_derivation ? `<div class="skip-detail"><strong>${{labels[lang].implementationDerivation}}:</strong> ${{formatRich(text(item.implementation_derivation))}}</div>` : ""}}
+                ${{item.solution_fit_assessment ? `<div class="skip-detail"><strong>${{labels[lang].solutionFitAssessment}}:</strong> ${{formatRich(text(item.solution_fit_assessment))}}</div>` : ""}}
                 ${{renderBlockers(item)}}
                 ${{item.ci_state ? `<div class="skip-detail">${{formatRich(text(item.ci_state))}}</div>` : ""}}
                 ${{item.risk ? `<div class="skip-detail">${{formatRich(text(item.risk))}}</div>` : ""}}
