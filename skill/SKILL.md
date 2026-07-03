@@ -135,6 +135,22 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
      a better design such as clearer docs, an explicit narrowly scoped option,
      or a separate contract decision; block the PR as `solution_fit` when the
      mismatch affects merge readiness.
+   - Treat manual-review-only merge policy as a first-class gate, separate from
+     ordinary code quality and unresolved review threads. Before approving or
+     merging a linked-issue PR, inspect issue labels, issue body, PR body,
+     maintainer comments, assignees, active competing PRs for the same issue,
+     and code owner requests for signals that the final merge decision belongs
+     to a human maintainer, mentor, code owner, or product/architecture owner.
+     Examples include mentorship or contest tracks such as Rhino Bird issues,
+     labels or text saying the issue is exclusive to a program, "students claim
+     this task", "mentor selects winners", explicit "manual review required",
+     multiple active PRs competing for one issue, security-boundary changes,
+     broad public API or architecture decisions, and roadmap/product choices.
+     In those cases MyCR may still audit the code and post real review
+     findings, but it must not approve with `LGTM` or merge unless a maintainer
+     explicitly states that this exact PR is the accepted merge candidate.
+     Report the gate as `manual_review` with the concrete label, issue text,
+     maintainer statement, or competing PR evidence that made automation unsafe.
    - Maintain a run-level reviewability ledger for every open PR. Each PR must
      end the scan in exactly one auditable bucket: processed, heavy-review
      eligible candidate, carried-forward unchanged blocker, intentionally not
@@ -176,6 +192,11 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
      satisfies the issue's literal proposed fix or a bot's linked-issue check if
      that fix uses the wrong knob, weakens default behavior, hides a contract
      decision in documentation, or broadens semantics beyond the actual need.
+   - the PR is not under a manual-review-only merge gate. If issue labels,
+     issue text, maintainer comments, code owner requests, active competing PRs,
+     security/architecture scope, or product/roadmap ownership indicate that a
+     human maintainer must choose the accepted PR, block approval and merge as
+     `manual_review` until that explicit selection exists.
    - all commit statuses and workflow runs for the current head SHA are green
      before starting review, except the soft CI cases described below
    - pending, queued, in-progress, cancelled, timed out, missing required
@@ -267,9 +288,12 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    `blockers` entries when possible. Do not group PRs under vague combined
    reasons such as "human review thread, Changes Requested, or API discussion"
    unless each item also lists the exact thread/comment/check/conflict that is
-   actually blocking it. If a PR is otherwise reviewable but was not processed
-   because of time or candidate ordering, say that plainly as "not reached this
-   run" and put it in follow-up, not in a blocker group.
+   actually blocking it. A manual-review-only gate must name the specific label,
+   issue sentence, maintainer statement, code owner decision point, competing PR,
+   security/architecture scope, or product/roadmap ownership reason that makes
+   MyCR approval or merge unsafe. If a PR is otherwise reviewable but was not
+   processed because of time or candidate ordering, say that plainly as "not
+   reached this run" and put it in follow-up, not in a blocker group.
    Before processing candidates and again before writing the report, compare
    the reviewability ledger with the processed list. If a PR looks reviewable
    but was not processed, promote it into the candidate queue when practical;
@@ -615,14 +639,15 @@ In the final report:
   can be described as a discrete fact. Each blocker should have `kind`
   (`ci`, `human_review`, `bot_review`, `merge_conflict`, `draft_wip`,
   `own_pr`, `soft_ci`, `necessity`, `insufficient_evidence`, `stale_issue`,
-  `implementation_scope`, `solution_fit`, `not_reached`, or `other`),
+  `implementation_scope`, `solution_fit`, `manual_review`, `not_reached`, or
+  `other`),
   `summary`, and, when applicable, `reviewer`, `url`, `path`, `line`,
   `latest_response`, and `verification`. A skipped item with
   `reviewDecision=CHANGES_REQUESTED` but no live human-review blocker must say
   that explicitly, then list the real remaining gate, such as `go-apidiff`
   soft-CI inspection, `codecov/patch` merge blocker, missing source-problem
-  evidence, wrong solution/control surface, CI pending, or "not reached this
-  run".
+  evidence, wrong solution/control surface, manual maintainer selection
+  required, CI pending, or "not reached this run".
 - If a skipped group is about human review, each item in that group must name
   the exact unresolved human thread. If no exact still-actionable human thread
   is found, the PR does not belong in that group.
@@ -711,8 +736,9 @@ In the final report:
 - "Ready for review" means not draft, not WIP, CI green or only acceptable
   soft CI failures, source-problem evidence is sufficient for the claimed
   fix/design change, the chosen solution/control surface is a reasonable fit
-  for the underlying need, and the PR is not blocked by a still-actionable human
-  or verified bot review issue.
+  for the underlying need, the PR is not under a manual-review-only merge gate,
+  and the PR is not blocked by a still-actionable human or verified bot review
+  issue.
 - Never merge a PR that received new inline findings during this run.
 - Never merge a PR while `codecov/patch` is non-green, even if it has no review
   findings and has been approved with `LGTM`.

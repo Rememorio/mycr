@@ -1139,6 +1139,7 @@ const labels = {{
       stale_issue: "问题已失效",
       implementation_scope: "实现范围",
       solution_fit: "方案适配性",
+      manual_review: "人工合入",
       not_reached: "本轮未处理",
       other: "其他"
     }},
@@ -1231,6 +1232,7 @@ const labels = {{
       stale_issue: "Stale Problem",
       implementation_scope: "Implementation Scope",
       solution_fit: "Solution Fit",
+      manual_review: "Manual Review",
       not_reached: "Not Reached",
       other: "Other"
     }},

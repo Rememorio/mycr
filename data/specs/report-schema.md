@@ -80,7 +80,7 @@ Skipped entries should also include:
   - `kind`: `ci`, `human_review`, `bot_review`, `merge_conflict`,
     `draft_wip`, `own_pr`, `soft_ci`, `necessity`,
     `insufficient_evidence`, `stale_issue`, `implementation_scope`,
-    `solution_fit`,
+    `solution_fit`, `manual_review`,
     `not_reached`, or `other`.
   - `summary`: the exact blocker, such as a check name, conflict state, or
     unresolved review request.
@@ -92,6 +92,14 @@ Skipped entries should also include:
     a soft gate.
 - `readiness_audit`: optional plain-language audit of why a broad GitHub state
   such as `CHANGES_REQUESTED` does or does not block review.
+
+Use `manual_review` when the PR may still be code-reviewed, but approval or
+merge must be left to a human maintainer, mentor, code owner, or
+product/architecture owner. Typical evidence includes mentorship/contest issue
+labels, issue text that reserves the task for program participants, multiple
+active PRs competing for one issue, explicit maintainer selection requirements,
+security-boundary changes, broad public API or architecture decisions, or
+roadmap/product ownership decisions.
 
 The report archive page only requires a subset, but richer fields make the
 self-contained HTML report useful without opening GitHub.

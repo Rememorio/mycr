@@ -49,6 +49,15 @@ cause, the report should use structured blocker kinds such as `necessity`,
 `solution_fit` instead of letting a green CI run, plausible diff, or literal
 implementation of a requested fix imply merge readiness.
 
+Some PRs can be technically reviewable but still not appropriate for automated
+approval or merge. When labels, linked issue text, maintainer discussion,
+multiple active PRs for the same issue, security-boundary scope, public API or
+architecture impact, or product/roadmap ownership show that a human maintainer,
+mentor, code owner, or product owner must choose the accepted change, the report
+should use a `manual_review` blocker. MyCR may still post concrete code review
+findings, but it must not submit `LGTM` or merge until a human explicitly
+selects that PR as merge-ready.
+
 Reports may include `incremental_plan` and `run_state` fields. These fields are
 machine-readable workflow memory and may be ignored by the visual renderer, but
 they must remain safe to publish: no credentials, private local paths, raw model
