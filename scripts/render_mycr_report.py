@@ -700,6 +700,28 @@ h1 {{
   text-align: center;
   background: rgba(255, 255, 255, 0.68);
 }}
+.evolution-list {{
+  display: grid;
+  gap: 10px;
+}}
+.evolution-item {{
+  border: 1px solid #e5edf5;
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: #fbfcfe;
+  padding: 12px 14px;
+}}
+.evolution-area {{
+  color: #17202a;
+  font-size: 13px;
+  font-weight: 900;
+  margin-bottom: 5px;
+}}
+.evolution-note {{
+  color: #42526a;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}}
 .footer {{
   color: var(--muted);
   font-size: 12px;
@@ -1056,6 +1078,10 @@ a:hover {{ color: #0a5d57; }}
     <div class="hint" data-i18n="followUpHint">接近可处理但仍有阻塞</div>
   </section>
   <section class="cards" id="followUpCards"></section>
+  <section class="panel" id="evolutionPanel" style="display: none; margin-top: 18px;">
+    <h2 data-i18n="selfEvolutionSection">自进化记录</h2>
+    <div class="evolution-list" id="evolutionList"></div>
+  </section>
   <div class="footer" id="footer"></div>
 </div>
 <script>
@@ -1122,6 +1148,7 @@ const labels = {{
     skippedHint: "按排除原因分组",
     followUpSection: "后续关注",
     followUpHint: "接近可处理但仍有阻塞",
+    selfEvolutionSection: "自进化记录",
     items: "项",
     blocker: "阻塞点",
     blockerDetails: "具体阻塞点",
@@ -1215,6 +1242,7 @@ const labels = {{
     skippedHint: "Grouped by exclusion reason",
     followUpSection: "Follow-up Attention",
     followUpHint: "Close to ready but still blocked",
+    selfEvolutionSection: "Self-evolution Notes",
     items: "items",
     blocker: "Blocker",
     blockerDetails: "Concrete Blockers",
@@ -1297,14 +1325,19 @@ function formatRich(value) {{
 }}
 
 function prs() {{
-  const groups = reportData.skipped_groups || [];
-  const skipped = groups.flatMap(group =>
-    (group.items || []).map(item => ({{
+  const skippedByNumber = new Map();
+  for (const group of skippedGroups()) {{
+    for (const item of (group.items || [])) {{
+      const key = item.number ? String(item.number) : `${{group.reason || "skipped"}}:${{text(item.title)}}`;
+      if (skippedByNumber.has(key)) continue;
+      skippedByNumber.set(key, {{
       ...item,
       status: item.status || "skipped",
       skip_reason: item.skip_reason || group.reason
-    }}))
-  );
+      }});
+    }}
+  }}
+  const skipped = [...skippedByNumber.values()];
   return [
     ...(reportData.approved || []),
     ...(reportData.commented || []),
@@ -1315,7 +1348,51 @@ function prs() {{
 }}
 
 function skippedGroups() {{
-  return reportData.skipped_groups || [];
+  const stateByPr = (reportData.run_state && reportData.run_state.pull_requests) || {{}};
+  const processedNumbers = new Set([
+    ...(reportData.approved || []),
+    ...(reportData.commented || []),
+    ...(reportData.maintained || []),
+    ...(reportData.blocked || [])
+  ].map(item => Number(item.number)).filter(Boolean));
+  return (reportData.skipped_groups || []).map(group => {{
+    const existingItems = group.items || [];
+    if (existingItems.length) {{
+      return {{
+        ...group,
+        items: existingItems.filter(item => !processedNumbers.has(Number(item.number)))
+      }};
+    }}
+    const items = (group.prs || []).filter(number => !processedNumbers.has(Number(number))).map(number => {{
+      const state = stateByPr[String(number)] || {{}};
+      const reason = group.reason || "skipped";
+      const nonGreenChecks = (state.checks || []).filter(check => {{
+        const status = String(check.state || check.conclusion || check.bucket || "").toLowerCase();
+        return status && !["success", "pass", "passed", "neutral"].includes(status);
+      }}).map(check => `${{check.name || "check"}}=${{check.state || check.bucket || "unknown"}}`);
+      const summary = nonGreenChecks.length
+        ? `${{reason}} · ${{nonGreenChecks.slice(0, 4).join(", ")}}`
+        : reason;
+      return {{
+        number,
+        title: state.title || "",
+        url: state.url || "",
+        author: state.author || "",
+        status: "skipped",
+        skip_reason: summary,
+        readiness_audit: summary,
+        ci_state: nonGreenChecks.length
+          ? nonGreenChecks.join(", ")
+          : "",
+        blockers: [{{
+          kind: reason,
+          summary,
+          verification: "Hydrated from run_state.pull_requests."
+        }}]
+      }};
+    }});
+    return {{ ...group, items, count: items.length }};
+  }}).filter(group => group.items.length > 0);
 }}
 
 function counts(items) {{
@@ -1969,7 +2046,16 @@ function renderFollowUp() {{
     return;
   }}
   const query = document.getElementById("search").value.trim().toLowerCase();
-  const items = (reportData.follow_up || []).filter(item => {{
+  const items = (reportData.follow_up || []).map(item => {{
+    if (typeof item === "object" && item !== null && !Array.isArray(item)) return item;
+    const body = text(item);
+    return {{
+      title: body,
+      reason: body,
+      next: body,
+      author: ""
+    }};
+  }}).filter(item => {{
     if (!query) return true;
     return [
       item.number,
@@ -2011,6 +2097,29 @@ function renderFollowUp() {{
   }}).join("");
 }}
 
+function renderEvolution() {{
+  const panel = document.getElementById("evolutionPanel");
+  const container = document.getElementById("evolutionList");
+  const items = reportData.skill_evolution || [];
+  if (!items.length) {{
+    panel.style.display = "none";
+    container.innerHTML = "";
+    return;
+  }}
+  panel.style.display = "block";
+  container.innerHTML = items.map(item => {{
+    const data = typeof item === "object" && item !== null && !Array.isArray(item)
+      ? item
+      : {{ area: labels[lang].selfEvolutionSection, note: item }};
+    return `
+      <article class="evolution-item">
+        <div class="evolution-area">${{escapeHtml(text(data.area || labels[lang].selfEvolutionSection))}}</div>
+        <div class="evolution-note">${{formatRich(text(data.note || data.summary || data.body || ""))}}</div>
+      </article>
+    `;
+  }}).join("");
+}}
+
 function render() {{
   const items = prs();
   renderStatic();
@@ -2023,6 +2132,7 @@ function render() {{
   renderCards();
   renderSkipGroups();
   renderFollowUp();
+  renderEvolution();
 }}
 
 document.querySelectorAll("[data-lang-button]").forEach(button => {{

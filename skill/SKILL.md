@@ -300,10 +300,14 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    otherwise report it as `not_reached` and include the specific reason it was
    deferred. The report must make this visible enough that the user can spot
    missed CR opportunities immediately.
-8. Process external candidates one at a time. Spawn exactly one subagent per
-   candidate with reasoning effort `xhigh`. Give it the PR number, repo, diff
-   access instructions, and ask for a code-review result only; do not let the
-   subagent post comments, approve, merge, or modify files.
+8. Process external candidates one at a time. When the active Codex tool policy
+   permits subagent delegation, spawn exactly one subagent per candidate with
+   reasoning effort `xhigh`. Give it the PR number, repo, diff access
+   instructions, and ask for a code-review result only; do not let the subagent
+   post comments, approve, merge, or modify files. If the active tool policy or
+   runtime does not permit subagent spawning, perform the same review depth
+   locally and record the delegation limitation in the report's run capability
+   or skill-evolution section instead of silently pretending a subagent ran.
 9. Ask the subagent to first assess problem necessity and implementation
    derivation, then code quality. It must state whether the PR's claimed
    problem is confirmed on the current base, what evidence supports or
@@ -377,6 +381,20 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
     implementation design, review judgment, and follow-up priorities so the
     user can understand the engineering state without opening GitHub or reading
     a diff.
+16. Before committing or final-answering a meaningful run, run the post-report
+    QA pass from the MyCR workspace. Prefer archiving through
+    `node scripts/archive-report.mjs <summary.json>`, which normalizes and
+    validates the source report before rendering. If the report was edited
+    after archiving, run
+    `node scripts/report-quality.mjs --file src/data/reports/<report>.json --write --check`,
+    copy the normalized JSON to `public/reports/`, render the HTML again with
+    `scripts/render_mycr_report.py`, and then run `npm run verify`. Treat
+    quality failures as workflow failures, not cosmetic warnings.
+17. Inspect the generated HTML contract, not only the JSON. At minimum verify
+    that reviewed PR cards, skipped groups, follow-up entries, inline comments,
+    and self-evolution notes are renderable and not empty placeholders. When
+    the report renderer or UI changed, use a browser or static DOM check to
+    confirm the page visibly contains the expected sections before publishing.
 
 ## Reporting Contract
 
@@ -669,6 +687,20 @@ In the final report:
 - At the end of each real MyCR run, capture concrete friction, repeated manual
   work, missed edge cases, brittle path assumptions, weak report fields,
   confusing UI, or unclear review gates in `data/evolution/backlog.md`.
+- Treat report QA as part of self-evolution. Empty rendered fields, review
+  actions written into PR-content fields, non-canonical display statuses,
+  skipped groups without per-PR blockers, follow-up entries that render as
+  blank cards, or missing HTML-visible self-evolution notes must produce a
+  local fix or an explicit backlog item before the run is considered done.
+- When the user explicitly asks for an independent reviewer, or the active tool
+  policy otherwise permits it, spawn a fresh xhigh reviewer after the report is
+  generated. The reviewer should inspect the latest JSON/HTML and MyCR flow
+  read-only, then return concrete quality gaps and evolution suggestions. The
+  main agent must validate those suggestions, implement low-risk local fixes,
+  and record longer-term work in `data/evolution/backlog.md`.
+- If subagent tools are unavailable or not permitted by the active tool policy,
+  do the same checklist locally and record the limitation as a run capability
+  or `skill_evolution` note so the report remains auditable.
 - When the user asks for MyCR maintenance, or when a low-risk improvement is
   clearly local to this repo, update the relevant canonical files here:
   `skill/SKILL.md`, `scripts/`, `src/`, `data/specs/`, or `data/evolution/`.

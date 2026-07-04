@@ -9,7 +9,7 @@
     "approved": 4,
     "commented": 0,
     "maintained": 2,
-    "skipped": 42
+    "skipped": 32
   },
   "overview": "本轮先在 MyCR 仓库执行 `git pull --ff-only`，结果为 already up to date；随后对 trpc-group/trpc-agent-go 做显式全量 sweep。由于 incremental planner 在传入上一轮 run_state 时仍产生 carry-forward，本轮按全量语义重新生成 46/46 heavy_review 计划。\n\n实际完成动作：#2082、#1894、#2017 均已 `LGTM` 并 squash merge；#2080 已 `LGTM`，但 `codecov/patch` 仍失败，所以按 MyCR 规则只审批、不合并。最终开放 PR 从 46 个降到 43 个。\n\n#2049 和 #1526 虽然 CI 绿，但当前 head 仍有 CodeRabbit actionable comments；#1930 是跨模型默认 timeout 的行为变更；#2045/#2050/#2044 及 replay/dynamicworkflow 类大 PR 需要 maintainer/manual_review 选择或继续处理，因此本轮没有强行 LGTM。\n\n目标仓库本身存在用户已有脏工作区，本轮所有本地验证均在 `.mycr-runs/20260704-084033/worktrees/` 临时 worktree 中完成，未改动目标 checkout 的既有变更。",
   "approved": [
@@ -21,28 +21,28 @@
       "head_sha": "f805880d6c15453a78a65a0955b3a5cf0705ad8a",
       "status": "merged",
       "ci_state": "GitHub checks all green including codecov/patch; head f805880d6c15453a78a65a0955b3a5cf0705ad8a was matched before merge.",
-      "technical_background": "Parallel flow tool calls should cancel sibling calls only when a critical non-ignorable error occurs, while panics and ignorable errors stay isolated.",
-      "problem": "A critical failure inside one parallel tool call could leave siblings running instead of cancelling them promptly.",
-      "necessity_assessment": "necessary: linked issue #2081 and local code path show cancellation semantics needed for parallel execution correctness.",
-      "evidence_checked": "Reviewed functioncall errgroup/context changes, panic handling, collectParallelToolResults behavior, linked issue context, current checks, and CodeRabbit status.",
-      "reproduction_on_base": "",
-      "issue_evidence_gaps": "",
-      "problem_framing": "",
-      "root_cause": "",
-      "approach": "Approve and squash merge after targeted race test and current-head check.",
-      "implementation_derivation": "",
-      "solution_fit_assessment": "",
-      "alternative_designs": "",
-      "tradeoffs": "",
-      "design_assessment": "",
-      "modules": "internal/flow/processor function-call execution and tests.",
-      "api_surface": "",
-      "change_inventory": "",
-      "semantic_changes": "",
-      "module_impact": "",
-      "cross_module_impact": "",
-      "behavior_impact": "",
-      "tests_docs": "`go test ./internal/flow/processor/... -race -count=1` passed in PR worktree.",
+      "technical_background": "internal/flow/processor 负责把模型产生的 tool calls 分发给具体工具，并把多个并行工具调用的结果重新汇总成模型可继续消费的结果。并行调用通常共享一个父 context；当其中一个工具返回关键错误时，剩余 sibling 调用继续运行会浪费资源，也可能在上层已经决定失败后继续产生副作用。因此这个模块需要区分 critical error、ignorable error 和 panic，并把取消信号只传给应该被取消的 sibling。",
+      "problem": "并行工具调用中，如果一个工具已经出现 critical non-ignorable error，旧逻辑可能没有及时取消同一批次的其他工具调用，导致调用继续运行、结果收集顺序变复杂，并增加超时或副作用窗口。",
+      "necessity_assessment": "confirmed: linked issue #2081 指向并行工具执行取消语义，当前代码路径和新增 race test 都能说明 critical failure 需要触发 sibling cancellation；这不是单纯的重构。",
+      "evidence_checked": "检查了 linked issue #2081、functioncall errgroup/context 改动、panic handling、collectParallelToolResults 行为、并发 race test、当前 GitHub checks 和 CodeRabbit 状态。",
+      "reproduction_on_base": "未在 base 上单独写复现程序；通过旧实现的控制流可确认 sibling cancellation 缺失，PR 的新增测试覆盖了 critical failure 取消路径和 panic/ignorable error 隔离路径。",
+      "issue_evidence_gaps": "没有剩余会阻塞合入的证据缺口；风险主要在并发取消语义是否误伤可忽略错误，已由测试覆盖。",
+      "problem_framing": "这不是普通 error wrapping 问题，而是批量并行工具执行的生命周期问题：父调用一旦确定关键失败，仍在运行的 sibling 应该收到取消信号，但 panic 和可忽略错误不能把整个批次错误地拖入取消状态。",
+      "root_cause": "旧控制流把错误收集和 context cancellation 绑定得不够明确，critical error 被观察到后没有形成对 sibling goroutine 的及时取消边界。",
+      "approach": "PR 在 parallel tool execution 中引入更明确的 critical-error cancellation 路径，让 errgroup/context 在发现不可忽略失败时取消 sibling，同时保留 panic recovery 和 ignorable error 的独立处理。",
+      "implementation_derivation": "问题发生在 internal/flow/processor 的并行工具分发和结果收集处，因此修复落在 function-call processor 而不是工具实现层；这样可以统一约束所有工具调用者，无需每个 tool 自行实现 sibling cancellation。",
+      "solution_fit_assessment": "控制面选在 processor 层是合理的：取消策略属于 runtime 调度语义，不应该暴露成每个工具的公共 API；默认行为也符合 critical failure fail-fast 的直觉。",
+      "alternative_designs": "可选方案包括让每个工具自行观察共享 context、只在收集结果时丢弃 sibling 输出、或新增可配置策略。前两者无法及时停止副作用，新增配置会把内部调度细节暴露给用户。",
+      "tradeoffs": "fail-fast 能减少资源浪费和错误后副作用窗口，但必须避免把 panic 或 ignorable error 误判成全局失败；PR 的测试把这两个边界作为主要回归点。",
+      "design_assessment": "设计接近最小正确修复：改动集中在并行执行调度层，API 不扩张，语义更清楚，测试覆盖了关键并发边界。",
+      "modules": "internal/flow/processor 的 function-call 并行执行路径和对应测试。",
+      "api_surface": "无导出 API 变更；这是 runtime 内部并行工具调度语义修复。",
+      "change_inventory": "调整并行工具调用的 context/errgroup 取消逻辑；补充 critical error 取消 sibling、panic 隔离、ignorable error 不触发取消等测试。",
+      "semantic_changes": "当某个并行工具返回 critical non-ignorable error 时，同批 sibling 更早收到取消；panic recovery 和 ignorable error 仍按局部结果处理。",
+      "module_impact": "直接影响 internal/flow/processor 的并行 tool call 执行；串行工具调用路径不受影响。",
+      "cross_module_impact": "所有通过 agent runtime 并行执行工具的上层 agent、tool set 和 flow 都受益于更一致的取消语义，但调用方 API 不需要迁移。",
+      "behavior_impact": "用户可见结果是 critical failure 后并行工具批次更快收敛，减少无意义等待和潜在副作用；正常成功路径保持不变。",
+      "tests_docs": "`go test ./internal/flow/processor/... -race -count=1` passed in PR worktree；无需文档更新，因为没有用户 API 变化。",
       "attention_points": [],
       "outcome": "Approved and merged.",
       "local_tests": [
@@ -60,28 +60,28 @@
       "head_sha": "c602dd565038a0da1640ba64139d97e739234bce",
       "status": "merged",
       "ci_state": "All GitHub checks green; review decision changed from old CHANGES_REQUESTED to APPROVED after current-head LGTM; head c602dd565038a0da1640ba64139d97e739234bce matched before merge.",
-      "technical_background": "Gemini 3 rejects replayed function calls from non-Gemini providers when thought_signature is missing. The PR injects a documented bypass sentinel only for the first unsigned call in a replayed assistant step and rewrites the wire payload from base64 bytes to the literal token.",
-      "problem": "Cross-provider tool-call replay could fail with Gemini HTTP 400 for missing thought_signature.",
-      "necessity_assessment": "necessary: PR body includes the failure mode, tests cover signature preservation and literal wire serialization, and implementation is scoped to Gemini conversion.",
-      "evidence_checked": "Reviewed gemini conversion, bypass rewriter, client/request ExtrasRequestProvider chaining, current CodeRabbit status, and current checks.",
-      "reproduction_on_base": "",
-      "issue_evidence_gaps": "",
-      "problem_framing": "",
-      "root_cause": "",
-      "approach": "Approve and squash merge after module-local targeted and race tests.",
-      "implementation_derivation": "",
-      "solution_fit_assessment": "",
-      "alternative_designs": "",
-      "tradeoffs": "",
-      "design_assessment": "",
-      "modules": "model/gemini message conversion, thought-signature bypass request rewriting, and tests.",
-      "api_surface": "",
-      "change_inventory": "",
-      "semantic_changes": "",
-      "module_impact": "",
-      "cross_module_impact": "",
-      "behavior_impact": "",
-      "tests_docs": "Root `go test ./model/gemini/...` is not valid for this multi-module checkout; equivalent module-local tests passed in `model/gemini`.",
+      "technical_background": "model/gemini 适配层把框架内部的 message/tool-call 表示转换成 Gemini API 的请求格式。Gemini 3 对自己生成的 functionCall 会带 thought_signature，并在后续 replay 时校验；但跨 provider replay 时，来自 OpenAI 等模型的 tool call 天然没有 Gemini signature。适配层需要在不破坏正常 Gemini signature 的情况下，让跨 provider 历史能被 Gemini 接受。",
+      "problem": "当会话历史里存在非 Gemini provider 生成的 function call，再切换或 fallback 到 Gemini 3 时，请求可能因为缺少 thought_signature 被 Gemini HTTP 400 拒绝。",
+      "necessity_assessment": "confirmed: PR 描述给出跨 provider replay 的失败模式，测试覆盖 signature 保留、bypass sentinel 注入和 wire payload literal serialization，问题边界清楚。",
+      "evidence_checked": "检查了 Gemini message conversion、thought-signature bypass rewriter、client/request ExtrasRequestProvider chaining、当前 checks、CodeRabbit 最新状态和模块内测试。",
+      "reproduction_on_base": "未调用真实 Gemini 服务复现；但请求构造层的缺失 signature 与 Gemini 校验契约直接对应，新增 wire-level 测试验证了修复会发出文档化 bypass token。",
+      "issue_evidence_gaps": "没有阻塞合入的证据缺口；真实服务行为仍依赖 Gemini 对 skip validator token 的公开契约，PR 已把使用范围限制在跨 provider replay 场景。",
+      "problem_framing": "根问题是 provider-specific transcript metadata 与框架通用 message history 之间的兼容边界，不是简单地给所有 function call 填默认 signature。",
+      "root_cause": "框架 replay history 是 provider-neutral 的，而 Gemini 3 对历史 functionCall 引入了 provider-specific thought_signature 校验；旧转换层没有针对非 Gemini 生成的调用做兼容标记。",
+      "approach": "PR 在 Gemini 转换和请求构建中识别需要 bypass 的 unsigned function call，只对首个跨 provider replay 调用注入 documented skip validator sentinel，并在最终 wire payload 中输出 literal token 而不是错误的 base64 bytes。",
+      "implementation_derivation": "失败发生在 Gemini request serialization 前，因此修复放在 model/gemini conversion 和 ExtrasRequestProvider 链路；这样既能保留内部 message 表示，也能只影响 Gemini provider 的 HTTP payload。",
+      "solution_fit_assessment": "选择 provider adapter 层是正确控制面：公共 agent/session API 不需要知道 Gemini signature 细节，正常 Gemini-origin signature 也继续原样保留。",
+      "alternative_designs": "可选方案包括在 session 层保存 provider-specific metadata、强制跨 provider replay 丢弃 tool history、或给所有 unsigned call 填 bypass。前者复杂且侵入，第二个破坏上下文连续性，第三个会弱化正常校验。",
+      "tradeoffs": "当前方案把兼容逻辑限制在 Gemini adapter，迁移成本低；代价是 adapter 需要维护一个非常具体的 wire-format rewrite，测试必须防止 token 被错误编码。",
+      "design_assessment": "设计合理且局部：只处理确实没有 Gemini signature 的 replay 调用，保留已有 signature，测试覆盖了转换和 HTTP payload 两层。",
+      "modules": "model/gemini message conversion、thought-signature bypass request rewrite、ExtrasRequestProvider 链路和测试。",
+      "api_surface": "无主模块导出 API 变更；Gemini 子模块内部新增/调整 request extra provider 组合能力，属于 provider adapter 实现细节。",
+      "change_inventory": "增加 bypass sentinel 注入与请求重写逻辑，调整 Gemini content/tool call 转换测试，补充 extras provider chaining 与 literal payload 测试。",
+      "semantic_changes": "跨 provider function-call replay 到 Gemini 时，从直接 400 失败变为在首个 unsigned call 上使用 skip validator；Gemini 自带 signature 的历史仍保持校验。",
+      "module_impact": "直接影响 model/gemini 请求构建；其他 provider 的模型适配不受影响。",
+      "cross_module_impact": "runner/session 的 provider fallback 和历史 replay 场景会受益，但不需要修改 session 存储格式或 agent API。",
+      "behavior_impact": "用户在 fallback 到 Gemini 3 时更不容易因为历史工具调用缺 signature 而失败；普通 Gemini 会话行为保持兼容。",
+      "tests_docs": "Root `go test ./model/gemini/...` 不适用于该 multi-module checkout；在 `model/gemini` 内通过 targeted tests 和 `go test . -race -count=1`。",
       "attention_points": [],
       "outcome": "Approved and merged.",
       "local_tests": [
@@ -100,28 +100,28 @@
       "head_sha": "7681a9ffa11ae2a6af09c5c328cbeef754c3eb5c",
       "status": "merged",
       "ci_state": "All checks green; old WineChord CHANGES_REQUESTED was superseded by current-head audit and LGTM; head 7681a9ffa11ae2a6af09c5c328cbeef754c3eb5c matched before merge.",
-      "technical_background": "mysqlvec rotateMemory must replace a memory row while preserving soft-delete semantics and avoiding duplicate-key errors when the target ID exists.",
-      "problem": "Soft-delete mode previously used hard DELETE, and the follow-up hard-delete duplicate-key path needed a target-row pre-check.",
-      "necessity_assessment": "necessary: current code adds target `FOR UPDATE` pre-check, rejects active target IDs, revives soft-deleted targets in soft-delete mode, and deletes soft-deleted targets before hard-delete insert.",
-      "evidence_checked": "Reviewed current diff after the previous blocker, hard-delete and soft-delete target handling, SQL mock expectations, current checks, and latest reviews.",
-      "reproduction_on_base": "",
-      "issue_evidence_gaps": "",
-      "problem_framing": "",
-      "root_cause": "",
-      "approach": "Approve and squash merge after mysqlvec targeted and race tests.",
-      "implementation_derivation": "",
-      "solution_fit_assessment": "",
-      "alternative_designs": "",
-      "tradeoffs": "",
-      "design_assessment": "",
-      "modules": "memory/mysqlvec rotateMemory and service tests.",
-      "api_surface": "",
-      "change_inventory": "",
-      "semantic_changes": "",
-      "module_impact": "",
-      "cross_module_impact": "",
-      "behavior_impact": "",
-      "tests_docs": "`go test . -run TestService_UpdateMemory|TestService_DeleteMemory|TestService_ClearMemories -count=1` and `go test . -race -count=1` passed in memory/mysqlvec module.",
+      "technical_background": "memory/mysqlvec 用 MySQL 表保存向量 memory，并支持 soft-delete 与 hard-delete 两种删除语义。rotateMemory 需要把一个 memory ID 替换成另一个目标 ID；当目标行已经存在、且可能是 soft-deleted 行时，必须同时维护唯一键约束、deleted_at 语义和事务隔离。",
+      "problem": "soft-delete 模式下旧逻辑用 hard DELETE 处理目标行，破坏 soft-delete 语义；hard-delete 分支也可能在目标 ID 已存在时遇到 duplicate-key 或错误覆盖。",
+      "necessity_assessment": "confirmed: 之前的 WineChord blocker 指向 soft-delete target handling，当前 diff 增加 target `FOR UPDATE` 预检查、active target 拒绝、soft-deleted target revive 和 hard-delete insert 前清理，覆盖了具体缺陷。",
+      "evidence_checked": "检查了最新 diff、UpdateMemory/DeleteMemory/ClearMemories 测试、SQL mock expectations、当前 checks、旧 review thread 和最新 review 状态。",
+      "reproduction_on_base": "未连接真实 MySQL 复现；通过 SQL 事务路径和 mock expectations 可确认旧逻辑会在 soft-deleted target 上走错误删除语义，新增测试覆盖目标行 active/soft-deleted 两类情况。",
+      "issue_evidence_gaps": "没有阻塞合入的证据缺口；剩余假设是 SQL mock 与真实 MySQL 行锁/唯一键行为一致，这属于该模块现有测试方式。",
+      "problem_framing": "根问题不是单条 DELETE/UPDATE SQL 写法，而是 rotate 操作在不同删除策略下对目标 ID 生命周期的定义：active target 不能被覆盖，soft-deleted target 应恢复或替换，hard-delete 模式要避免唯一键冲突。",
+      "root_cause": "旧实现没有在事务内把目标行状态作为显式输入决策，导致 soft-delete 与 hard-delete 分支共享了不合适的删除动作。",
+      "approach": "PR 在 rotateMemory 中先锁定并检查 target row，根据 active、soft-deleted、missing 三种状态分别处理；soft-delete 模式用 UPDATE 恢复/替换语义，hard-delete 模式在插入前清理 soft-deleted target。",
+      "implementation_derivation": "缺陷发生在 memory/mysqlvec 的持久化 rotate 路径，修复必须靠数据库事务内的目标行检查，而不是上层 memory service 预判；`FOR UPDATE` 能把并发替换边界放在数据库锁内。",
+      "solution_fit_assessment": "方案符合 mysqlvec 的存储抽象：外部 API 仍表达 memory 更新/删除，内部根据删除策略维护一致性，不把数据库细节暴露给调用方。",
+      "alternative_designs": "可选方案包括总是生成新 ID、在上层禁止 rotate 到历史 ID、或彻底移除 soft-delete revive。前两者改变用户语义，第三者无法满足保留软删除历史的设计。",
+      "tradeoffs": "事务内多一次 target 查询和锁会增加少量数据库开销，但换来唯一键、安全覆盖和 soft-delete 语义的一致性。",
+      "design_assessment": "设计是合理的局部修复：用数据库状态驱动分支，保持 API 不变，并用针对性 SQL tests 锁住边界。",
+      "modules": "memory/mysqlvec 的 rotateMemory、UpdateMemory/DeleteMemory/ClearMemories 相关 service tests。",
+      "api_surface": "无导出 API 变更；行为变化限于 mysqlvec backend 内部存储语义。",
+      "change_inventory": "修改 rotateMemory 目标行查询、锁定和删除/更新分支；补充 active target、soft-deleted target、hard-delete duplicate-key 防护相关 SQL mock 测试。",
+      "semantic_changes": "soft-delete 模式不再硬删除目标行；active target ID 会被拒绝覆盖；hard-delete 模式在安全清理 soft-deleted target 后再插入。",
+      "module_impact": "直接影响 memory/mysqlvec backend 的 update/rotate/delete 行为。",
+      "cross_module_impact": "上层 memory service、agent memory 调用和使用 mysqlvec 的应用会获得更一致的 soft-delete 行为；其他 memory backend 不受影响。",
+      "behavior_impact": "用户在替换 memory ID 时更不容易遇到 duplicate-key 或软删除历史被硬删除的问题，已有 API 调用方式保持不变。",
+      "tests_docs": "`cd memory/mysqlvec && go test . -run TestService_UpdateMemory|TestService_DeleteMemory|TestService_ClearMemories -count=1` 和 `cd memory/mysqlvec && go test . -race -count=1` 通过。",
       "attention_points": [],
       "outcome": "Approved and merged.",
       "local_tests": [
@@ -138,30 +138,30 @@
       "url": "https://github.com/trpc-group/trpc-agent-go/pull/2080",
       "author": "sks",
       "head_sha": "2ab766cbef4e0e8da4d8e8fc98f9b70ca7fde13a",
-      "status": "approved_waiting_codecov",
+      "status": "approved",
       "ci_state": "All checks green except `codecov/patch` FAILURE; GitHub reviewDecision is APPROVED after LGTM; mergeStateStatus remained blocked/unknown due required coverage gate.",
-      "technical_background": "The PR adds jsonrepair Loads APIs and opt-in flexible JSON decoding for tool-call arguments and related SDK decode paths.",
-      "problem": "Malformed JSON arguments need an opt-in repair path without weakening strict default behavior.",
-      "necessity_assessment": "useful and well-scoped, but not mergeable while codecov/patch is red.",
-      "evidence_checked": "Reviewed jsonrepair/jsonutils helpers, opt-in gating in tool/function and processor paths, CodeRabbit latest status, current checks, and Codecov missing-line report.",
-      "reproduction_on_base": "",
-      "issue_evidence_gaps": "",
-      "problem_framing": "",
-      "root_cause": "",
-      "approach": "Submitted LGTM only; intentionally did not merge because codecov/patch is a hard merge gate.",
-      "implementation_derivation": "",
-      "solution_fit_assessment": "",
-      "alternative_designs": "",
-      "tradeoffs": "",
-      "design_assessment": "",
-      "modules": "internal/jsonrepair, internal/jsonutils, tool/function, internal/flow/processor, evaluation response decoder, tool submodule go.mod/go.sum updates.",
-      "api_surface": "",
-      "change_inventory": "",
-      "semantic_changes": "",
-      "module_impact": "",
-      "cross_module_impact": "",
-      "behavior_impact": "",
-      "tests_docs": "`go test ./internal/jsonrepair/... ./internal/jsonutils/... ./tool/function/... ./internal/flow/processor/... -race -count=1` passed in PR worktree.",
+      "technical_background": "tool/function 和 flow processor 会把模型输出的 tool-call arguments 反序列化成 Go 结构。默认严格 JSON 解析能尽早暴露模型输出错误，但实际模型有时会产生接近 JSON、但带尾逗号/缺引号等格式瑕疵的参数。internal/jsonrepair 提供修复能力，关键是必须保持 opt-in，不能让所有解码路径默认接受非标准 JSON。",
+      "problem": "部分工具调用参数或 SDK 响应需要可选的 JSON repair 能力，否则模型输出轻微格式错误会导致调用失败；但如果默认放宽解析，又会弱化严格 JSON 合约。",
+      "necessity_assessment": "useful and well-scoped: PR 把 repair 设计成 opt-in，并在 jsonrepair/jsonutils、tool/function、flow processor 和 evaluation decode 相关路径补齐测试；但 `codecov/patch` 仍低于阈值，所以不能 merge。",
+      "evidence_checked": "检查了 internal/jsonrepair Loads API、internal/jsonutils helper、tool/function 参数 decode、processor 路径、evaluation response decoder、go.mod/go.sum 更新、Codecov missing-line report、当前 checks 和 CodeRabbit 状态。",
+      "reproduction_on_base": "未用真实模型输出复现；通过新增 malformed JSON 测试可以确认 base 严格解析会失败，而 opt-in repair 后可解析。",
+      "issue_evidence_gaps": "没有阻塞审批的设计证据缺口；合入阻塞点是 patch coverage 未达 required gate，需补测试或调整覆盖后才能 merge。",
+      "problem_framing": "核心问题是严格协议与模型容错之间的控制面选择：用户需要能容忍模型小格式错误，但框架默认不应悄悄接受不规范 JSON。",
+      "root_cause": "旧解码路径只暴露严格 JSON decode，没有统一的 opt-in repair helper；各调用点要么失败，要么可能各自实现不一致的容错。",
+      "approach": "PR 增加 jsonrepair Loads 类 API 和 jsonutils 入口，并把 opt-in flexible JSON decoding 接到 tool-call arguments 与相关 SDK decode 路径；默认严格行为保持不变。",
+      "implementation_derivation": "解析失败发生在参数/响应 decode 边界，因此修复放在 internal/jsonrepair/jsonutils 和调用这些 helper 的 decode path；这样能复用修复逻辑并保持上层 tool API 明确。",
+      "solution_fit_assessment": "选择 opt-in API 是合适控制面：既满足容错需求，也避免把 repair 变成全局默认导致隐藏模型或调用方 bug。",
+      "alternative_designs": "可选方案包括全局默认 repair、只在具体 tool 中手写修复、或完全拒绝 malformed JSON。全局默认风险太高，手写修复重复且不一致，完全拒绝会牺牲实际模型兼容性。",
+      "tradeoffs": "opt-in 增加一点配置复杂度，但保留严格默认；repair 逻辑集中后更易测试，但需要持续关注覆盖率和 malformed 输入边界。",
+      "design_assessment": "设计方向合理，API 范围可控；唯一不合入原因不是代码审查发现，而是 required codecov/patch gate 未过。",
+      "modules": "internal/jsonrepair、internal/jsonutils、tool/function、internal/flow/processor、evaluation response decoder、tool submodule go.mod/go.sum。",
+      "api_surface": "新增 jsonrepair Loads 类能力和 opt-in flexible decode 入口；tool/function 相关 decode path 可通过显式选项使用 repair。",
+      "change_inventory": "新增/扩展 JSON repair helper，接入工具参数和 SDK decode 路径，更新子模块依赖，补充 malformed JSON 和 opt-in 行为测试。",
+      "semantic_changes": "默认 JSON 解析仍严格；启用 repair 后，部分非标准但可修复的 JSON 参数会被修复后继续执行。",
+      "module_impact": "直接影响 JSON helper、工具参数解码和 flow processor decode；默认未启用 repair 的调用不改变。",
+      "cross_module_impact": "agent tools、evaluation、SDK response decode 等使用同一 helper 的路径会获得一致的 opt-in 容错；依赖 tool submodule 的调用方需要接受 go.mod/go.sum 更新。",
+      "behavior_impact": "使用者显式打开 repair 后，模型轻微 JSON 格式错误导致的工具调用失败会减少；未打开时继续 fail fast。",
+      "tests_docs": "`go test ./internal/jsonrepair/... ./internal/jsonutils/... ./tool/function/... ./internal/flow/processor/... -race -count=1` passed；merge 仍等待 codecov/patch。",
       "attention_points": [
         "codecov/patch 83.56164% below 85% target",
         "do not merge until coverage gate passes"
@@ -170,7 +170,8 @@
       "local_tests": [
         "go test ./internal/jsonrepair/... ./internal/jsonutils/... ./tool/function/... ./internal/flow/processor/... -race -count=1"
       ],
-      "review_action": "gh pr review 2080 --approve --body LGTM"
+      "review_action": "gh pr review 2080 --approve --body LGTM",
+      "gate_status": "approved_waiting_codecov"
     }
   ],
   "commented": [],
@@ -181,34 +182,35 @@
       "url": "https://github.com/trpc-group/trpc-agent-go/pull/2073",
       "author": "WineChord",
       "head_sha": "a268594e228eba8ecc029e0e588ab006ea6c62ce",
-      "status": "own_pr_no_self_review",
+      "status": "maintained",
       "ci_state": "Own PR; non-draft but codecov/patch is non-green in the run ledger.",
-      "technical_background": "Authenticated reviewer must not self-approve or self-merge own PRs.",
-      "problem": "OpenClaw browser repeated backend crash guard remains an own branch requiring maintainer path, not external review.",
-      "necessity_assessment": "deferred: no self-review; coverage gate still needs resolution or explicit maintainer decision.",
-      "evidence_checked": "Checked author, head, draft state, checks, and review threads from the full ledger.",
-      "reproduction_on_base": "",
-      "issue_evidence_gaps": "",
-      "problem_framing": "",
-      "root_cause": "",
-      "approach": "No PR review action; leave for own-PR maintenance/fix path.",
-      "implementation_derivation": "",
-      "solution_fit_assessment": "",
-      "alternative_designs": "",
-      "tradeoffs": "",
-      "design_assessment": "",
-      "modules": "",
-      "api_surface": "",
-      "change_inventory": "",
-      "semantic_changes": "",
-      "module_impact": "",
-      "cross_module_impact": "",
-      "behavior_impact": "",
-      "tests_docs": "",
+      "technical_background": "OpenClaw browser/backend 相关 PR 属于仓库维护者自己的分支。MyCR 对 own PR 的职责不是在 GitHub 上自我 approve 或 request changes，而是在独立 worktree 中做维护审计，必要时直接推修复；如果仍有 coverage gate 或外部 review 需要，则只能如实报告。",
+      "problem": "PR 试图增强 OpenClaw browser 对重复 backend crash 的保护，但本轮没有进入可自助合入状态，因为 own-PR policy 禁止自审，且 ledger 仍显示 codecov/patch 非绿。",
+      "necessity_assessment": "deferred: 需求可能成立，但本轮没有做完整实现复审或直接修复；需要先处理 coverage gate 或等待外部 reviewer。",
+      "evidence_checked": "检查了 author、head SHA、draft 状态、checks、review threads 和 full-open PR ledger。",
+      "reproduction_on_base": "本轮没有在 base 上复现 backend crash；该条目记录的是 own-PR 维护门禁而非代码修复结论。",
+      "issue_evidence_gaps": "缺少本轮 crash 复现、具体 failing path 和 coverage 解释，因此不能把它描述为已完成维护。",
+      "problem_framing": "这里的关键不是能否写 LGTM，而是 MyCR 对自己分支的权限边界：不能用 reviewer 身份给 own PR 制造通过状态。",
+      "root_cause": "报告生成把 own-PR gate 放进 maintained section，但没有补充足够的工程背景和 self-review policy，导致 HTML 看起来像空白维护结果。",
+      "approach": "本轮只记录维护门禁：不提交 PR review，不 merge；后续应在独立 worktree 中复现问题、补 coverage 或推修复。",
+      "implementation_derivation": "如果后续处理，应从 OpenClaw browser/backend crash loop 的入口和错误恢复路径入手，而不是通过 GitHub review 动作解决。",
+      "solution_fit_assessment": "own-PR direct maintenance 是正确控制面；当前没有足够证据证明无需代码或测试变更。",
+      "alternative_designs": "可选方案是把 own PR 全部移到 skipped section，或单独创建 own_pr_blocked section；长期更好的报告模型应区分 maintained_done 与 own_pr_blocked。",
+      "tradeoffs": "放在 maintained 里能让用户看到 own PR 已被扫描，但如果字段不完整会误导；本次补充 self-review policy 和 remaining blocker 来降低误导。",
+      "design_assessment": "当前状态不是可合入维护完成，而是 own-PR/no-self-review gate；报告应在后续版本改成更明确的 bucket。",
+      "modules": "OpenClaw browser/backend crash guard 相关代码路径；本轮未展开到文件级实现审计。",
+      "api_surface": "本轮未确认导出 API 变化；需要后续从 PR diff 中单独列出。",
+      "change_inventory": "本轮未对 PR 分支做代码修改；只记录 gate 和后续维护要求。",
+      "semantic_changes": "未在本轮确认运行时语义变化。",
+      "module_impact": "预计影响 OpenClaw browser/backend 稳定性路径，但本轮未完成细审。",
+      "cross_module_impact": "可能影响 OpenClaw app/browser 集成和 CI 覆盖；需要后续维护 pass。",
+      "behavior_impact": "用户侧预期是重复 backend crash 后更稳健；当前报告只确认该 PR 仍需后续处理。",
+      "tests_docs": "本轮未运行该 PR 的本地测试；ledger 显示 codecov/patch 非绿。",
       "attention_points": [],
-      "outcome": "Maintained as no-action due self-review gate.",
+      "outcome": "Own PR was scanned but not self-reviewed; no direct fix was pushed in this run.",
       "local_tests": [],
-      "review_action": ""
+      "gate_status": "own_pr_no_self_review",
+      "self_review_policy": "No self-review comment, self-approval, or self-merge was submitted. Future action should be direct branch maintenance in a clean worktree."
     },
     {
       "number": 2078,
@@ -216,34 +218,35 @@
       "url": "https://github.com/trpc-group/trpc-agent-go/pull/2078",
       "author": "WineChord",
       "head_sha": "4848cd03a9f281b7f60643ce0a0026db6187a342",
-      "status": "own_pr_hard_ci",
+      "status": "maintained",
       "ci_state": "Own PR with hard/non-green checks in the run ledger.",
-      "technical_background": "Own PRs require direct branch maintenance instead of GitHub PR review actions.",
-      "problem": "openclaw/app direct-tools default change was not ready for self-review or merge.",
-      "necessity_assessment": "blocked by hard checks and own-PR policy.",
-      "evidence_checked": "Checked author, non-draft state, CI summary, and current review metadata.",
-      "reproduction_on_base": "",
-      "issue_evidence_gaps": "",
-      "problem_framing": "",
-      "root_cause": "",
-      "approach": "No self-review or merge.",
-      "implementation_derivation": "",
-      "solution_fit_assessment": "",
-      "alternative_designs": "",
-      "tradeoffs": "",
-      "design_assessment": "",
-      "modules": "",
-      "api_surface": "",
-      "change_inventory": "",
-      "semantic_changes": "",
-      "module_impact": "",
-      "cross_module_impact": "",
-      "behavior_impact": "",
-      "tests_docs": "",
+      "technical_background": "OpenClaw app 的 tool surface/default behavior 属于运行时用户可感知的集成语义。因为 PR 作者是当前认证账号，MyCR 不能通过 GitHub review 给自己的 PR 放行；如果 CI 或 coverage 非绿，应把它作为维护任务，而不是审批动作。",
+      "problem": "PR 试图让 OpenClaw app 默认保持 direct tools，但 ledger 显示 hard/non-green checks，且 own-PR policy 禁止自审自合。",
+      "necessity_assessment": "blocked: 需求和方案需要后续维护审计；当前 CI 非绿使它不能被视作 ready。",
+      "evidence_checked": "检查了 author、non-draft state、CI summary、head SHA、review metadata 和 full-open PR ledger。",
+      "reproduction_on_base": "本轮没有复现 direct-tools 默认行为差异；该条目记录的是 own-PR + CI gate。",
+      "issue_evidence_gaps": "缺少本轮对 OpenClaw tool surface 兼容性的 diff-level 结论和失败检查详情。",
+      "problem_framing": "问题本质是默认工具暴露策略的兼容性，而不是 reviewer 操作；需要在代码层确认默认行为是否保持用户预期。",
+      "root_cause": "PR 仍处于 CI 非绿状态，且 MyCR 不能用自审绕过外部质量门禁。",
+      "approach": "本轮不做 GitHub review 或 merge；后续应在独立 worktree 中修复 hard checks，再做外部 review。",
+      "implementation_derivation": "后续实现审计应围绕 OpenClaw app tool registration/default selection 路径，而不是 report 层面的审批状态。",
+      "solution_fit_assessment": "direct branch maintenance 是 own PR 的正确路径；在 hard checks 未过之前不应把它包装成已维护完成。",
+      "alternative_designs": "短期可继续报告为 maintained with blocker；长期应新增 own_pr_blocked bucket，避免和已推修复的 maintained 混淆。",
+      "tradeoffs": "保留在 maintained section 能展示 own PR 被纳入全量扫描，但需要清晰写出 hard CI 和 no-self-review 约束。",
+      "design_assessment": "当前不是可放行状态；报告应驱动下一轮修 CI/补证据，而不是审批。",
+      "modules": "OpenClaw app tool default surface；本轮未展开到文件级实现审计。",
+      "api_surface": "可能涉及 OpenClaw app 默认工具暴露语义；本轮未确认具体导出 API 变化。",
+      "change_inventory": "本轮未对 PR 分支做代码修改。",
+      "semantic_changes": "未在本轮确认最终语义；标题暗示 direct tools 默认行为保持。",
+      "module_impact": "预计影响 OpenClaw app 运行时工具选择。",
+      "cross_module_impact": "可能影响 browser/app 集成和调用方工具可见性，需要后续 review。",
+      "behavior_impact": "用户预期是工具默认直连行为不被包装层改变；当前仍需 CI 和审计确认。",
+      "tests_docs": "本轮未运行本地测试；ledger 显示 hard/non-green checks。",
       "attention_points": [],
-      "outcome": "Maintained as blocked.",
+      "outcome": "Own PR remained blocked by hard CI and no-self-review policy; no GitHub review or merge action was taken.",
       "local_tests": [],
-      "review_action": ""
+      "gate_status": "own_pr_hard_ci",
+      "self_review_policy": "No self-review comment, self-approval, or self-merge was submitted. Fixes must be pushed directly to the PR branch from a clean worktree when ready."
     }
   ],
   "blocked": [
@@ -253,34 +256,35 @@
       "url": "https://github.com/trpc-group/trpc-agent-go/pull/2049",
       "author": "Spock12138",
       "head_sha": "adf4af792312019d83f6f8bcd53cb966e3abb9db",
-      "status": "blocked_actionable_comments",
+      "status": "blocked",
       "ci_state": "Current checks green, but latest CodeRabbit review has actionable comments.",
-      "technical_background": "",
+      "technical_background": "session/replaytest harness 用来验证不同 session backend、summary 边界和 replay 语义是否一致。这样的测试框架会成为后续 runtime 变更的安全网，因此测试隔离、namespace、memory alias、LastEventID 和并发覆盖都必须精确。",
       "problem": "Replay consistency harness still has current issues: test isolation by app namespace, ambiguous memory alias lookup, summary boundary LastEventID normalization, missing concurrency/retry coverage, hardcoded Windows paths, and test module OpenTelemetry lockset.",
-      "necessity_assessment": "",
+      "necessity_assessment": "blocked: 当前 head 有 CodeRabbit actionable comments 指向具体测试正确性风险，不能仅凭 CI 绿审批。",
       "evidence_checked": "Reviewed latest CodeRabbit current-head review summary and PR metadata.",
-      "reproduction_on_base": "",
-      "issue_evidence_gaps": "",
-      "problem_framing": "",
-      "root_cause": "",
-      "approach": "No duplicate comment was posted because actionable comments already exist on the PR.",
-      "implementation_derivation": "",
-      "solution_fit_assessment": "",
-      "alternative_designs": "",
-      "tradeoffs": "",
-      "design_assessment": "",
-      "modules": "",
-      "api_surface": "",
-      "change_inventory": "",
-      "semantic_changes": "",
-      "module_impact": "",
-      "cross_module_impact": "",
-      "behavior_impact": "",
-      "tests_docs": "",
+      "problem_framing": "问题不是是否需要 replay consistency，而是当前 harness 是否会稳定、准确地捕捉真实一致性问题，而不是因为隔离或路径假设产生假阳性/假阴性。",
+      "approach": "不重复发布评论；保留现有 actionable comments 作为 blocker，等待作者修复后再复审。",
+      "solution_fit_assessment": "测试框架方向合理，但现有隔离和边界条件问题会削弱它作为回归安全网的可信度。",
+      "design_assessment": "需要先修正测试隔离、alias lookup、summary boundary 和平台路径假设，再判断整体设计是否可合入。",
+      "modules": "session/replaytest、多 backend replay harness、memory alias、summary LastEventID、测试模块依赖锁。",
+      "api_surface": "主要是测试框架/内部验证 surface；没有确认用户导出 API 变化。",
+      "change_inventory": "新增 replay consistency harness 及多 backend 场景；当前 blocker 涉及 namespace 隔离、alias lookup、summary boundary、并发/retry 覆盖、Windows path 和 OpenTelemetry lockset。",
+      "semantic_changes": "测试语义将影响未来 session/replay 行为的判定标准；如果 harness 不准，会误导后续 runtime 变更。",
+      "module_impact": "直接影响 session/replaytest 质量门禁。",
+      "cross_module_impact": "间接影响所有依赖 replay consistency 测试判断的 session backend 和 summary worker 改动。",
+      "behavior_impact": "用户运行测试时应得到稳定、可解释的一致性结果；当前评论指出仍有误判风险。",
       "attention_points": [],
       "outcome": "Blocked; author should address current review comments.",
       "local_tests": [],
-      "review_action": ""
+      "gate_status": "blocked_actionable_comments",
+      "risk": "Existing current-head actionable review comments remain unresolved.",
+      "blockers": [
+        {
+          "kind": "bot_review",
+          "summary": "CodeRabbit current-head actionable comments remain on test isolation, alias lookup, LastEventID normalization, retry/concurrency coverage, Windows paths, and lockset.",
+          "verification": "Reviewed latest CodeRabbit current-head review summary and PR metadata."
+        }
+      ]
     },
     {
       "number": 1526,
@@ -288,34 +292,35 @@
       "url": "https://github.com/trpc-group/trpc-agent-go/pull/1526",
       "author": "sks",
       "head_sha": "c169d77954e5947aebfd1c4321781678e4ce3f70",
-      "status": "blocked_actionable_comments",
+      "status": "blocked",
       "ci_state": "Current checks green, but latest CodeRabbit review has actionable comments.",
-      "technical_background": "",
+      "technical_background": "model max output token 逻辑会影响不同 provider 的 generation 参数上限。这个 helper 一旦进入公共路径，就会参与 context budget、provider cap、模型别名解析和默认值计算；错误的 cap 可能导致请求被 provider 拒绝或输出被意外截断。",
       "problem": "Model max-output-token PR still has current correctness concerns: Gemini int32 overflow risk, deterministic longest-prefix resolution, Claude 3.7 Sonnet cap, floor exceeding remaining context, and duplicate clamp logic.",
-      "necessity_assessment": "",
+      "necessity_assessment": "blocked: 当前 head 仍有 actionable comments，涉及 overflow、最长前缀确定性、Claude cap、remaining context floor 和重复 clamp。",
       "evidence_checked": "Reviewed latest CodeRabbit current-head review summary and PR metadata.",
-      "reproduction_on_base": "",
-      "issue_evidence_gaps": "",
-      "problem_framing": "",
-      "root_cause": "",
-      "approach": "No approval; existing actionable comments are sufficient.",
-      "implementation_derivation": "",
-      "solution_fit_assessment": "",
-      "alternative_designs": "",
-      "tradeoffs": "",
-      "design_assessment": "",
-      "modules": "",
-      "api_surface": "",
-      "change_inventory": "",
-      "semantic_changes": "",
-      "module_impact": "",
-      "cross_module_impact": "",
-      "behavior_impact": "",
-      "tests_docs": "",
+      "problem_framing": "问题不只是维护一个 map，而是把 provider/model 的 token 上限解析成稳定、可解释、不会超过上下文预算的运行时策略。",
+      "approach": "PR 通过集中维护 model-to-max-output-token 映射和 ResolveMaxOutputTokens helper，把不同 provider/model 的输出 token 上限解析封装成可复用预算函数。",
+      "solution_fit_assessment": "集中 helper 是合理方向，但必须保证 deterministic matching 和 provider-specific cap 正确，否则会把错误预算传播给所有模型调用。",
+      "design_assessment": "当前设计尚未达到可合入标准；需要先解决边界和重复逻辑，再判断 API 是否稳定。",
+      "modules": "model package 的 max output token map/helper、provider-specific cap、context budget 计算相关调用。",
+      "api_surface": "新增/调整 ModelMaxOutputTokens 和 ResolveMaxOutputTokens helper，属于导出模型预算 API surface。",
+      "change_inventory": "新增模型上限 map 与解析 helper；当前 blocker 涉及 Gemini int32 overflow、prefix matching、Claude 3.7 cap、context floor 和 clamp 重复。",
+      "semantic_changes": "调用方可能开始依赖 helper 自动计算输出 token 上限，因此错误逻辑会改变请求参数。",
+      "module_impact": "直接影响 model 参数解析。",
+      "cross_module_impact": "间接影响 runner/agent 中所有依赖模型输出 token 配置的请求。",
+      "behavior_impact": "修正后应减少 provider 参数错误；当前未修前可能造成超限、截断或非确定性匹配。",
       "attention_points": [],
       "outcome": "Blocked; needs fixes before LGTM.",
       "local_tests": [],
-      "review_action": ""
+      "gate_status": "blocked_actionable_comments",
+      "risk": "Existing actionable review comments point to correctness and compatibility risks.",
+      "blockers": [
+        {
+          "kind": "bot_review",
+          "summary": "CodeRabbit current-head actionable comments remain on Gemini int32 overflow, deterministic longest-prefix resolution, Claude 3.7 Sonnet cap, floor exceeding remaining context, and duplicate clamp logic.",
+          "verification": "Reviewed latest CodeRabbit current-head review summary and PR metadata."
+        }
+      ]
     },
     {
       "number": 1930,
@@ -323,34 +328,35 @@
       "url": "https://github.com/trpc-group/trpc-agent-go/pull/1930",
       "author": "123456wda",
       "head_sha": "576b11d6d1f4d19f85c04bbc1c27220251cc4d89",
-      "status": "manual_review_behavior_change",
+      "status": "blocked",
       "ci_state": "Checks green in ledger, but old WineChord CHANGES_REQUESTED remains and merge is blocked until maintainer approval.",
-      "technical_background": "",
+      "technical_background": "model/http_client.go 为多个模型 provider 构造共享 HTTP client。Go 的 http.Client.Timeout 覆盖整个请求生命周期，包括等待响应头和读取 body；对 streaming/SSE 模型调用来说，固定总超时可能在仍有 token 输出时取消请求。",
       "problem": "Adding a 5-minute default timeout to the shared model HTTP client changes behavior across providers and long-running/streaming calls.",
-      "necessity_assessment": "",
+      "necessity_assessment": "product_decision_needed: goroutine leak 防护的动机合理，但给所有 provider 设置 5 分钟默认总超时是行为/兼容性决策，需要 maintainer 明确接受。",
       "evidence_checked": "Reviewed current diff, tests, latest review history, and CodeRabbit note.",
-      "reproduction_on_base": "",
-      "issue_evidence_gaps": "",
-      "problem_framing": "",
-      "root_cause": "",
-      "approach": "Manual-review gate: do not approve until maintainer explicitly accepts the default timeout behavior and migration story.",
-      "implementation_derivation": "",
-      "solution_fit_assessment": "",
-      "alternative_designs": "",
-      "tradeoffs": "",
-      "design_assessment": "",
-      "modules": "",
-      "api_surface": "",
-      "change_inventory": "",
-      "semantic_changes": "",
-      "module_impact": "",
-      "cross_module_impact": "",
-      "behavior_impact": "",
-      "tests_docs": "",
+      "problem_framing": "真正问题是在防止无界请求泄漏与保持长流式生成之间找到契约，而不是简单给共享 client 加一个固定 Timeout。",
+      "approach": "manual-review gate：不审批，等待 maintainer 确认默认 timeout 行为、streaming 兼容和迁移故事。",
+      "solution_fit_assessment": "默认总超时可能不是最佳控制面；更窄的连接/响应头超时、provider-specific 配置或显式 option 可能更符合长流式请求契约。",
+      "design_assessment": "当前改动可能可接受，但属于公共行为默认值变更；没有 maintainer 决策前自动 LGTM 风险过高。",
+      "modules": "model/http_client.go、各 provider 共用 HTTP client、streaming generation 调用路径。",
+      "api_surface": "可能改变默认运行时行为；即使没有新增导出符号，也会影响所有未显式配置 client timeout 的用户。",
+      "change_inventory": "为默认 HTTP client 设置 5 分钟超时并补测试；需要确认是否影响 streaming body 读取。",
+      "semantic_changes": "长时间模型请求可能从无限等待变为 5 分钟总时限；这既能防 leak，也可能中断合法长输出。",
+      "module_impact": "直接影响 model 层 HTTP client 默认值。",
+      "cross_module_impact": "间接影响 OpenAI、Anthropic、Gemini 等 provider adapter 和 runner/agent 长任务。",
+      "behavior_impact": "用户可能看到 hung request 更快失败，也可能看到长流式请求被默认取消。",
       "attention_points": [],
       "outcome": "Blocked by product/API behavior decision.",
       "local_tests": [],
-      "review_action": ""
+      "gate_status": "manual_review_behavior_change",
+      "risk": "Public default behavior change requires human maintainer decision.",
+      "blockers": [
+        {
+          "kind": "manual_review",
+          "summary": "Default 5-minute shared model HTTP timeout changes provider and streaming behavior; maintainer must accept the contract and migration story.",
+          "verification": "Reviewed current diff, tests, latest review history, and CodeRabbit note."
+        }
+      ]
     },
     {
       "number": 2051,
@@ -358,34 +364,35 @@
       "url": "https://github.com/trpc-group/trpc-agent-go/pull/2051",
       "author": "xiaosansh",
       "head_sha": "d94052ccbc6fa56ccd8d4654f07c815e3420e721",
-      "status": "manual_review_large_replay_framework",
-      "ci_state": "",
-      "technical_background": "",
+      "status": "blocked",
+      "ci_state": "Ledger showed green checks, but previous CHANGES_REQUESTED remains and this is a broad replay framework competing with nearby replay work.",
+      "technical_background": "session/replaytest 的多 backend 一致性框架会定义 future session backend 的正确性基准。它覆盖面大、会影响 reviewer 对 replay、summary、storage backend 的判断，因此是否采用这套框架本身是维护者设计选择。",
       "problem": "Large replay consistency framework overlaps the same review space as other replay harness PRs and needs maintainer selection/design acceptance.",
-      "necessity_assessment": "",
+      "necessity_assessment": "manual_review: CI 绿不等于可自动合入；该框架与其他 replay harness PR 重叠，需要 maintainer 选择方向。",
       "evidence_checked": "Ledger shows green checks and no open threads, but previous CHANGES_REQUESTED remains and change size is broad.",
-      "reproduction_on_base": "",
-      "issue_evidence_gaps": "",
-      "problem_framing": "",
-      "root_cause": "",
-      "approach": "",
-      "implementation_derivation": "",
-      "solution_fit_assessment": "",
-      "alternative_designs": "",
-      "tradeoffs": "",
-      "design_assessment": "",
-      "modules": "",
-      "api_surface": "",
-      "change_inventory": "",
-      "semantic_changes": "",
-      "module_impact": "",
-      "cross_module_impact": "",
-      "behavior_impact": "",
-      "tests_docs": "",
+      "problem_framing": "问题是 replay consistency 测试体系该如何统一，而不是单个小 bugfix。多个候选实现并存时，自动 reviewer 不应替 maintainer 选架构路线。",
+      "approach": "PR 新增多 backend replay consistency framework，用统一测试入口比较不同 session backend、summary/replay 边界和持久化行为。",
+      "solution_fit_assessment": "多 backend harness 可能是正确方向，但需要确认与已有/竞争 PR 的边界和长期维护成本。",
+      "design_assessment": "大范围测试框架需要设计 owner 接受；当前只可作为待人工选择候选。",
+      "modules": "session/replaytest、多 backend replay consistency、summary/session backend 测试支撑。",
+      "api_surface": "主要是测试/内部验证 surface；可能影响未来 backend conformance contract。",
+      "change_inventory": "新增多 backend replay consistency framework；本轮未做逐文件合入审定。",
+      "semantic_changes": "会改变未来测试判定哪些 replay 行为是一致/不一致。",
+      "module_impact": "直接影响 session/replaytest 测试组织。",
+      "cross_module_impact": "影响各 session backend、summary worker 和 replay feature 的回归判断。",
+      "behavior_impact": "用户不会直接看到 API 变化，但维护者会依赖该测试框架判断 runtime 正确性。",
       "attention_points": [],
       "outcome": "Manual review required.",
       "local_tests": [],
-      "review_action": ""
+      "gate_status": "manual_review_large_replay_framework",
+      "risk": "Large framework and competing replay work require maintainer selection.",
+      "blockers": [
+        {
+          "kind": "manual_review",
+          "summary": "Large replay consistency framework overlaps other replay harness work and needs maintainer design selection.",
+          "verification": "Ledger showed green checks and no open threads, but previous CHANGES_REQUESTED remains and change size is broad."
+        }
+      ]
     },
     {
       "number": 2028,
@@ -393,34 +400,35 @@
       "url": "https://github.com/trpc-group/trpc-agent-go/pull/2028",
       "author": "bytethm",
       "head_sha": "27a840a3444111270ac21fb175a2ead75c732ef3",
-      "status": "manual_review_architecture",
-      "ci_state": "",
-      "technical_background": "",
+      "status": "blocked",
+      "ci_state": "Ledger did not record a merge-ready maintainer selection for this broad architecture PR.",
+      "technical_background": "dynamicworkflow 会把 agent runtime 的工作流编排能力扩展到动态 orchestration。此类功能通常涉及 graph/step lifecycle、tool/session state、错误传播、可观测性和 public API 语义，不是局部 bugfix。",
       "problem": "Dynamic workflow orchestration is a broad new runtime feature and API surface.",
-      "necessity_assessment": "",
+      "necessity_assessment": "manual_review: 这是 broad runtime feature/API surface，需要产品或架构 owner 明确接受设计。",
       "evidence_checked": "Fetched PR metadata/diff and classified as architecture/product gate.",
-      "reproduction_on_base": "",
-      "issue_evidence_gaps": "",
-      "problem_framing": "",
-      "root_cause": "",
-      "approach": "",
-      "implementation_derivation": "",
-      "solution_fit_assessment": "",
-      "alternative_designs": "",
-      "tradeoffs": "",
-      "design_assessment": "",
-      "modules": "",
-      "api_surface": "",
-      "change_inventory": "",
-      "semantic_changes": "",
-      "module_impact": "",
-      "cross_module_impact": "",
-      "behavior_impact": "",
-      "tests_docs": "",
+      "problem_framing": "问题是仓库是否要引入 dynamic workflow 这个新抽象，以及它与现有 agent/runner/graph 能力如何分层。",
+      "approach": "不自动 LGTM；等待 maintainer 对架构边界、API shape 和 roadmap 做选择。",
+      "solution_fit_assessment": "如果需要动态编排，PR 可能是方向之一；但控制面和抽象层级必须由维护者确认。",
+      "design_assessment": "当前不能通过自动 review 代替架构决策；需要 design review 后再进入代码级 merge 判断。",
+      "modules": "dynamicworkflow runtime orchestration、agent/runner/graph 相关集成点。",
+      "api_surface": "可能新增动态工作流相关导出 API、配置或用户可见抽象；需要单独 API review。",
+      "change_inventory": "新增 broad dynamic workflow orchestration 能力；本轮未逐文件确认最终 API。",
+      "semantic_changes": "可能引入新的工作流执行、状态流转和错误处理语义。",
+      "module_impact": "直接影响 workflow/orchestration 相关模块。",
+      "cross_module_impact": "可能影响 agent runtime、tools、session state、docs/examples 和测试策略。",
+      "behavior_impact": "用户可能获得新的动态工作流能力，但也会承担新抽象的学习和兼容成本。",
       "attention_points": [],
       "outcome": "Manual review required before LGTM/merge.",
       "local_tests": [],
-      "review_action": ""
+      "gate_status": "manual_review_architecture",
+      "risk": "Architecture/product approval required before automated LGTM.",
+      "blockers": [
+        {
+          "kind": "manual_review",
+          "summary": "Broad dynamic workflow runtime feature and API surface need maintainer architecture decision.",
+          "verification": "Fetched PR metadata/diff and classified as architecture/product gate."
+        }
+      ]
     },
     {
       "number": 2045,
@@ -428,34 +436,35 @@
       "url": "https://github.com/trpc-group/trpc-agent-go/pull/2045",
       "author": "everfid-ever",
       "head_sha": "0e3bfbf1aa01222ef9720c1b440ad995c3e72176",
-      "status": "manual_review_competing_tool_safety",
-      "ci_state": "",
-      "technical_background": "",
+      "status": "blocked",
+      "ci_state": "Ledger did not record a maintainer-selected winning tool-safety implementation.",
+      "technical_background": "tool execution safety guard 属于安全边界：它决定哪些命令、路径、网络或工具调用会被阻止、审计或允许。多个 PR 同时修改这一区域时，维护者必须选择统一策略，避免规则冲突或安全绕过。",
       "problem": "Tool safety guard competes with other active tool-safety PRs for the same problem area.",
-      "necessity_assessment": "",
+      "necessity_assessment": "manual_review: 工具安全方向重要，但该 PR 与其他 active tool-safety submissions 竞争，需要 maintainer 选型。",
       "evidence_checked": "Ledger shows green/no open threads, but multiple active #2002-style tool-safety submissions exist.",
-      "reproduction_on_base": "",
-      "issue_evidence_gaps": "",
-      "problem_framing": "",
-      "root_cause": "",
-      "approach": "",
-      "implementation_derivation": "",
-      "solution_fit_assessment": "",
-      "alternative_designs": "",
-      "tradeoffs": "",
-      "design_assessment": "",
-      "modules": "",
-      "api_surface": "",
-      "change_inventory": "",
-      "semantic_changes": "",
-      "module_impact": "",
-      "cross_module_impact": "",
-      "behavior_impact": "",
-      "tests_docs": "",
+      "problem_framing": "问题不是单条规则是否合理，而是整个 tool safety scanner 的策略、默认值、误报/漏报边界和与现有权限模型的关系。",
+      "approach": "PR 新增 tool execution safety guard 和 secure command scanning 规则，用扫描结果在工具执行前识别潜在危险命令或参数。",
+      "solution_fit_assessment": "实现可能覆盖部分需求，但在竞争实现未收敛前，自动合入会增加策略分叉风险。",
+      "design_assessment": "需要统一安全设计后再判断具体实现质量。",
+      "modules": "tool execution safety guard、secure command scanning、policy/rule engine 相关代码。",
+      "api_surface": "可能影响安全策略配置、规则结构、审计输出或 tool execution contract。",
+      "change_inventory": "新增安全扫描/guard 逻辑；本轮未作为最终方案审定。",
+      "semantic_changes": "可能改变命令执行允许/拒绝行为和审计输出。",
+      "module_impact": "直接影响 tool safety enforcement。",
+      "cross_module_impact": "间接影响 code executor、workspace exec、agent tools 和用户脚本执行体验。",
+      "behavior_impact": "用户可能看到更多命令被拦截或要求确认；错误策略会造成安全风险或可用性问题。",
       "attention_points": [],
       "outcome": "Manual review required to select accepted implementation.",
       "local_tests": [],
-      "review_action": ""
+      "gate_status": "manual_review_competing_tool_safety",
+      "risk": "Competing implementations require maintainer selection.",
+      "blockers": [
+        {
+          "kind": "manual_review",
+          "summary": "Competes with other active tool-safety PRs; maintainer must select the accepted implementation.",
+          "verification": "Ledger shows green/no open threads, but multiple active tool-safety submissions exist."
+        }
+      ]
     },
     {
       "number": 2050,
@@ -463,34 +472,35 @@
       "url": "https://github.com/trpc-group/trpc-agent-go/pull/2050",
       "author": "d2bz",
       "head_sha": "e5234b25d8467988f6727a16a0a2e0a7f0edbc56",
-      "status": "manual_review_competing_tool_safety",
-      "ci_state": "",
-      "technical_background": "",
+      "status": "blocked",
+      "ci_state": "Ledger and fetched metadata reviewed; historical changes-requested context remains.",
+      "technical_background": "tool safety guard 是 agent 执行外部命令时的安全策略层。它必须和现有权限模型、审计输出、规则优先级以及用户确认流程一致，否则可能出现绕过或过度拦截。",
       "problem": "Tool safety guard competes with other active tool-safety PRs and still has historical changes-requested context.",
-      "necessity_assessment": "",
+      "necessity_assessment": "manual_review: 同一 problem area 有多个 active PR，且该 PR 有历史 changes-requested 上下文。",
       "evidence_checked": "Ledger and fetched metadata reviewed.",
-      "reproduction_on_base": "",
-      "issue_evidence_gaps": "",
-      "problem_framing": "",
-      "root_cause": "",
-      "approach": "",
-      "implementation_derivation": "",
-      "solution_fit_assessment": "",
-      "alternative_designs": "",
-      "tradeoffs": "",
-      "design_assessment": "",
-      "modules": "",
-      "api_surface": "",
-      "change_inventory": "",
-      "semantic_changes": "",
-      "module_impact": "",
-      "cross_module_impact": "",
-      "behavior_impact": "",
-      "tests_docs": "",
+      "problem_framing": "核心是选择统一的安全策略和 API，而不是把相似 guard 并行合入。",
+      "approach": "PR 新增 tool/safety guard，把命令或工具执行请求经过安全规则检查后再决定允许、阻断或报告风险。",
+      "solution_fit_assessment": "可能解决部分安全扫描需求，但未确认与整体权限模型的最佳契合。",
+      "design_assessment": "需要安全/架构 owner 决策；自动 review 只能记录 gate。",
+      "modules": "tool/safety guard、rule scanner、tool execution policy。",
+      "api_surface": "可能影响安全规则配置和 tool execution 行为；需要统一 API review。",
+      "change_inventory": "新增 tool execution safety guard；本轮未选定为 accepted implementation。",
+      "semantic_changes": "可能改变工具执行时的阻断、警告或审计语义。",
+      "module_impact": "直接影响 tool safety package。",
+      "cross_module_impact": "影响 code executor、tool calling runtime 和用户工作流。",
+      "behavior_impact": "安全 guard 会改变用户可执行命令集合；错误选择可能降低安全性或可用性。",
       "attention_points": [],
       "outcome": "Manual review required.",
       "local_tests": [],
-      "review_action": ""
+      "gate_status": "manual_review_competing_tool_safety",
+      "risk": "Competing tool-safety PR and historical review context block automated LGTM.",
+      "blockers": [
+        {
+          "kind": "manual_review",
+          "summary": "Competes with other active tool-safety PRs and still has historical changes-requested context.",
+          "verification": "Ledger and fetched metadata reviewed."
+        }
+      ]
     },
     {
       "number": 2044,
@@ -498,34 +508,35 @@
       "url": "https://github.com/trpc-group/trpc-agent-go/pull/2044",
       "author": "Nerdlet369",
       "head_sha": "8f093064d559d2485416c0ac1fc4854aac2652c5",
-      "status": "manual_review_competing_tool_safety",
-      "ci_state": "",
-      "technical_background": "",
+      "status": "blocked",
+      "ci_state": "Ledger and fetched metadata reviewed; previous blocker history remains.",
+      "technical_background": "Tool Safety Scanner 通过规则化审计来判断工具执行是否安全。规则数量、结构化输出、默认阻断策略和 false positive 处理都会成为长期安全契约，因此不能只看单个 PR CI 是否通过。",
       "problem": "Tool safety scanner competes with other active tool-safety PRs and has previous blocker history.",
-      "necessity_assessment": "",
+      "necessity_assessment": "manual_review: 该 PR 与其他 tool-safety guard 实现竞争，并且存在 previous blocker history。",
       "evidence_checked": "Ledger and fetched metadata reviewed.",
-      "reproduction_on_base": "",
-      "issue_evidence_gaps": "",
-      "problem_framing": "",
-      "root_cause": "",
-      "approach": "",
-      "implementation_derivation": "",
-      "solution_fit_assessment": "",
-      "alternative_designs": "",
-      "tradeoffs": "",
-      "design_assessment": "",
-      "modules": "",
-      "api_surface": "",
-      "change_inventory": "",
-      "semantic_changes": "",
-      "module_impact": "",
-      "cross_module_impact": "",
-      "behavior_impact": "",
-      "tests_docs": "",
+      "problem_framing": "问题是工具安全体系的统一设计，而不是某个 8-rule scanner 是否能单独工作。",
+      "approach": "PR 新增包含 8 条规则的 Tool Safety Scanner，并输出结构化 audit 结果用于描述工具执行风险。",
+      "solution_fit_assessment": "结构化 audit 有价值，但是否作为主线方案需要和其他 guard/scanner PR 比较。",
+      "design_assessment": "需要人工选择和安全设计复核后再进入最终 merge 判断。",
+      "modules": "Tool Safety Scanner、规则集、结构化 audit 输出。",
+      "api_surface": "可能新增规则配置、扫描结果结构或用户可见 safety report。",
+      "change_inventory": "新增 8 条规则和结构化审计；本轮未作为最终安全方案审定。",
+      "semantic_changes": "可能改变工具执行前的安全判断和审计可见性。",
+      "module_impact": "直接影响 tool safety scanner。",
+      "cross_module_impact": "间接影响 agent tool execution、workspace command execution 和安全提示。",
+      "behavior_impact": "用户可能看到新的安全扫描结果；策略不统一会导致体验和安全边界不稳定。",
       "attention_points": [],
       "outcome": "Manual review required.",
       "local_tests": [],
-      "review_action": ""
+      "gate_status": "manual_review_competing_tool_safety",
+      "risk": "Previous blocker history and competing tool-safety submissions require maintainer decision.",
+      "blockers": [
+        {
+          "kind": "manual_review",
+          "summary": "Competes with other active tool-safety PRs and has previous blocker history.",
+          "verification": "Ledger and fetched metadata reviewed."
+        }
+      ]
     }
   ],
   "skipped_groups": [
@@ -550,27 +561,419 @@
         1710,
         1683,
         1678
+      ],
+      "items": [
+        {
+          "number": 2077,
+          "title": "openclaw/app: harden dynamic web research",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2077",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2077."
+            }
+          ]
+        },
+        {
+          "number": 2076,
+          "title": "feat(sandbox): add macOS denial diagnostics",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2076",
+          "author": "cuboya",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2076."
+            }
+          ]
+        },
+        {
+          "number": 2075,
+          "title": "internal/jsonrepair, openclaw: repair malformed tool call arguments",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2075",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2075."
+            }
+          ]
+        },
+        {
+          "number": 2072,
+          "title": "session/recall: accept current session aliases",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2072",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2072."
+            }
+          ]
+        },
+        {
+          "number": 2069,
+          "title": "openclaw/browser: harden schema and target ids",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2069",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2069."
+            }
+          ]
+        },
+        {
+          "number": 2068,
+          "title": "tool/duckduckgo: return blocker for SERP challenges",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2068",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2068."
+            }
+          ]
+        },
+        {
+          "number": 2066,
+          "title": "openclaw: bound host exec sessions and waits",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2066",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2066."
+            }
+          ]
+        },
+        {
+          "number": 2058,
+          "title": "a2a: add v2 packages backed by trpc-a2a-go/v2 (A2A protocol v1.0)",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2058",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "ci_state": "Non-green checks in latest lightweight ledger: check examples (1/4)@Pull Request Check=FAILURE, check examples (2/4)@Pull Request Check=FAILURE, check examples (4/4)@Pull Request Check=FAILURE, check examples build script (1/4)@Pull Request Check=FAILURE, check examples build script (2/4)@Pull Request Check=FAILURE, check examples build script (4/4)@Pull Request Check=FAILURE, ....",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2058."
+            }
+          ]
+        },
+        {
+          "number": 2047,
+          "title": "{agent, runner, examples}: add session context messages",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2047",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2047."
+            }
+          ]
+        },
+        {
+          "number": 2037,
+          "title": "feat(telemetry): add invoke skill observability",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2037",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2037."
+            }
+          ]
+        },
+        {
+          "number": 2010,
+          "title": "memory/deepsearch: add progressive DeepSearch",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2010",
+          "author": "print-happy",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "ci_state": "Non-green checks in latest lightweight ledger: coverage@Pull Request Check=SKIPPED, go test (go.mod)@Pull Request Check=FAILURE, lint@Pull Request Check=FAILURE.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2010."
+            }
+          ]
+        },
+        {
+          "number": 1901,
+          "title": "WIP: knowledge: deprecate legacy OCR path",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1901",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit (draft=true, wip=true).",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit (draft=true, wip=true).",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked review before code audit (draft=true, wip=true).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1901."
+            }
+          ]
+        },
+        {
+          "number": 1857,
+          "title": "memory/mem0: advance checkpoint after successful ingest",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1857",
+          "author": "print-happy",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1857."
+            }
+          ]
+        },
+        {
+          "number": 1778,
+          "title": "examples: add RLM (Recursive Language Model) demo",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1778",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "ci_state": "Non-green checks in latest lightweight ledger: check examples (1/4)@Pull Request Check=FAILURE, check examples build script (1/4)@Pull Request Check=FAILURE, go-apidiff@Pull Request Check=SKIPPED.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1778."
+            }
+          ]
+        },
+        {
+          "number": 1710,
+          "title": "a2a: add input schema",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1710",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1710."
+            }
+          ]
+        },
+        {
+          "number": 1683,
+          "title": "tool/workspaceexec: add workspace-scoped file tools sharing workspace_exec state",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1683",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, lint@Pull Request Check=FAILURE.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1683."
+            }
+          ]
+        },
+        {
+          "number": 1678,
+          "title": "agent: centralize invoke_agent telemetry in RunWithPlugins",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1678",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+          "ci_state": "Non-green checks in latest lightweight ledger: check go mod tidy@Pull Request Check=FAILURE, coverage@Pull Request Check=SKIPPED, go test (agent/dify/go.mod)@Pull Request Check=FAILURE, go test (agent/n8n/go.mod)@Pull Request Check=FAILURE, go test (memory/mysql/go.mod)@Pull Request Check=FAILURE, go test (memory/mysqlvec/go.mod)@Pull Request Check=FAILURE, ....",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked review before code audit (draft=true, wip=false).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1678."
+            }
+          ]
+        }
       ]
     },
     {
       "reason": "own_pr_no_self_review",
-      "count": 8,
+      "count": 6,
       "prs": [
-        2078,
         2077,
         2075,
-        2073,
         2072,
         2069,
         2068,
         2066
+      ],
+      "items": [
+        {
+          "number": 2077,
+          "title": "openclaw/app: harden dynamic web research",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2077",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.",
+          "readiness_audit": "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+          "blockers": [
+            {
+              "kind": "own_pr",
+              "summary": "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2077."
+            }
+          ]
+        },
+        {
+          "number": 2075,
+          "title": "internal/jsonrepair, openclaw: repair malformed tool call arguments",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2075",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.",
+          "readiness_audit": "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "own_pr",
+              "summary": "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2075."
+            }
+          ]
+        },
+        {
+          "number": 2072,
+          "title": "session/recall: accept current session aliases",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2072",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.",
+          "readiness_audit": "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "own_pr",
+              "summary": "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2072."
+            }
+          ]
+        },
+        {
+          "number": 2069,
+          "title": "openclaw/browser: harden schema and target ids",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2069",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.",
+          "readiness_audit": "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "own_pr",
+              "summary": "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2069."
+            }
+          ]
+        },
+        {
+          "number": 2068,
+          "title": "tool/duckduckgo: return blocker for SERP challenges",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2068",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.",
+          "readiness_audit": "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "own_pr",
+              "summary": "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2068."
+            }
+          ]
+        },
+        {
+          "number": 2066,
+          "title": "openclaw: bound host exec sessions and waits",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2066",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.",
+          "readiness_audit": "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "own_pr",
+              "summary": "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2066."
+            }
+          ]
+        }
       ]
     },
     {
       "reason": "hard_ci_or_required_check_failure",
-      "count": 15,
+      "count": 14,
       "prs": [
-        2078,
         2074,
         2071,
         2058,
@@ -585,17 +988,254 @@
         1678,
         1446,
         1183
+      ],
+      "items": [
+        {
+          "number": 2074,
+          "title": "server/openai: map request tools to external tools run option",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2074",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Required check gate blocked review. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CodeRabbit=PENDING.",
+          "readiness_audit": "Required check gate blocked review. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CodeRabbit=PENDING.",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CodeRabbit=PENDING.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Required check gate blocked review. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CodeRabbit=PENDING.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2074."
+            }
+          ]
+        },
+        {
+          "number": 2071,
+          "title": "model/internal/model: add MiniMax-M3 context window",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2071",
+          "author": "octo-patch",
+          "status": "skipped",
+          "skip_reason": "Required check gate blocked review. Non-green checks in latest lightweight ledger: CLAAssistant@CLA Assistant=FAILURE.",
+          "readiness_audit": "Required check gate blocked review. Non-green checks in latest lightweight ledger: CLAAssistant@CLA Assistant=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: CLAAssistant@CLA Assistant=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Required check gate blocked review. Non-green checks in latest lightweight ledger: CLAAssistant@CLA Assistant=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2071."
+            }
+          ]
+        },
+        {
+          "number": 2058,
+          "title": "a2a: add v2 packages backed by trpc-a2a-go/v2 (A2A protocol v1.0)",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2058",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Required check gate blocked review. Non-green checks in latest lightweight ledger: check examples (1/4)@Pull Request Check=FAILURE, check examples (2/4)@Pull Request Check=FAILURE, check examples (4/4)@Pull Request Check=FAILURE, check examples build script (1/4)@Pull Request Check=FAILURE, check examples build script (2/4)@Pull Request Check=FAILURE, check examples build script (4/4)@Pull Request Check=FAILURE, ....",
+          "readiness_audit": "Required check gate blocked review. Non-green checks in latest lightweight ledger: check examples (1/4)@Pull Request Check=FAILURE, check examples (2/4)@Pull Request Check=FAILURE, check examples (4/4)@Pull Request Check=FAILURE, check examples build script (1/4)@Pull Request Check=FAILURE, check examples build script (2/4)@Pull Request Check=FAILURE, check examples build script (4/4)@Pull Request Check=FAILURE, ....",
+          "ci_state": "Non-green checks in latest lightweight ledger: check examples (1/4)@Pull Request Check=FAILURE, check examples (2/4)@Pull Request Check=FAILURE, check examples (4/4)@Pull Request Check=FAILURE, check examples build script (1/4)@Pull Request Check=FAILURE, check examples build script (2/4)@Pull Request Check=FAILURE, check examples build script (4/4)@Pull Request Check=FAILURE, ....",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Required check gate blocked review. Non-green checks in latest lightweight ledger: check examples (1/4)@Pull Request Check=FAILURE, check examples (2/4)@Pull Request Check=FAILURE, check examples (4/4)@Pull Request Check=FAILURE, check examples build script (1/4)@Pull Request Check=FAILURE, check examples build script (2/4)@Pull Request Check=FAILURE, check examples build script (4/4)@Pull Request Check=FAILURE, ....",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2058."
+            }
+          ]
+        },
+        {
+          "number": 2055,
+          "title": "feat: 新增会话回放一致性测试工具链",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2055",
+          "author": "mingri31164",
+          "status": "skipped",
+          "skip_reason": "Required check gate blocked review. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CLAAssistant@CLA Assistant=FAILURE, check go.mod version@Pull Request Check=FAILURE.",
+          "readiness_audit": "Required check gate blocked review. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CLAAssistant@CLA Assistant=FAILURE, check go.mod version@Pull Request Check=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CLAAssistant@CLA Assistant=FAILURE, check go.mod version@Pull Request Check=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Required check gate blocked review. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CLAAssistant@CLA Assistant=FAILURE, check go.mod version@Pull Request Check=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2055."
+            }
+          ]
+        },
+        {
+          "number": 2010,
+          "title": "memory/deepsearch: add progressive DeepSearch",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2010",
+          "author": "print-happy",
+          "status": "skipped",
+          "skip_reason": "Required check gate blocked review. Non-green checks in latest lightweight ledger: coverage@Pull Request Check=SKIPPED, go test (go.mod)@Pull Request Check=FAILURE, lint@Pull Request Check=FAILURE.",
+          "readiness_audit": "Required check gate blocked review. Non-green checks in latest lightweight ledger: coverage@Pull Request Check=SKIPPED, go test (go.mod)@Pull Request Check=FAILURE, lint@Pull Request Check=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: coverage@Pull Request Check=SKIPPED, go test (go.mod)@Pull Request Check=FAILURE, lint@Pull Request Check=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Required check gate blocked review. Non-green checks in latest lightweight ledger: coverage@Pull Request Check=SKIPPED, go test (go.mod)@Pull Request Check=FAILURE, lint@Pull Request Check=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2010."
+            }
+          ]
+        },
+        {
+          "number": 1957,
+          "title": "fix(session/postgres): cast JSON bytes to string for DB params",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1957",
+          "author": "Ocyss",
+          "status": "skipped",
+          "skip_reason": "Required check gate blocked review. Non-green checks in latest lightweight ledger: coverage@Pull Request Check=SKIPPED, go test (session/postgres/go.mod)@Pull Request Check=FAILURE.",
+          "readiness_audit": "Required check gate blocked review. Non-green checks in latest lightweight ledger: coverage@Pull Request Check=SKIPPED, go test (session/postgres/go.mod)@Pull Request Check=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: coverage@Pull Request Check=SKIPPED, go test (session/postgres/go.mod)@Pull Request Check=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Required check gate blocked review. Non-green checks in latest lightweight ledger: coverage@Pull Request Check=SKIPPED, go test (session/postgres/go.mod)@Pull Request Check=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1957."
+            }
+          ]
+        },
+        {
+          "number": 1956,
+          "title": "langfuse: add environment config option and pass to OTEL resource attributes",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1956",
+          "author": "Ocyss",
+          "status": "skipped",
+          "skip_reason": "Required check gate blocked review. Non-green checks in latest lightweight ledger: coverage@Pull Request Check=SKIPPED, go test (go.mod)@Pull Request Check=FAILURE, lint@Pull Request Check=FAILURE.",
+          "readiness_audit": "Required check gate blocked review. Non-green checks in latest lightweight ledger: coverage@Pull Request Check=SKIPPED, go test (go.mod)@Pull Request Check=FAILURE, lint@Pull Request Check=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: coverage@Pull Request Check=SKIPPED, go test (go.mod)@Pull Request Check=FAILURE, lint@Pull Request Check=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Required check gate blocked review. Non-green checks in latest lightweight ledger: coverage@Pull Request Check=SKIPPED, go test (go.mod)@Pull Request Check=FAILURE, lint@Pull Request Check=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1956."
+            }
+          ]
+        },
+        {
+          "number": 1801,
+          "title": "docs/mkdocs/zh/fix/agent.md: fix typo",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1801",
+          "author": "GongNanyue",
+          "status": "skipped",
+          "skip_reason": "Required check gate blocked review. Non-green checks in latest lightweight ledger: CLAAssistant@CLA Assistant=FAILURE, coverage@Pull Request Check=SKIPPED, go test (openclaw/go.mod)@Pull Request Check=FAILURE.",
+          "readiness_audit": "Required check gate blocked review. Non-green checks in latest lightweight ledger: CLAAssistant@CLA Assistant=FAILURE, coverage@Pull Request Check=SKIPPED, go test (openclaw/go.mod)@Pull Request Check=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: CLAAssistant@CLA Assistant=FAILURE, coverage@Pull Request Check=SKIPPED, go test (openclaw/go.mod)@Pull Request Check=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Required check gate blocked review. Non-green checks in latest lightweight ledger: CLAAssistant@CLA Assistant=FAILURE, coverage@Pull Request Check=SKIPPED, go test (openclaw/go.mod)@Pull Request Check=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1801."
+            }
+          ]
+        },
+        {
+          "number": 1778,
+          "title": "examples: add RLM (Recursive Language Model) demo",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1778",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Required check gate blocked review. Non-green checks in latest lightweight ledger: check examples (1/4)@Pull Request Check=FAILURE, check examples build script (1/4)@Pull Request Check=FAILURE, go-apidiff@Pull Request Check=SKIPPED.",
+          "readiness_audit": "Required check gate blocked review. Non-green checks in latest lightweight ledger: check examples (1/4)@Pull Request Check=FAILURE, check examples build script (1/4)@Pull Request Check=FAILURE, go-apidiff@Pull Request Check=SKIPPED.",
+          "ci_state": "Non-green checks in latest lightweight ledger: check examples (1/4)@Pull Request Check=FAILURE, check examples build script (1/4)@Pull Request Check=FAILURE, go-apidiff@Pull Request Check=SKIPPED.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Required check gate blocked review. Non-green checks in latest lightweight ledger: check examples (1/4)@Pull Request Check=FAILURE, check examples build script (1/4)@Pull Request Check=FAILURE, go-apidiff@Pull Request Check=SKIPPED.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1778."
+            }
+          ]
+        },
+        {
+          "number": 1736,
+          "title": "all: add deferred tool set",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1736",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Required check gate blocked review. Non-green checks in latest lightweight ledger: test@PULL_REQUEST=FAILURE.",
+          "readiness_audit": "Required check gate blocked review. Non-green checks in latest lightweight ledger: test@PULL_REQUEST=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: test@PULL_REQUEST=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Required check gate blocked review. Non-green checks in latest lightweight ledger: test@PULL_REQUEST=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1736."
+            }
+          ]
+        },
+        {
+          "number": 1683,
+          "title": "tool/workspaceexec: add workspace-scoped file tools sharing workspace_exec state",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1683",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Required check gate blocked review. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, lint@Pull Request Check=FAILURE.",
+          "readiness_audit": "Required check gate blocked review. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, lint@Pull Request Check=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, lint@Pull Request Check=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Required check gate blocked review. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, lint@Pull Request Check=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1683."
+            }
+          ]
+        },
+        {
+          "number": 1678,
+          "title": "agent: centralize invoke_agent telemetry in RunWithPlugins",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1678",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Required check gate blocked review. Non-green checks in latest lightweight ledger: check go mod tidy@Pull Request Check=FAILURE, coverage@Pull Request Check=SKIPPED, go test (agent/dify/go.mod)@Pull Request Check=FAILURE, go test (agent/n8n/go.mod)@Pull Request Check=FAILURE, go test (memory/mysql/go.mod)@Pull Request Check=FAILURE, go test (memory/mysqlvec/go.mod)@Pull Request Check=FAILURE, ....",
+          "readiness_audit": "Required check gate blocked review. Non-green checks in latest lightweight ledger: check go mod tidy@Pull Request Check=FAILURE, coverage@Pull Request Check=SKIPPED, go test (agent/dify/go.mod)@Pull Request Check=FAILURE, go test (agent/n8n/go.mod)@Pull Request Check=FAILURE, go test (memory/mysql/go.mod)@Pull Request Check=FAILURE, go test (memory/mysqlvec/go.mod)@Pull Request Check=FAILURE, ....",
+          "ci_state": "Non-green checks in latest lightweight ledger: check go mod tidy@Pull Request Check=FAILURE, coverage@Pull Request Check=SKIPPED, go test (agent/dify/go.mod)@Pull Request Check=FAILURE, go test (agent/n8n/go.mod)@Pull Request Check=FAILURE, go test (memory/mysql/go.mod)@Pull Request Check=FAILURE, go test (memory/mysqlvec/go.mod)@Pull Request Check=FAILURE, ....",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Required check gate blocked review. Non-green checks in latest lightweight ledger: check go mod tidy@Pull Request Check=FAILURE, coverage@Pull Request Check=SKIPPED, go test (agent/dify/go.mod)@Pull Request Check=FAILURE, go test (agent/n8n/go.mod)@Pull Request Check=FAILURE, go test (memory/mysql/go.mod)@Pull Request Check=FAILURE, go test (memory/mysqlvec/go.mod)@Pull Request Check=FAILURE, ....",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1678."
+            }
+          ]
+        },
+        {
+          "number": 1446,
+          "title": "feat(a2a): add StructuredOutput → DataPart converter for custom event…",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1446",
+          "author": "SummerLv",
+          "status": "skipped",
+          "skip_reason": "Required check gate blocked review. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE, CLAAssistant@CLA Assistant=FAILURE.",
+          "readiness_audit": "Required check gate blocked review. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE, CLAAssistant@CLA Assistant=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE, CLAAssistant@CLA Assistant=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Required check gate blocked review. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE, CLAAssistant@CLA Assistant=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1446."
+            }
+          ]
+        },
+        {
+          "number": 1183,
+          "title": "internal/util: add util for streaming parsing of JSON returned by LLM",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1183",
+          "author": "hongxiuzhe",
+          "status": "skipped",
+          "skip_reason": "Required check gate blocked review. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CLAAssistant@CLA Assistant=FAILURE, lint@Pull Request Check=FAILURE.",
+          "readiness_audit": "Required check gate blocked review. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CLAAssistant@CLA Assistant=FAILURE, lint@Pull Request Check=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CLAAssistant@CLA Assistant=FAILURE, lint@Pull Request Check=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Required check gate blocked review. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CLAAssistant@CLA Assistant=FAILURE, lint@Pull Request Check=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1183."
+            }
+          ]
+        }
       ]
     },
     {
       "reason": "soft_check_or_coverage_gate",
-      "count": 14,
+      "count": 11,
       "prs": [
-        2080,
-        2078,
         2077,
         2074,
-        2073,
         2055,
         2041,
         2037,
@@ -605,6 +1245,195 @@
         1446,
         1400,
         1183
+      ],
+      "items": [
+        {
+          "number": 2077,
+          "title": "openclaw/app: harden dynamic web research",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2077",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+          "readiness_audit": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+          "blockers": [
+            {
+              "kind": "soft_ci",
+              "summary": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2077."
+            }
+          ]
+        },
+        {
+          "number": 2074,
+          "title": "server/openai: map request tools to external tools run option",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2074",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CodeRabbit=PENDING.",
+          "readiness_audit": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CodeRabbit=PENDING.",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CodeRabbit=PENDING.",
+          "blockers": [
+            {
+              "kind": "soft_ci",
+              "summary": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CodeRabbit=PENDING.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2074."
+            }
+          ]
+        },
+        {
+          "number": 2055,
+          "title": "feat: 新增会话回放一致性测试工具链",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2055",
+          "author": "mingri31164",
+          "status": "skipped",
+          "skip_reason": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CLAAssistant@CLA Assistant=FAILURE, check go.mod version@Pull Request Check=FAILURE.",
+          "readiness_audit": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CLAAssistant@CLA Assistant=FAILURE, check go.mod version@Pull Request Check=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CLAAssistant@CLA Assistant=FAILURE, check go.mod version@Pull Request Check=FAILURE.",
+          "blockers": [
+            {
+              "kind": "soft_ci",
+              "summary": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CLAAssistant@CLA Assistant=FAILURE, check go.mod version@Pull Request Check=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2055."
+            }
+          ]
+        },
+        {
+          "number": 2041,
+          "title": "{evolution, openclaw, docs}: add rollback API and pending_approval auto-expire",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2041",
+          "author": "Rememorio",
+          "status": "skipped",
+          "skip_reason": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+          "readiness_audit": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+          "blockers": [
+            {
+              "kind": "soft_ci",
+              "summary": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2041."
+            }
+          ]
+        },
+        {
+          "number": 2037,
+          "title": "feat(telemetry): add invoke skill observability",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2037",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+          "readiness_audit": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+          "blockers": [
+            {
+              "kind": "soft_ci",
+              "summary": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #2037."
+            }
+          ]
+        },
+        {
+          "number": 1967,
+          "title": "fix(sqlite): allow WithAsyncSummaryNum(0) to disable async workers",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1967",
+          "author": "YellowDusk04",
+          "status": "skipped",
+          "skip_reason": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+          "readiness_audit": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+          "blockers": [
+            {
+              "kind": "soft_ci",
+              "summary": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1967."
+            }
+          ]
+        },
+        {
+          "number": 1778,
+          "title": "examples: add RLM (Recursive Language Model) demo",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1778",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: check examples (1/4)@Pull Request Check=FAILURE, check examples build script (1/4)@Pull Request Check=FAILURE, go-apidiff@Pull Request Check=SKIPPED.",
+          "readiness_audit": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: check examples (1/4)@Pull Request Check=FAILURE, check examples build script (1/4)@Pull Request Check=FAILURE, go-apidiff@Pull Request Check=SKIPPED.",
+          "ci_state": "Non-green checks in latest lightweight ledger: check examples (1/4)@Pull Request Check=FAILURE, check examples build script (1/4)@Pull Request Check=FAILURE, go-apidiff@Pull Request Check=SKIPPED.",
+          "blockers": [
+            {
+              "kind": "soft_ci",
+              "summary": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: check examples (1/4)@Pull Request Check=FAILURE, check examples build script (1/4)@Pull Request Check=FAILURE, go-apidiff@Pull Request Check=SKIPPED.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1778."
+            }
+          ]
+        },
+        {
+          "number": 1683,
+          "title": "tool/workspaceexec: add workspace-scoped file tools sharing workspace_exec state",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1683",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, lint@Pull Request Check=FAILURE.",
+          "readiness_audit": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, lint@Pull Request Check=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, lint@Pull Request Check=FAILURE.",
+          "blockers": [
+            {
+              "kind": "soft_ci",
+              "summary": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, lint@Pull Request Check=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1683."
+            }
+          ]
+        },
+        {
+          "number": 1446,
+          "title": "feat(a2a): add StructuredOutput → DataPart converter for custom event…",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1446",
+          "author": "SummerLv",
+          "status": "skipped",
+          "skip_reason": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE, CLAAssistant@CLA Assistant=FAILURE.",
+          "readiness_audit": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE, CLAAssistant@CLA Assistant=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE, CLAAssistant@CLA Assistant=FAILURE.",
+          "blockers": [
+            {
+              "kind": "soft_ci",
+              "summary": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE, CLAAssistant@CLA Assistant=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1446."
+            }
+          ]
+        },
+        {
+          "number": 1400,
+          "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, go-apidiff@Pull Request Check=FAILURE.",
+          "readiness_audit": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, go-apidiff@Pull Request Check=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, go-apidiff@Pull Request Check=FAILURE.",
+          "blockers": [
+            {
+              "kind": "soft_ci",
+              "summary": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, go-apidiff@Pull Request Check=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1400."
+            }
+          ]
+        },
+        {
+          "number": 1183,
+          "title": "internal/util: add util for streaming parsing of JSON returned by LLM",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1183",
+          "author": "hongxiuzhe",
+          "status": "skipped",
+          "skip_reason": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CLAAssistant@CLA Assistant=FAILURE, lint@Pull Request Check=FAILURE.",
+          "readiness_audit": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CLAAssistant@CLA Assistant=FAILURE, lint@Pull Request Check=FAILURE.",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CLAAssistant@CLA Assistant=FAILURE, lint@Pull Request Check=FAILURE.",
+          "blockers": [
+            {
+              "kind": "soft_ci",
+              "summary": "Soft gate needs explicit audit before merge. Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CLAAssistant@CLA Assistant=FAILURE, lint@Pull Request Check=FAILURE.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1183."
+            }
+          ]
+        }
       ]
     },
     {
@@ -619,6 +1448,144 @@
         1678,
         1483,
         1446
+      ],
+      "items": [
+        {
+          "number": 1988,
+          "title": "memory: guard auto extraction after external context",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1988",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+          "readiness_audit": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "merge_conflict",
+              "summary": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1988."
+            }
+          ]
+        },
+        {
+          "number": 1923,
+          "title": "fix(codeexecutor): honor CleanEnv in e2b runtime",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1923",
+          "author": "yu-xin-c",
+          "status": "skipped",
+          "skip_reason": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+          "readiness_audit": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "merge_conflict",
+              "summary": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1923."
+            }
+          ]
+        },
+        {
+          "number": 1901,
+          "title": "WIP: knowledge: deprecate legacy OCR path",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1901",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+          "readiness_audit": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "merge_conflict",
+              "summary": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1901."
+            }
+          ]
+        },
+        {
+          "number": 1736,
+          "title": "all: add deferred tool set",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1736",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+          "readiness_audit": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+          "ci_state": "Non-green checks in latest lightweight ledger: test@PULL_REQUEST=FAILURE.",
+          "blockers": [
+            {
+              "kind": "merge_conflict",
+              "summary": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1736."
+            }
+          ]
+        },
+        {
+          "number": 1683,
+          "title": "tool/workspaceexec: add workspace-scoped file tools sharing workspace_exec state",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1683",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+          "readiness_audit": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, lint@Pull Request Check=FAILURE.",
+          "blockers": [
+            {
+              "kind": "merge_conflict",
+              "summary": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1683."
+            }
+          ]
+        },
+        {
+          "number": 1678,
+          "title": "agent: centralize invoke_agent telemetry in RunWithPlugins",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1678",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+          "readiness_audit": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+          "ci_state": "Non-green checks in latest lightweight ledger: check go mod tidy@Pull Request Check=FAILURE, coverage@Pull Request Check=SKIPPED, go test (agent/dify/go.mod)@Pull Request Check=FAILURE, go test (agent/n8n/go.mod)@Pull Request Check=FAILURE, go test (memory/mysql/go.mod)@Pull Request Check=FAILURE, go test (memory/mysqlvec/go.mod)@Pull Request Check=FAILURE, ....",
+          "blockers": [
+            {
+              "kind": "merge_conflict",
+              "summary": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1678."
+            }
+          ]
+        },
+        {
+          "number": 1483,
+          "title": "tool/subtask: add dynamic agent creation tools",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1483",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+          "readiness_audit": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+          "ci_state": "Latest lightweight ledger did not record non-green checks.",
+          "blockers": [
+            {
+              "kind": "merge_conflict",
+              "summary": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1483."
+            }
+          ]
+        },
+        {
+          "number": 1446,
+          "title": "feat(a2a): add StructuredOutput → DataPart converter for custom event…",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1446",
+          "author": "SummerLv",
+          "status": "skipped",
+          "skip_reason": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+          "readiness_audit": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE, CLAAssistant@CLA Assistant=FAILURE.",
+          "blockers": [
+            {
+              "kind": "merge_conflict",
+              "summary": "Mergeability gate blocked automation (mergeable=UNKNOWN).",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1446."
+            }
+          ]
+        }
       ]
     },
     {
@@ -627,20 +1594,42 @@
       "prs": [
         1400,
         1183
-      ]
-    },
-    {
-      "reason": "manual_review_or_existing_actionable_review",
-      "count": 8,
-      "prs": [
-        2051,
-        2050,
-        2049,
-        2045,
-        2044,
-        2028,
-        1930,
-        1526
+      ],
+      "items": [
+        {
+          "number": 1400,
+          "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Conversation is locked, so review/comment delivery must be verified or temporarily unlocked by policy before posting.",
+          "readiness_audit": "Conversation is locked, so review/comment delivery must be verified or temporarily unlocked by policy before posting.",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, go-apidiff@Pull Request Check=FAILURE.",
+          "blockers": [
+            {
+              "kind": "other",
+              "summary": "Conversation is locked, so review/comment delivery must be verified or temporarily unlocked by policy before posting.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1400."
+            }
+          ]
+        },
+        {
+          "number": 1183,
+          "title": "internal/util: add util for streaming parsing of JSON returned by LLM",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1183",
+          "author": "hongxiuzhe",
+          "status": "skipped",
+          "skip_reason": "Conversation is locked, so review/comment delivery must be verified or temporarily unlocked by policy before posting.",
+          "readiness_audit": "Conversation is locked, so review/comment delivery must be verified or temporarily unlocked by policy before posting.",
+          "ci_state": "Non-green checks in latest lightweight ledger: codecov/patch=FAILURE, CLAAssistant@CLA Assistant=FAILURE, lint@Pull Request Check=FAILURE.",
+          "blockers": [
+            {
+              "kind": "other",
+              "summary": "Conversation is locked, so review/comment delivery must be verified or temporarily unlocked by policy before posting.",
+              "verification": "Derived from latest run_state lightweight ledger for PR #1183."
+            }
+          ]
+        }
       ]
     }
   ],
@@ -678,6 +1667,10 @@
     {
       "time": "09:02",
       "event": "Final open PR list refreshed: 43 open PRs remain."
+    },
+    {
+      "time": "post-run",
+      "event": "Report QA repaired empty detail fields, canonicalized display statuses, and expanded skipped PR details before republishing the HTML report."
     }
   ],
   "incremental_plan": {
@@ -81542,6 +82535,14 @@
     {
       "area": "Run orchestration",
       "note": "Added backlog item for explicit full-run planner and delegation-policy friction."
+    },
+    {
+      "area": "Report quality",
+      "note": "Post-run QA found empty placeholder fields and non-canonical display statuses in the latest HTML report; this report was backfilled and future reports are guarded by scripts/report-quality.mjs."
+    },
+    {
+      "area": "Self-evolution",
+      "note": "Full-flow self-evolution now requires report QA, fresh xhigh reviewer feedback when requested/available, backlog capture, and npm verify before commit/push."
     }
   ]
 }

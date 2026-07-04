@@ -1,0 +1,507 @@
+import { constants as fsConstants } from "node:fs";
+import { access, readdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const sourceReportDir = path.join(repoRoot, "src", "data", "reports");
+const jsonExtension = ".json";
+
+const processedGroups = ["approved", "commented", "maintained", "blocked"];
+const allowedStatusByGroup = {
+  approved: new Set(["approved", "merged"]),
+  commented: new Set(["commented"]),
+  maintained: new Set(["maintained"]),
+  blocked: new Set(["blocked"]),
+};
+const renderedDetailFields = [
+  "technical_background",
+  "problem",
+  "necessity_assessment",
+  "evidence_checked",
+  "reproduction_on_base",
+  "issue_evidence_gaps",
+  "problem_framing",
+  "root_cause",
+  "approach",
+  "implementation_derivation",
+  "solution_fit_assessment",
+  "alternative_designs",
+  "tradeoffs",
+  "design_assessment",
+  "modules",
+  "api_surface",
+  "change_inventory",
+  "semantic_changes",
+  "module_impact",
+  "cross_module_impact",
+  "behavior_impact",
+  "tests_docs",
+  "outcome",
+  "ci_state",
+  "risk",
+  "review_action",
+  "self_review_policy",
+];
+
+const richReviewedFields = [
+  "technical_background",
+  "problem",
+  "necessity_assessment",
+  "evidence_checked",
+  "problem_framing",
+  "approach",
+  "implementation_derivation",
+  "solution_fit_assessment",
+  "alternative_designs",
+  "tradeoffs",
+  "design_assessment",
+  "modules",
+  "api_surface",
+  "change_inventory",
+  "semantic_changes",
+  "module_impact",
+  "cross_module_impact",
+  "behavior_impact",
+  "tests_docs",
+  "outcome",
+  "ci_state",
+];
+
+const richBlockedFields = [
+  "technical_background",
+  "problem",
+  "necessity_assessment",
+  "evidence_checked",
+  "problem_framing",
+  "approach",
+  "solution_fit_assessment",
+  "design_assessment",
+  "modules",
+  "api_surface",
+  "change_inventory",
+  "semantic_changes",
+  "module_impact",
+  "cross_module_impact",
+  "behavior_impact",
+  "outcome",
+];
+
+function usage() {
+  console.error(
+    "usage: node scripts/report-quality.mjs (--latest | --file <report.json>) [--check] [--write]",
+  );
+}
+
+function parseArgs(argv) {
+  const parsed = {
+    file: "",
+    latest: false,
+    check: false,
+    write: false,
+  };
+  const args = [...argv];
+  while (args.length > 0) {
+    const arg = args.shift();
+    if (arg === "--latest") {
+      parsed.latest = true;
+      continue;
+    }
+    if (arg === "--file") {
+      parsed.file = args.shift() || "";
+      continue;
+    }
+    if (arg === "--check") {
+      parsed.check = true;
+      continue;
+    }
+    if (arg === "--write") {
+      parsed.write = true;
+      continue;
+    }
+    throw new Error(`unexpected argument: ${arg}`);
+  }
+  if (parsed.latest === Boolean(parsed.file)) {
+    throw new Error("pass exactly one of --latest or --file <report.json>");
+  }
+  if (!parsed.check && !parsed.write) {
+    parsed.check = true;
+  }
+  return parsed;
+}
+
+async function exists(filePath) {
+  try {
+    await access(filePath, fsConstants.F_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function latestReportPath() {
+  const entries = await readdir(sourceReportDir);
+  const reports = entries
+    .filter((entry) => entry.endsWith(jsonExtension))
+    .sort();
+  if (reports.length === 0) {
+    throw new Error("no report JSON files found");
+  }
+  return path.join(sourceReportDir, reports.at(-1));
+}
+
+async function readReport(reportPath) {
+  const raw = await readFile(reportPath, "utf8");
+  const data = JSON.parse(raw);
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error(`${reportPath}: report must be a JSON object`);
+  }
+  return data;
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function asObject(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function text(value) {
+  if (typeof value === "string") {
+    return value.trim();
+  }
+  if (Array.isArray(value)) {
+    return value.map(text).filter(Boolean).join("; ");
+  }
+  if (value && typeof value === "object") {
+    return text(value.zh || value.en || value.summary || value.body || "");
+  }
+  if (value === undefined || value === null) {
+    return "";
+  }
+  return String(value).trim();
+}
+
+function isFilled(value) {
+  return text(value) !== "";
+}
+
+function nonGreenChecks(state) {
+  return asArray(state.checks)
+    .filter((check) => {
+      const status = String(check.state || check.conclusion || check.bucket || "")
+        .toLowerCase();
+      return status && !["success", "pass", "passed", "neutral"].includes(status);
+    })
+    .map((check) => {
+      const label = [check.name, check.workflow].filter(Boolean).join("@");
+      return `${label || "check"}=${check.state || check.bucket || "unknown"}`;
+    });
+}
+
+function checkSummary(state) {
+  const bad = nonGreenChecks(state);
+  if (bad.length === 0) {
+    return "Latest lightweight ledger did not record non-green checks.";
+  }
+  return `Non-green checks in latest lightweight ledger: ${bad.slice(0, 6).join(", ")}${bad.length > 6 ? ", ..." : ""}.`;
+}
+
+function skipReason(reason, state) {
+  const base = String(reason || "skipped");
+  if (base === "draft_or_wip") {
+    return `Draft/WIP gate blocked review before code audit (draft=${Boolean(state.is_draft)}, wip=${Boolean(state.is_wip)}).`;
+  }
+  if (base === "own_pr_no_self_review") {
+    return "Own-PR policy blocked GitHub review actions: MyCR must not self-review, self-approve, or self-merge; use the direct maintenance path when ready.";
+  }
+  if (base === "hard_ci_or_required_check_failure") {
+    return `Required check gate blocked review. ${checkSummary(state)}`;
+  }
+  if (base === "soft_check_or_coverage_gate") {
+    return `Soft gate needs explicit audit before merge. ${checkSummary(state)}`;
+  }
+  if (base === "merge_conflict") {
+    return `Mergeability gate blocked automation (mergeable=${state.mergeable || "unknown"}).`;
+  }
+  if (base === "locked_conversation_comment_delivery_risk") {
+    return "Conversation is locked, so review/comment delivery must be verified or temporarily unlocked by policy before posting.";
+  }
+  if (base === "manual_review_or_existing_actionable_review") {
+    return `Manual review or existing actionable review gate blocked LGTM (reviewDecision=${state.review_decision || "unknown"}).`;
+  }
+  return base.replaceAll("_", " ");
+}
+
+function blockerKind(reason) {
+  if (reason === "draft_or_wip") {
+    return "draft_wip";
+  }
+  if (reason === "own_pr_no_self_review") {
+    return "own_pr";
+  }
+  if (reason === "hard_ci_or_required_check_failure") {
+    return "ci";
+  }
+  if (reason === "soft_check_or_coverage_gate") {
+    return "soft_ci";
+  }
+  if (reason === "merge_conflict") {
+    return "merge_conflict";
+  }
+  if (reason === "manual_review_or_existing_actionable_review") {
+    return "manual_review";
+  }
+  return "other";
+}
+
+function skippedItemFromState(number, group, state) {
+  const reason = String(group.reason || "skipped");
+  const summary = skipReason(reason, state);
+  return {
+    number: Number(number),
+    title: state.title || `PR #${number}`,
+    url: state.url || "",
+    author: state.author || "",
+    status: "skipped",
+    skip_reason: summary,
+    readiness_audit: summary,
+    ci_state: checkSummary(state),
+    blockers: [
+      {
+        kind: blockerKind(reason),
+        summary,
+        verification: `Derived from latest run_state lightweight ledger for PR #${number}.`,
+      },
+    ],
+  };
+}
+
+function normalizeSkippedGroups(report) {
+  const stateByPr = asObject(report.run_state?.pull_requests);
+  const processedNumbers = new Set(
+    processedGroups.flatMap((group) =>
+      asArray(report[group])
+        .map((item) => Number(item?.number))
+        .filter(Boolean),
+    ),
+  );
+  report.skipped_groups = asArray(report.skipped_groups).map((group) => {
+    const normalized = { ...group };
+    const numbers = asArray(group.prs).length
+      ? asArray(group.prs)
+      : asArray(group.items).map((item) => item?.number).filter(Boolean);
+    const existingItemsByNumber = new Map(
+      asArray(group.items)
+        .filter((item) => item?.number)
+        .map((item) => [Number(item.number), item]),
+    );
+    normalized.items = numbers
+      .filter((number) => !processedNumbers.has(Number(number)))
+      .map((number) => {
+        const existing = existingItemsByNumber.get(Number(number)) || {};
+        const state = asObject(stateByPr[String(number)]);
+        const synthesized = skippedItemFromState(number, group, state);
+        return {
+          ...synthesized,
+          ...existing,
+          blockers: asArray(existing.blockers).length
+            ? existing.blockers
+            : synthesized.blockers,
+        };
+      });
+    normalized.prs = normalized.items.map((item) => item.number);
+    normalized.count = normalized.items.length;
+    return normalized;
+  }).filter((group) => group.items.length > 0);
+
+  if (report.repo_info && typeof report.repo_info === "object") {
+    const uniqueSkipped = new Set(
+      report.skipped_groups.flatMap((group) =>
+        asArray(group.items).map((item) => Number(item?.number)).filter(Boolean),
+      ),
+    );
+    report.repo_info.skipped = uniqueSkipped.size;
+  }
+}
+
+function normalizeReport(report) {
+  normalizeSkippedGroups(report);
+  return report;
+}
+
+function validateTopLevel(report, problems, reportName) {
+  if (text(report.overview).length < 180) {
+    problems.push(`${reportName}: overview is too thin for a full-run report`);
+  }
+  if (asArray(report.timeline).length === 0) {
+    problems.push(`${reportName}: timeline is empty`);
+  }
+  const pullRequests = asObject(report.run_state?.pull_requests);
+  if (Object.keys(pullRequests).length === 0) {
+    problems.push(`${reportName}: run_state.pull_requests is empty`);
+  }
+  const evolution = asArray(report.skill_evolution);
+  if (evolution.length === 0) {
+    problems.push(`${reportName}: skill_evolution is empty`);
+  }
+  evolution.forEach((item, index) => {
+    if (!isFilled(item?.area) || !isFilled(item?.note)) {
+      problems.push(`${reportName}: skill_evolution[${index}] needs area and note`);
+    }
+  });
+}
+
+function validateEntryFields(entry, group, problems, reportName) {
+  const allowedStatuses = allowedStatusByGroup[group] || new Set([group]);
+  if (!allowedStatuses.has(entry.status)) {
+    problems.push(
+      `${reportName}: ${group} PR #${entry.number || "unknown"} has non-canonical display status "${entry.status || ""}"`,
+    );
+  }
+
+  for (const field of renderedDetailFields) {
+    if (Object.hasOwn(entry, field) && entry[field] === "") {
+      problems.push(
+        `${reportName}: ${group} PR #${entry.number || "unknown"} has empty placeholder "${field}"`,
+      );
+    }
+  }
+
+  const required = group === "blocked" ? richBlockedFields : richReviewedFields;
+  for (const field of required) {
+    if (!isFilled(entry[field])) {
+      problems.push(
+        `${reportName}: ${group} PR #${entry.number || "unknown"} missing rich field "${field}"`,
+      );
+    }
+  }
+
+  if (
+    isFilled(entry.approach) &&
+    /^(approve|approved|submit|submitted|gh pr review|lgtm|merge|merged|no approval|no duplicate comment|不审批|不合并)/iu.test(
+      text(entry.approach),
+    )
+  ) {
+    problems.push(
+      `${reportName}: ${group} PR #${entry.number || "unknown"} approach describes review action instead of PR implementation`,
+    );
+  }
+
+  if (group === "approved" && !isFilled(entry.review_action)) {
+    problems.push(`${reportName}: approved PR #${entry.number || "unknown"} missing review_action`);
+  }
+  if (group === "approved" && entry.status === "merged" && !isFilled(entry.merge_commit)) {
+    problems.push(`${reportName}: merged PR #${entry.number || "unknown"} missing merge_commit`);
+  }
+  if (group === "maintained" && !isFilled(entry.self_review_policy)) {
+    problems.push(`${reportName}: maintained PR #${entry.number || "unknown"} missing self_review_policy`);
+  }
+  if (group === "blocked") {
+    const hasBlocker = asArray(entry.blockers).length > 0 || isFilled(entry.risk);
+    if (!hasBlocker) {
+      problems.push(`${reportName}: blocked PR #${entry.number || "unknown"} needs blockers or risk`);
+    }
+  }
+}
+
+function validateFollowUp(report, problems, reportName) {
+  asArray(report.follow_up).forEach((item, index) => {
+    if (typeof item === "string") {
+      if (!isFilled(item)) {
+        problems.push(`${reportName}: follow_up[${index}] is empty`);
+      }
+      return;
+    }
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      problems.push(`${reportName}: follow_up[${index}] must be a string or object`);
+      return;
+    }
+    if (!isFilled(item.reason) && !isFilled(item.next) && !isFilled(item.title)) {
+      problems.push(`${reportName}: follow_up[${index}] needs reason, next, or title`);
+    }
+  });
+}
+
+function validateProcessedEntries(report, problems, reportName) {
+  for (const group of processedGroups) {
+    for (const entry of asArray(report[group])) {
+      validateEntryFields(asObject(entry), group, problems, reportName);
+    }
+  }
+}
+
+function validateSkippedGroups(report, problems, reportName) {
+  for (const [index, group] of asArray(report.skipped_groups).entries()) {
+    if (!isFilled(group.reason)) {
+      problems.push(`${reportName}: skipped_groups[${index}] missing reason`);
+    }
+    const items = asArray(group.items);
+    if (items.length === 0) {
+      problems.push(`${reportName}: skipped group "${group.reason || index}" has no item details`);
+      continue;
+    }
+    if (Number(group.count) !== items.length) {
+      problems.push(`${reportName}: skipped group "${group.reason}" count does not match items`);
+    }
+    for (const item of items) {
+      const prefix = `${reportName}: skipped group "${group.reason}" PR #${item?.number || "unknown"}`;
+      for (const field of ["number", "title", "url", "author", "skip_reason", "readiness_audit"]) {
+        if (!isFilled(item?.[field])) {
+          problems.push(`${prefix} missing ${field}`);
+        }
+      }
+      if (asArray(item?.blockers).length === 0) {
+        problems.push(`${prefix} missing blockers`);
+      }
+    }
+  }
+}
+
+function validateReport(report, reportName) {
+  const problems = [];
+  validateTopLevel(report, problems, reportName);
+  validateProcessedEntries(report, problems, reportName);
+  validateSkippedGroups(report, problems, reportName);
+  validateFollowUp(report, problems, reportName);
+  return problems;
+}
+
+async function main() {
+  let args;
+  try {
+    args = parseArgs(process.argv.slice(2));
+  } catch (error) {
+    usage();
+    throw error;
+  }
+
+  const reportPath = args.latest ? await latestReportPath() : path.resolve(args.file);
+  if (!(await exists(reportPath))) {
+    throw new Error(`report not found: ${reportPath}`);
+  }
+
+  const report = normalizeReport(await readReport(reportPath));
+  const reportName = path.basename(reportPath);
+
+  if (args.write) {
+    await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
+  }
+
+  if (args.check) {
+    const problems = validateReport(report, reportName);
+    if (problems.length > 0) {
+      for (const problem of problems) {
+        console.error(problem);
+      }
+      process.exit(1);
+    }
+    console.log(`quality checked ${reportName}`);
+  }
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

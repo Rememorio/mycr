@@ -7,6 +7,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const sourceReportDir = path.join(repoRoot, "src", "data", "reports");
 const publicReportDir = path.join(repoRoot, "public", "reports");
 const rendererPath = path.join(repoRoot, "scripts", "render_mycr_report.py");
+const qualityPath = path.join(repoRoot, "scripts", "report-quality.mjs");
 const jsonExtension = ".json";
 const htmlExtension = ".html";
 const htmlFlag = "--html";
@@ -69,19 +70,30 @@ async function main() {
   await mkdir(sourceReportDir, { recursive: true });
   await mkdir(publicReportDir, { recursive: true });
   await copyFile(summaryPath, sourceJsonPath);
-  await copyFile(summaryPath, publicJsonPath);
+
+  const quality = spawnSync(
+    "node",
+    [qualityPath, "--file", sourceJsonPath, "--write", "--check"],
+    { stdio: "inherit" },
+  );
+  if (quality.status !== 0) {
+    throw new Error(`report quality check exited with status ${quality.status}`);
+  }
+
+  await copyFile(sourceJsonPath, publicJsonPath);
 
   if (args.htmlPath) {
-    await copyFile(path.resolve(args.htmlPath), publicHtmlPath);
-  } else {
-    const result = spawnSync(
-      "python3",
-      [rendererPath, sourceJsonPath, "--output", publicHtmlPath],
-      { stdio: "inherit" },
+    console.warn(
+      "ignoring --html after report normalization; rendering HTML from JSON",
     );
-    if (result.status !== 0) {
-      throw new Error(`renderer exited with status ${result.status}`);
-    }
+  }
+  const result = spawnSync(
+    "python3",
+    [rendererPath, sourceJsonPath, "--output", publicHtmlPath],
+    { stdio: "inherit" },
+  );
+  if (result.status !== 0) {
+    throw new Error(`renderer exited with status ${result.status}`);
   }
 
   console.log(`archived ${reportName}`);
