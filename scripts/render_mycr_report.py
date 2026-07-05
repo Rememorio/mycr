@@ -1141,6 +1141,9 @@ const labels = {{
     attentionPoints: "需要注意",
     directFixes: "直接修复",
     selfReviewPolicy: "自审策略",
+    reviewAction: "执行动作",
+    headSha: "Head SHA",
+    mergeCommit: "Merge Commit",
     reason: "跳过原因",
     reviewedSection: "已处理 PR",
     reviewedHint: "点击卡片查看细节",
@@ -1235,6 +1238,9 @@ const labels = {{
     attentionPoints: "Attention Points",
     directFixes: "Direct Fixes",
     selfReviewPolicy: "Self-review Policy",
+    reviewAction: "Review Action",
+    headSha: "Head SHA",
+    mergeCommit: "Merge Commit",
     reason: "Skip Reason",
     reviewedSection: "Processed PRs",
     reviewedHint: "Click a card for details",
@@ -1474,12 +1480,22 @@ function renderTimeline() {{
     container.innerHTML = `<div class="empty">${{labels[lang].empty}}</div>`;
     return;
   }}
-  container.innerHTML = events.map(event => `
-    <div class="timeline-item">
-      <div class="time">${{escapeHtml(event.time || "")}}</div>
-      <div>${{escapeHtml(text(event.label || event.text || event))}}</div>
-    </div>
-  `).join("");
+  container.innerHTML = events.map(event => {{
+    const data = typeof event === "object" && event !== null && !Array.isArray(event)
+      ? event
+      : {{ detail: event }};
+    const eventName = text(data.event || data.type || data.label || "");
+    const detail = text(data.detail || data.text || (!eventName ? data : ""));
+    const body = eventName && detail && eventName !== detail
+      ? `<strong>${{escapeHtml(eventName)}}</strong><div>${{formatRich(detail)}}</div>`
+      : formatRich(detail || eventName);
+    return `
+      <div class="timeline-item">
+        <div class="time">${{escapeHtml(data.time || "")}}</div>
+        <div>${{body}}</div>
+      </div>
+    `;
+  }}).join("");
 }}
 
 function renderOverview() {{
@@ -1723,7 +1739,13 @@ function renderReadingGuide(items) {{
   const container = document.getElementById("readingGuide");
   const candidates = [
     ...items.filter(item => (item.status || "skipped") !== "skipped"),
-    ...(reportData.follow_up || []).map(item => ({{ ...item, status: item.status || "blocked" }}))
+    ...(reportData.follow_up || []).map(item => {{
+      if (typeof item === "object" && item !== null && !Array.isArray(item)) {{
+        return {{ ...item, status: item.status || "blocked" }};
+      }}
+      const body = text(item);
+      return {{ title: body, next: body, status: "blocked", plain: true }};
+    }})
   ].map(item => ({{ item, advice: readingAdvice(item) }}))
     .filter(entry => entry.advice.level !== "skim")
     .sort((left, right) => priorityRank(right.advice.level) - priorityRank(left.advice.level));
@@ -1835,6 +1857,9 @@ function renderReviewRail(item) {{
   `;
   const facts = [
     factItem(labels[lang].outcome, item.outcome),
+    factItem(labels[lang].reviewAction, item.review_action),
+    factItem(labels[lang].headSha, item.head_sha),
+    factItem(labels[lang].mergeCommit, item.merge_commit),
     factItem(labels[lang].necessityAssessment, item.necessity_assessment),
     factItem(labels[lang].reproductionOnBase, item.reproduction_on_base),
     factItem(labels[lang].solutionFitAssessment, item.solution_fit_assessment),
@@ -2051,9 +2076,8 @@ function renderFollowUp() {{
     const body = text(item);
     return {{
       title: body,
-      reason: body,
       next: body,
-      author: ""
+      plain: true
     }};
   }}).filter(item => {{
     if (!query) return true;
@@ -2073,24 +2097,33 @@ function renderFollowUp() {{
   heading.style.display = "flex";
   container.style.display = "grid";
   container.innerHTML = items.map(item => {{
+    const hasPrIdentity = Boolean(item.number || item.url);
     const prText = item.number ? `#${{item.number}}` : "PR";
     const prLink = item.url
       ? `<a href="${{escapeHtml(item.url)}}">${{prText}}</a>`
       : prText;
+    const title = escapeHtml(text(item.title || item.next || item.reason));
+    const cardTitle = hasPrIdentity ? `${{prLink}} · ${{title}}` : title;
+    const meta = item.author
+      ? `<div class="meta">${{labels[lang].author}}: ${{escapeHtml(item.author)}}</div>`
+      : "";
+    const body = item.plain
+      ? `<div>${{formatRich(text(item.next || item.title))}}</div>`
+      : `<div class="grid">
+          ${{field(labels[lang].reason, item.reason)}}
+          ${{field(labels[lang].outcome, item.next)}}
+        </div>`;
     return `
       <article class="card open" data-status="blocked">
         <div class="card-head">
           <div>
-            <h3 class="card-title">${{prLink}} · ${{escapeHtml(text(item.title))}}</h3>
-            <div class="meta">${{labels[lang].author}}: ${{escapeHtml(item.author || "")}}</div>
+            <h3 class="card-title">${{cardTitle}}</h3>
+            ${{meta}}
           </div>
           <span class="badge blocked">${{labels[lang].followups}}</span>
         </div>
         <div class="card-body">
-          <div class="grid">
-            ${{field(labels[lang].reason, item.reason)}}
-            ${{field(labels[lang].outcome, item.next)}}
-          </div>
+          ${{body}}
         </div>
       </article>
     `;

@@ -395,6 +395,9 @@ function validateEntryFields(entry, group, problems, reportName) {
   if (group === "approved" && entry.status === "merged" && !isFilled(entry.merge_commit)) {
     problems.push(`${reportName}: merged PR #${entry.number || "unknown"} missing merge_commit`);
   }
+  if (group === "approved" && entry.status === "merged" && !isFilled(entry.head_sha)) {
+    problems.push(`${reportName}: merged PR #${entry.number || "unknown"} missing head_sha`);
+  }
   if (group === "maintained" && !isFilled(entry.self_review_policy)) {
     problems.push(`${reportName}: maintained PR #${entry.number || "unknown"} missing self_review_policy`);
   }
@@ -420,6 +423,29 @@ function validateFollowUp(report, problems, reportName) {
     }
     if (!isFilled(item.reason) && !isFilled(item.next) && !isFilled(item.title)) {
       problems.push(`${reportName}: follow_up[${index}] needs reason, next, or title`);
+    }
+  });
+}
+
+function validateTimeline(report, problems, reportName) {
+  asArray(report.timeline).forEach((item, index) => {
+    if (typeof item === "string") {
+      if (!isFilled(item)) {
+        problems.push(`${reportName}: timeline[${index}] is empty`);
+      }
+      return;
+    }
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      problems.push(`${reportName}: timeline[${index}] must be a string or object`);
+      return;
+    }
+    if (
+      !isFilled(item.detail) &&
+      !isFilled(item.text) &&
+      !isFilled(item.label) &&
+      !isFilled(item.event)
+    ) {
+      problems.push(`${reportName}: timeline[${index}] needs detail, text, label, or event`);
     }
   });
 }
@@ -465,6 +491,7 @@ function validateReport(report, reportName) {
   validateProcessedEntries(report, problems, reportName);
   validateSkippedGroups(report, problems, reportName);
   validateFollowUp(report, problems, reportName);
+  validateTimeline(report, problems, reportName);
   return problems;
 }
 
