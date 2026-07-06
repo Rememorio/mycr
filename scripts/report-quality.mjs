@@ -389,6 +389,16 @@ function validateEntryFields(entry, group, problems, reportName) {
       `${reportName}: ${group} PR #${entry.number || "unknown"} approach describes review action instead of PR implementation`,
     );
   }
+  if (
+    isFilled(entry.technical_background) &&
+    /\bMyCR\b|本轮|确认 PR 当前 head|xhigh|子审查|checked CI|提交 GitHub|LGTM|approve|merge/iu.test(
+      text(entry.technical_background),
+    )
+  ) {
+    problems.push(
+      `${reportName}: ${group} PR #${entry.number || "unknown"} technical_background describes review process instead of domain background`,
+    );
+  }
 
   if (group === "approved" && !isFilled(entry.review_action)) {
     problems.push(`${reportName}: approved PR #${entry.number || "unknown"} missing review_action`);
@@ -415,6 +425,38 @@ function validateEntryFields(entry, group, problems, reportName) {
     const hasBlocker = asArray(entry.blockers).length > 0 || isFilled(entry.risk);
     if (!hasBlocker) {
       problems.push(`${reportName}: blocked PR #${entry.number || "unknown"} needs blockers or risk`);
+    }
+  }
+}
+
+function hasCiOrSoftCiBlocker(value) {
+  return asArray(value).some((blocker) =>
+    ["ci", "soft_ci"].includes(String(blocker?.kind || "")) ||
+    /codecov|go-apidiff|pending|queued|in[_ -]?progress|failure|failed/iu.test(
+      text(blocker?.summary || blocker?.verification),
+    ),
+  );
+}
+
+function validateProcessedRunStateConsistency(report, problems, reportName) {
+  const stateByPr = asObject(report.run_state?.pull_requests);
+  for (const group of processedGroups) {
+    for (const entry of asArray(report[group])) {
+      const number = Number(entry?.number);
+      if (!number) {
+        continue;
+      }
+      const state = asObject(stateByPr[String(number)]);
+      if (
+        /all effective checks are green|all checks are green|全部.*通过|全绿/iu.test(
+          text(entry?.ci_state),
+        ) &&
+        hasCiOrSoftCiBlocker(state.blockers)
+      ) {
+        problems.push(
+          `${reportName}: ${group} PR #${number} ci_state says green but run_state still carries CI blockers`,
+        );
+      }
     }
   }
 }
@@ -521,6 +563,11 @@ function validateSkippedGroups(report, problems, reportName) {
       for (const blocker of asArray(item?.blockers)) {
         const kind = String(blocker?.kind || "");
         const reviewer = text(blocker?.reviewer);
+        for (const optionalField of ["reviewer", "url", "path", "line", "latest_response"]) {
+          if (Object.hasOwn(blocker || {}, optionalField) && !isFilled(blocker?.[optionalField])) {
+            problems.push(`${prefix} blocker has empty optional field "${optionalField}"`);
+          }
+        }
         if (
           ["human_review", "manual_review"].includes(kind) &&
           reviewer &&
@@ -552,6 +599,7 @@ function validateReport(report, reportName) {
   const problems = [];
   validateTopLevel(report, problems, reportName);
   validateProcessedEntries(report, problems, reportName);
+  validateProcessedRunStateConsistency(report, problems, reportName);
   validateSkippedGroups(report, problems, reportName);
   validateFollowUp(report, problems, reportName);
   validateTimeline(report, problems, reportName);

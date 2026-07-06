@@ -49,6 +49,10 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
      changed-file path summaries. Do not put full PR bodies, full
      review/comment bodies, diff hunks, source files, workflow logs, or long
      CodeRabbit comments into the cheap index.
+     When small excerpts from external GitHub text are needed for fingerprints
+     or blocker evidence, sanitize invalid Unicode and truncate by Unicode code
+     point rather than UTF-16 index so emoji or other surrogate-pair text cannot
+     produce invalid JSON.
    - Compare that index with the latest successful run-state snapshot by using
      `node scripts/mycr-incremental-plan.mjs --current <current-index.json>
      --previous <previous-report-or-state.json> --output <plan.json>` from the

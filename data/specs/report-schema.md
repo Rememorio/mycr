@@ -150,6 +150,10 @@ Planner reasons should be discrete strings such as `new_pr`,
 `run_state` is hidden workflow memory for the next run. It should be compact,
 stable, and safe to publish. Store only GitHub metadata and review-state facts,
 not local paths, private tokens, temporary files, or raw model prompts.
+Any stored excerpt from GitHub comments, reviews, checks, or issue text must be
+valid Unicode. Collectors should sanitize lone surrogate characters and
+truncate text by Unicode code point rather than UTF-16 index so serialized JSON
+remains parseable by standard tools.
 
 Recommended fields:
 

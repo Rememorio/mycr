@@ -1608,13 +1608,16 @@ function blockerKindLabel(kind) {{
   return (labels[lang].blockerKinds || {{}})[kind] || text(kind);
 }}
 
-function inlineCommentText(comment) {{
-  if (comment === undefined || comment === null) return "";
-  if (typeof comment !== "object" || Array.isArray(comment)) {{
-    return text(comment);
+  function inlineCommentText(comment) {{
+    if (comment === undefined || comment === null) return "";
+    if (typeof comment !== "object" || Array.isArray(comment)) {{
+      return text(comment);
+    }}
+    if (lang === "zh") {{
+      return text(comment.summary_zh || comment.summary || comment.body || comment.message || "");
+    }}
+    return text(comment.body || comment.summary_en || comment.summary || comment.message || "");
   }}
-  return text(comment.body || comment.summary || comment.message || "");
-}}
 
 function allPrText(item) {{
   const comments = (item.inline_comments || []).map(comment => [
@@ -2010,13 +2013,16 @@ function renderSkipGroups() {{
   const query = document.getElementById("search").value.trim();
   const groups = skippedGroups().map(group => {{
     const reason = group.reason || "";
+    const title = lang === "zh"
+      ? text(group.title_zh || group.title || group.reason)
+      : text(group.title_en || group.title || group.reason);
     const items = (group.items || []).map(item => ({{
       ...item,
       status: item.status || "skipped",
       group_reason: reason,
       skip_reason: item.skip_reason || reason
     }})).filter(item => matchesSearch(item, query));
-    return {{ reason, items }};
+    return {{ reason, title, items }};
   }}).filter(group => group.items.length > 0);
   if (!groups.length) {{
     container.innerHTML = `<div class="empty">${{labels[lang].empty}}</div>`;
@@ -2025,7 +2031,7 @@ function renderSkipGroups() {{
   container.innerHTML = groups.map((group, index) => `
     <article class="skip-group open">
       <div class="skip-group-head" data-skip-group="${{index}}">
-        <h3 class="skip-group-title">${{escapeHtml(text(group.reason))}}</h3>
+        <h3 class="skip-group-title">${{escapeHtml(text(group.title || group.reason))}}</h3>
         <span class="skip-group-count">${{group.items.length}} ${{labels[lang].items}}</span>
       </div>
       <div class="skip-group-body">
