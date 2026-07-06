@@ -39,9 +39,10 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    - Collect a cheap index for every open PR before doing any expensive diff,
      thread-body, log, source, or report-writing work. This index is a cache
      invalidation input, not a review artifact. It must include at least title,
-     author, labels, draft/WIP state, base branch, head SHA, mergeability,
-     review decision, locked state and active lock reason, updated/latest-activity
-     time, commit/check fingerprint, review-thread fingerprint, and
+     author, author association, labels, draft/WIP state, base branch, head SHA,
+     mergeability, review decision, locked state and active lock reason,
+     updated/latest-activity time, commit/check fingerprint,
+     review-thread fingerprint, and
      comment/review fingerprint. Build those
      fingerprints from stable IDs, authors, states, timestamps, check names and
      conclusions, head SHAs, close/reopen/lock/unlock timeline events, and
@@ -135,22 +136,35 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
      a better design such as clearer docs, an explicit narrowly scoped option,
      or a separate contract decision; block the PR as `solution_fit` when the
      mismatch affects merge readiness.
-   - Treat manual-review-only merge policy as a first-class gate, separate from
-     ordinary code quality and unresolved review threads. Before approving or
-     merging a linked-issue PR, inspect issue labels, issue body, PR body,
-     maintainer comments, assignees, active competing PRs for the same issue,
-     and code owner requests for signals that the final merge decision belongs
-     to a human maintainer, mentor, code owner, or product/architecture owner.
+   - Treat `manual_review` as a first-class gate, separate from ordinary code
+     quality, unresolved review threads, and merge permissions. Before
+     approving or merging a linked-issue PR, inspect issue labels, issue body,
+     PR body, maintainer comments, assignees, active competing PRs for the same
+     issue, and code owner requests for signals that the accept/reject decision
+     belongs to a human maintainer, mentor, code owner, or product/architecture
+     owner.
      Examples include mentorship or contest tracks such as Rhino Bird issues,
      labels or text saying the issue is exclusive to a program, "students claim
      this task", "mentor selects winners", explicit "manual review required",
      multiple active PRs competing for one issue, security-boundary changes,
-     broad public API or architecture decisions, and roadmap/product choices.
+     broad public API or architecture decisions, broad test or verification
+     contracts that set expectations for multiple backends, and roadmap/product
+     choices.
      In those cases MyCR may still audit the code and post real review
      findings, but it must not approve with `LGTM` or merge unless a maintainer
-     explicitly states that this exact PR is the accepted merge candidate.
-     Report the gate as `manual_review` with the concrete label, issue text,
-     maintainer statement, or competing PR evidence that made automation unsafe.
+     explicitly states that this exact PR is the accepted merge candidate. A
+     MyCR-submitted `LGTM`, even from a maintainer account used by this run, is
+     not evidence that the human decision happened. Report the gate as
+     `manual_review` with the concrete label, issue text, maintainer statement,
+     or competing PR evidence that made automation unsafe.
+   - Track merge authority separately from code-review blockers. When the
+     repository or the user requires a human to perform the final merge for a
+     class of PRs, record `merge_policy: { mode: "human_required", ... }` with
+     the reason and required evidence. MyCR may still review the code and, when
+     otherwise allowed, approve it, but it must leave the PR unmerged and report
+     the human merge requirement explicitly. Apply this policy by default to PRs
+     whose author association is not `OWNER`, `MEMBER`, or `COLLABORATOR`,
+     unless the user explicitly authorizes MyCR to merge that PR class.
    - Maintain a run-level reviewability ledger for every open PR. Each PR must
      end the scan in exactly one auditable bucket: processed, heavy-review
      eligible candidate, carried-forward unchanged blocker, intentionally not
@@ -192,7 +206,7 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
      satisfies the issue's literal proposed fix or a bot's linked-issue check if
      that fix uses the wrong knob, weakens default behavior, hides a contract
      decision in documentation, or broadens semantics beyond the actual need.
-   - the PR is not under a manual-review-only merge gate. If issue labels,
+   - the PR is not under a manual-review gate. If issue labels,
      issue text, maintainer comments, code owner requests, active competing PRs,
      security/architecture scope, or product/roadmap ownership indicate that a
      human maintainer must choose the accepted PR, block approval and merge as
@@ -288,10 +302,11 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    `blockers` entries when possible. Do not group PRs under vague combined
    reasons such as "human review thread, Changes Requested, or API discussion"
    unless each item also lists the exact thread/comment/check/conflict that is
-   actually blocking it. A manual-review-only gate must name the specific label,
-   issue sentence, maintainer statement, code owner decision point, competing PR,
-   security/architecture scope, or product/roadmap ownership reason that makes
-   MyCR approval or merge unsafe. If a PR is otherwise reviewable but was not
+   actually blocking it. A `manual_review` gate must name the specific label,
+   issue sentence, maintainer statement, code owner decision point, competing
+   PR, security/architecture scope, broad verification contract, or
+   product/roadmap ownership reason that makes MyCR approval or merge unsafe.
+   If a PR is otherwise reviewable but was not
    processed because of time or candidate ordering, say that plainly as "not
    reached this run" and put it in follow-up, not in a blocker group.
    Before processing candidates and again before writing the report, compare
@@ -343,13 +358,26 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
    asking for the missing reproduction, raw payload/log, current-base
    verification, better control surface, or contract decision, and report the PR
    as blocked; do not approve or merge.
-12. If an external PR has no valid findings, approve it with a GitHub pull-request
-    review whose state is approve and whose body is exactly `LGTM`. This must
-    be the same visible effect as a human submitting an approving review from
-    the GitHub UI, not a standalone issue comment that says `LGTM`.
-13. After approval, merge the external PR using the repository-supported merge method
-    only when it has no non-green `codecov/patch` check. For this repo, prefer
-    squash merge when repository metadata says only squash merge is allowed.
+12. Before any approving review, refresh the PR head SHA, linked issue metadata,
+    review threads, review decision, maintainer comments, and manual-review
+    evidence. If `manual_review` still applies, do not approve. Record the
+    blocker and the evidence that still requires a human decision.
+13. If an external PR has no valid findings and is not blocked by
+    `manual_review`, approve it with a GitHub pull-request review whose state is
+    approve and whose body is exactly `LGTM`. This must be the same visible
+    effect as a human submitting an approving review from the GitHub UI, not a
+    standalone issue comment that says `LGTM`.
+14. After approval, refresh the current head SHA, effective checks,
+    mergeability, codecov state, `manual_review` state, and `merge_policy`
+    before attempting a merge. If `merge_policy.mode` is `human_required`, do
+    not merge; leave the PR approved or reviewed-clean as appropriate and report
+    the required human merge evidence. If `manual_review` became applicable
+    during the refresh, do not merge even if MyCR already approved earlier in
+    the run.
+15. Merge the external PR using the repository-supported merge method only when
+    it has no non-green `codecov/patch` check and no `merge_policy` blocking
+    MyCR from merging. For this repo, prefer squash merge when repository
+    metadata says only squash merge is allowed.
     The merge must preserve GitHub's default squash commit title and body, the
     same as clicking the UI "Squash and merge" button without editing the
     generated message. Do not pass custom merge subjects or bodies. With
@@ -361,7 +389,7 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
     fields, do not use that path. This keeps the PR number suffix generated by
     GitHub, for example `(#1844)`. If `codecov/patch` is still non-green, leave
     the approved PR unmerged and report it as approved but waiting for codecov.
-14. Before ending, fetch each processed PR's latest comments and review threads
+16. Before ending, fetch each processed PR's latest comments and review threads
     again. For external PRs, if new actionable comments appeared and can be
     fixed by the author or require a different outcome, handle them before
     reporting; otherwise include them in the report. For own PRs, convert any
@@ -372,7 +400,7 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
     after the head movement. A re-evaluated `codecov/patch` soft failure can
     still allow external review/approval, but never merge while it remains
     non-green.
-15. Report all reviewed PRs, maintained own PRs, skipped PRs with reasons,
+17. Report all reviewed PRs, maintained own PRs, skipped PRs with reasons,
     comments posted, direct fixes, approvals, merge results, and any blocked
     operations. Generate the
     interactive HTML report described below before sending the final answer.
@@ -381,7 +409,7 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
     implementation design, review judgment, and follow-up priorities so the
     user can understand the engineering state without opening GitHub or reading
     a diff.
-16. Before committing or final-answering a meaningful run, run the post-report
+18. Before committing or final-answering a meaningful run, run the post-report
     QA pass from the MyCR workspace. Prefer archiving through
     `node scripts/archive-report.mjs <summary.json>`, which normalizes and
     validates the source report before rendering. If the report was edited
@@ -390,7 +418,7 @@ Prefer `gh` when it is authenticated; otherwise use the GitHub connector tools.
     copy the normalized JSON to `public/reports/`, render the HTML again with
     `scripts/render_mycr_report.py`, and then run `npm run verify`. Treat
     quality failures as workflow failures, not cosmetic warnings.
-17. Inspect the generated HTML contract, not only the JSON. At minimum verify
+19. Inspect the generated HTML contract, not only the JSON. At minimum verify
     that reviewed PR cards, skipped groups, follow-up entries, inline comments,
     and self-evolution notes are renderable and not empty placeholders. When
     the report renderer or UI changed, use a browser or static DOM check to
@@ -649,6 +677,9 @@ In the final report:
   - if comments were posted, the exact inline comment bodies, the review focus,
     severity, and whether the user should pay extra attention
   - latest CI and review-thread state when it affects the outcome
+  - `merge_policy` when MyCR intentionally leaves an otherwise reviewed PR
+    unmerged because a human must perform the final merge; include the mode,
+    reason, required evidence, and the current evidence checked
 - For PRs that were not reviewed, group them by skip reason and still use
   clickable PR links. For each PR, include the author, title, concrete blocker,
   and whether the blocker is CI, draft/WIP/own PR state, unresolved human review,
@@ -666,6 +697,10 @@ In the final report:
   soft-CI inspection, `codecov/patch` merge blocker, missing source-problem
   evidence, wrong solution/control surface, manual maintainer selection
   required, CI pending, or "not reached this run".
+- A PR blocked by `manual_review` may also have `merge_policy`, but do not use
+  `merge_policy` to hide the decision blocker. `manual_review` explains why
+  MyCR cannot decide or approve the PR; `merge_policy` explains why MyCR cannot
+  perform the final merge action.
 - If a skipped group is about human review, each item in that group must name
   the exact unresolved human thread. If no exact still-actionable human thread
   is found, the PR does not belong in that group.
@@ -768,9 +803,12 @@ In the final report:
 - "Ready for review" means not draft, not WIP, CI green or only acceptable
   soft CI failures, source-problem evidence is sufficient for the claimed
   fix/design change, the chosen solution/control surface is a reasonable fit
-  for the underlying need, the PR is not under a manual-review-only merge gate,
+  for the underlying need, the PR is not under a `manual_review` gate,
   and the PR is not blocked by a still-actionable human or verified bot review
   issue.
+- "Ready for merge" additionally means the latest pre-merge refresh found no
+  `manual_review` blocker and no `merge_policy` that requires a human to
+  perform the merge.
 - Never merge a PR that received new inline findings during this run.
 - Never merge a PR while `codecov/patch` is non-green, even if it has no review
   findings and has been approved with `LGTM`.
