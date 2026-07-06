@@ -41,6 +41,7 @@ const renderedDetailFields = [
   "ci_state",
   "risk",
   "review_action",
+  "merge_policy",
   "self_review_policy",
 ];
 
@@ -175,7 +176,7 @@ function text(value) {
     return value.map(text).filter(Boolean).join("; ");
   }
   if (value && typeof value === "object") {
-    return text(value.zh || value.en || value.summary || value.body || "");
+    return text(value.zh || value.en || value.summary || value.body || value.mode || "");
   }
   if (value === undefined || value === null) {
     return "";
@@ -397,6 +398,15 @@ function validateEntryFields(entry, group, problems, reportName) {
   }
   if (group === "approved" && entry.status === "merged" && !isFilled(entry.head_sha)) {
     problems.push(`${reportName}: merged PR #${entry.number || "unknown"} missing head_sha`);
+  }
+  const mergePolicy = text(entry.merge_policy);
+  if (
+    /human_required/iu.test(mergePolicy) &&
+    (entry.status === "merged" || /gh pr merge|squash merge|merged/iu.test(text(entry.review_action)))
+  ) {
+    problems.push(
+      `${reportName}: ${group} PR #${entry.number || "unknown"} is marked human_required but also merged by MyCR`,
+    );
   }
   if (group === "maintained" && !isFilled(entry.self_review_policy)) {
     problems.push(`${reportName}: maintained PR #${entry.number || "unknown"} missing self_review_policy`);

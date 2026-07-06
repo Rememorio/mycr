@@ -65,6 +65,15 @@ Reviewed entries should include:
 - `outcome`
 - `risk`
 - `ci_state`
+- `merge_policy`: optional action policy when MyCR may review or approve a PR
+  but must not perform the final merge. Prefer an object with:
+  - `mode`: normally `human_required`.
+  - `reason`: the policy source, such as `external_contributor`,
+    `repo_policy`, or `user_policy`.
+  - `required_evidence`: what human action or evidence clears the policy.
+  - `current_evidence`: what the run checked, such as author association,
+    approvals, maintainer comments, or merge actor.
+  - `summary`: a short human-readable explanation for renderers.
 - `inline_comments`
 - `direct_fixes`: optional array for own PRs with direct branch maintenance
   details. Each object should include the branch, commit SHA or message when
@@ -93,13 +102,19 @@ Skipped entries should also include:
 - `readiness_audit`: optional plain-language audit of why a broad GitHub state
   such as `CHANGES_REQUESTED` does or does not block review.
 
-Use `manual_review` when the PR may still be code-reviewed, but approval or
-merge must be left to a human maintainer, mentor, code owner, or
-product/architecture owner. Typical evidence includes mentorship/contest issue
-labels, issue text that reserves the task for program participants, multiple
-active PRs competing for one issue, explicit maintainer selection requirements,
-security-boundary changes, broad public API or architecture decisions, or
-roadmap/product ownership decisions.
+Use `manual_review` when the PR may still be code-reviewed, but MyCR must not
+decide acceptance or submit approval/merge actions. Typical evidence includes
+mentorship/contest issue labels, issue text that reserves the task for program
+participants, multiple active PRs competing for one issue, explicit maintainer
+selection requirements, security-boundary changes, broad public API or
+architecture decisions, broad test or verification contracts that set
+expectations for multiple backends, or roadmap/product ownership decisions. A
+MyCR-submitted `LGTM` is not evidence that the human decision happened.
+
+Use `merge_policy` separately when the PR may pass code review, but the final
+merge action must be performed by a human. This is not a blocker kind: blockers
+explain why the PR is not ready for automated approval, while `merge_policy`
+explains why MyCR cannot perform a specific action.
 
 The report archive page only requires a subset, but richer fields make the
 self-contained HTML report useful without opening GitHub.

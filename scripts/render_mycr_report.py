@@ -1142,6 +1142,7 @@ const labels = {{
     directFixes: "直接修复",
     selfReviewPolicy: "自审策略",
     reviewAction: "执行动作",
+    mergePolicy: "合入策略",
     headSha: "Head SHA",
     mergeCommit: "Merge Commit",
     reason: "跳过原因",
@@ -1239,6 +1240,7 @@ const labels = {{
     directFixes: "Direct Fixes",
     selfReviewPolicy: "Self-review Policy",
     reviewAction: "Review Action",
+    mergePolicy: "Merge Policy",
     headSha: "Head SHA",
     mergeCommit: "Merge Commit",
     reason: "Skip Reason",
@@ -1290,7 +1292,7 @@ const statusOrder = ["approved", "commented", "maintained", "merged", "skipped",
 function text(value, fallback = "") {{
   if (value === undefined || value === null || value === "") return fallback;
   if (typeof value === "object" && !Array.isArray(value)) {{
-    return value[lang] || value.zh || value.en || fallback;
+    return value[lang] || value.zh || value.en || value.summary || value.body || value.mode || fallback;
   }}
   return String(value);
 }}
@@ -1544,6 +1546,7 @@ function matchesSearch(item, query) {{
     text(item.implementation_derivation),
     text(item.solution_fit_assessment),
     text(item.outcome),
+    text(item.merge_policy),
     text(item.skip_reason),
     text(item.group_reason),
     text(item.readiness_audit),
@@ -1858,6 +1861,7 @@ function renderReviewRail(item) {{
   const facts = [
     factItem(labels[lang].outcome, item.outcome),
     factItem(labels[lang].reviewAction, item.review_action),
+    factItem(labels[lang].mergePolicy, item.merge_policy),
     factItem(labels[lang].headSha, item.head_sha),
     factItem(labels[lang].mergeCommit, item.merge_commit),
     factItem(labels[lang].necessityAssessment, item.necessity_assessment),
