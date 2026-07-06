@@ -458,7 +458,27 @@ function validateProcessedEntries(report, problems, reportName) {
   }
 }
 
+function itemHasLockedBlocker(item) {
+  return asArray(item?.blockers).some((blocker) =>
+    /locked|conversation is locked|conversation locked/iu.test(
+      text(blocker?.summary || blocker?.verification),
+    ),
+  );
+}
+
+function ciStateNonGreenCount(item) {
+  const match = text(item?.ci_state).match(/\bnon[_-]?green=(\d+)/iu);
+  return match ? Number(match[1]) : 0;
+}
+
+function hasConcreteCiBlocker(item) {
+  return asArray(item?.blockers).some((blocker) =>
+    ["ci", "soft_ci"].includes(String(blocker?.kind || "")),
+  );
+}
+
 function validateSkippedGroups(report, problems, reportName) {
+  const seenSkipped = new Set();
   for (const [index, group] of asArray(report.skipped_groups).entries()) {
     if (!isFilled(group.reason)) {
       problems.push(`${reportName}: skipped_groups[${index}] missing reason`);
@@ -480,6 +500,39 @@ function validateSkippedGroups(report, problems, reportName) {
       }
       if (asArray(item?.blockers).length === 0) {
         problems.push(`${prefix} missing blockers`);
+      }
+      const number = Number(item?.number);
+      if (number) {
+        if (seenSkipped.has(number)) {
+          problems.push(`${reportName}: skipped PR #${number} appears in more than one group`);
+        }
+        seenSkipped.add(number);
+      }
+      for (const blocker of asArray(item?.blockers)) {
+        const kind = String(blocker?.kind || "");
+        const reviewer = text(blocker?.reviewer);
+        if (
+          ["human_review", "manual_review"].includes(kind) &&
+          reviewer &&
+          (reviewer === text(item?.author) || /bot|coderabbit/iu.test(reviewer))
+        ) {
+          problems.push(
+            `${prefix} uses ${kind} blocker from non-reviewer "${reviewer}"`,
+          );
+        }
+        if (
+          kind === "soft_ci" &&
+          /pending|queued|in[_ -]?progress/iu.test(text(blocker?.summary))
+        ) {
+          problems.push(`${prefix} classifies pending check as soft_ci`);
+        }
+      }
+      if (
+        itemHasLockedBlocker(item) &&
+        ciStateNonGreenCount(item) > 0 &&
+        !hasConcreteCiBlocker(item)
+      ) {
+        problems.push(`${prefix} is locked but omits concrete CI blockers`);
       }
     }
   }
