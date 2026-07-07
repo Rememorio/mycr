@@ -1156,6 +1156,7 @@ const labels = {{
     items: "项",
     blocker: "阻塞点",
     blockerDetails: "具体阻塞点",
+    nonBlockerDetails: "未处理原因",
     readinessAudit: "就绪性审计",
     blockerKinds: {{
       ci: "CI",
@@ -1254,6 +1255,7 @@ const labels = {{
     items: "items",
     blocker: "Blocker",
     blockerDetails: "Concrete Blockers",
+    nonBlockerDetails: "Why Not Reviewed",
     readinessAudit: "Readiness Audit",
     blockerKinds: {{
       ci: "CI",
@@ -1318,7 +1320,7 @@ function formatRich(value) {{
       "mark-good"
     ],
     [
-      /(pending|soft[- ]?CI|软门禁|follow-up|后续|关注|CodeRabbit|reviewability ledger|not_reached)/gi,
+      /(pending|soft[- ]?CI|软门禁|follow-up|后续|关注|CodeRabbit|review readiness|not_reached)/gi,
       "mark-info"
     ],
     [
@@ -1583,6 +1585,13 @@ function field(label, value) {{
 function renderBlockers(item) {{
   const blockers = Array.isArray(item.blockers) ? item.blockers : [];
   if (!blockers.length) return "";
+  const isNonBlockerList = blockers.every(blocker => {{
+    const kind = typeof blocker === "object" && blocker !== null ? String(blocker.kind || "") : "";
+    return kind === "not_reached";
+  }});
+  const detailLabel = isNonBlockerList
+    ? labels[lang].nonBlockerDetails
+    : labels[lang].blockerDetails;
   const rendered = blockers.map(blocker => {{
     const data = typeof blocker === "object" && blocker !== null
       ? blocker
@@ -1601,7 +1610,7 @@ function renderBlockers(item) {{
       : "";
     return `<li class="blocker-item"><div>${{summary}}${{link}}</div>${{meta ? `<div class="blocker-meta">${{escapeHtml(meta)}}</div>` : ""}}</li>`;
   }}).join("");
-  return `<div class="skip-detail"><strong>${{labels[lang].blockerDetails}}:</strong></div><ul class="blocker-list">${{rendered}}</ul>`;
+  return `<div class="skip-detail"><strong>${{detailLabel}}:</strong></div><ul class="blocker-list">${{rendered}}</ul>`;
 }}
 
 function blockerKindLabel(kind) {{
@@ -1803,11 +1812,13 @@ function storyBlock(title, rows, className = "") {{
 
 function compactSummary(item) {{
   const candidates = [
-    item.outcome,
-    item.skip_reason,
-    item.reason,
     item.problem,
     item.design_assessment,
+    item.solution_fit_assessment,
+    item.approach,
+    item.skip_reason,
+    item.reason,
+    item.outcome,
     item.risk
   ].map(value => text(value).trim()).filter(Boolean);
   return candidates[0] || labels[lang].summaryFallback;
@@ -2047,7 +2058,7 @@ function renderSkipGroups() {{
                 <div class="skip-detail">${{labels[lang].author}}: ${{escapeHtml(item.author || "")}}</div>
               </div>
               <div>
-                <div><strong>${{labels[lang].blocker}}:</strong> ${{formatRich(text(item.skip_reason))}}</div>
+                <div><strong>${{labels[lang].reason}}:</strong> ${{formatRich(text(item.skip_reason))}}</div>
                 ${{item.readiness_audit ? `<div class="skip-detail"><strong>${{labels[lang].readinessAudit}}:</strong> ${{formatRich(text(item.readiness_audit))}}</div>` : ""}}
                 ${{item.necessity_assessment ? `<div class="skip-detail"><strong>${{labels[lang].necessityAssessment}}:</strong> ${{formatRich(text(item.necessity_assessment))}}</div>` : ""}}
                 ${{item.evidence_checked ? `<div class="skip-detail"><strong>${{labels[lang].evidenceChecked}}:</strong> ${{formatRich(text(item.evidence_checked))}}</div>` : ""}}
