@@ -529,6 +529,23 @@ function hasConcreteCiBlocker(item) {
   );
 }
 
+function hasVagueOrClippedBlockerText(value) {
+  const summary = text(value);
+  if (!summary) {
+    return false;
+  }
+  if (/\bBlocking issues found\.?$/iu.test(summary)) {
+    return true;
+  }
+  if (/review[：:]\s*[A-Za-z0-9_-]+$/iu.test(summary)) {
+    return true;
+  }
+  if (summary.includes("…")) {
+    return true;
+  }
+  return summary.length > 160 && /[A-Za-z][A-Za-z_-]{3,}$/.test(summary);
+}
+
 function validateSkippedGroups(report, problems, reportName) {
   const seenSkipped = new Set();
   for (const [index, group] of asArray(report.skipped_groups).entries()) {
@@ -552,6 +569,16 @@ function validateSkippedGroups(report, problems, reportName) {
       }
       if (asArray(item?.blockers).length === 0) {
         problems.push(`${prefix} missing blockers`);
+      }
+      const hasManualReviewBlocker = asArray(item?.blockers).some((blocker) =>
+        ["human_review", "manual_review"].includes(String(blocker?.kind || "")),
+      );
+      if (hasManualReviewBlocker) {
+        for (const field of ["skip_reason", "readiness_audit"]) {
+          if (hasVagueOrClippedBlockerText(item?.[field])) {
+            problems.push(`${prefix} has vague or clipped ${field}`);
+          }
+        }
       }
       const number = Number(item?.number);
       if (number) {
@@ -582,6 +609,12 @@ function validateSkippedGroups(report, problems, reportName) {
           /pending|queued|in[_ -]?progress/iu.test(text(blocker?.summary))
         ) {
           problems.push(`${prefix} classifies pending check as soft_ci`);
+        }
+        if (
+          ["human_review", "manual_review"].includes(kind) &&
+          hasVagueOrClippedBlockerText(blocker?.summary)
+        ) {
+          problems.push(`${prefix} blocker summary is vague or clipped`);
         }
       }
       if (
