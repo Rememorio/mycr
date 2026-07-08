@@ -13,8 +13,7 @@
     "merged": 0,
     "commented": 2,
     "skipped": 70,
-    "policy": "comment_only_no_lgtm_no_merge",
-    "target_worktree_dirty_preserved": true
+    "policy": "comment_only_no_lgtm_no_merge"
   },
   "overview": "本次按指令先在 mycr 仓库执行 git pull --ff-only，结果为 already up to date；随后对 trpc-group/trpc-agent-go 做全量 MyCR。初始和最终 open PR 均为 72 个，本轮严格执行 comment-only：没有提交 LGTM、approve 或 merge，也没有修改目标仓库主 checkout 中既有用户改动。实际深审并只发评论的是 #2121 和 #2145：#2121 提交 4 条 inline comments，覆盖 untracked symlink 读取越界、container network 文档与实现不一致、CLI signal cancellation、diff parser 空分隔行；#2145 提交 1 条 inline comment，指出 WithDialector 对 caller-owned GORM ConnPool 的 ownership 契约不清。#2141 经本地复核发现的问题已被 CodeRabbit 当前评论覆盖，因此不重复发评论；#2134/#2135 已有维护者 actionable review，继续作为人工 review blocker。报告生成前刷新 final open PR snapshot，并把 locked conversation 的 #1400/#1183 同时记录 locked delivery risk 和真实 CI blocker，避免 review 意见被锁定状态掩盖。",
   "approved": [],

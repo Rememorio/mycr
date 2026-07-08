@@ -18,6 +18,9 @@ const privateTopLevelFields = [
   "metadata_cache_key",
   "reviewability_ledger",
 ];
+const privateNestedFields = new Set([
+  "target_worktree_dirty_preserved",
+]);
 
 function usage() {
   console.error(
@@ -68,7 +71,27 @@ function publicReportFrom(report) {
   for (const field of privateTopLevelFields) {
     delete publicReport[field];
   }
+  stripPrivateNestedFields(publicReport);
   return publicReport;
+}
+
+function stripPrivateNestedFields(value) {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      stripPrivateNestedFields(item);
+    }
+    return;
+  }
+  if (!value || typeof value !== "object") {
+    return;
+  }
+  for (const key of Object.keys(value)) {
+    if (privateNestedFields.has(key)) {
+      delete value[key];
+      continue;
+    }
+    stripPrivateNestedFields(value[key]);
+  }
 }
 
 async function main() {

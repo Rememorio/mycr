@@ -13,8 +13,7 @@
     "merged": 0,
     "commented": 1,
     "skipped": 73,
-    "policy": "comment_only_no_lgtm_no_merge",
-    "target_worktree_dirty_preserved": true
+    "policy": "comment_only_no_lgtm_no_merge"
   },
   "overview": "本轮按指令先同步 mycr，结果 already up to date，然后对 trpc-group/trpc-agent-go 做全量 MyCR。当前 open PR 为 74 个，比上一份报告新增自有 PR #2147/#2148，外部 PR #2145 head 从 2f5488649a35 更新到 0ea421bd347b。用户明确要求只发 comments，因此本轮没有 LGTM、approve、merge，也没有对自有 PR 分支做直接修复。实际深审 #2145：上一轮 caller-owned ConnPool 默认 builder blocker 已由作者通过 WithOwnsConnection(false) 修复，current-head checks 全绿，本地 go test/go test -race/go vet 均通过；复核发现该 ownership option 对 SetClientBuilder 的外部 custom builder 不可观察，于是提交 1 条 inline COMMENT review。#2147/#2148/#2131 均为自有 PR 且 checks 绿，本轮仅记录状态；其它 PR 维持 draft、CI、已有 review、soft gate、merge conflict 或 not_reached 分组。",
   "approved": [],

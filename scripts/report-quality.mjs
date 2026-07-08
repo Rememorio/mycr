@@ -99,6 +99,7 @@ const publicForbiddenKeys = new Set([
   "ledger_bucket",
   "planning_reasons",
   "target_checkout",
+  "target_worktree_dirty_preserved",
 ]);
 const publicForbiddenText = [
   /\/Users\/guoqizhou/u,
@@ -375,7 +376,7 @@ function normalizeReport(report) {
   return report;
 }
 
-function validateTopLevel(report, problems, reportName) {
+function validateTopLevel(report, problems, reportName, options = {}) {
   if (text(report.overview).length < 180) {
     problems.push(`${reportName}: overview is too thin for a full-run report`);
   }
@@ -383,7 +384,7 @@ function validateTopLevel(report, problems, reportName) {
     problems.push(`${reportName}: timeline is empty`);
   }
   const pullRequests = asObject(report.run_state?.pull_requests);
-  if (Object.keys(pullRequests).length === 0) {
+  if (!options.public && Object.keys(pullRequests).length === 0) {
     problems.push(`${reportName}: run_state.pull_requests is empty`);
   }
   const evolution = asArray(report.skill_evolution);
@@ -775,9 +776,11 @@ function validateSkippedGroups(report, problems, reportName) {
   }
 }
 
-function validateReport(report, reportName) {
+function validateReport(report, reportName, options = {}) {
   const problems = [];
-  validateTopLevel(report, problems, reportName);
+  validateTopLevel(report, problems, reportName, {
+    public: Boolean(options.publicArtifact),
+  });
   validateProcessedEntries(report, problems, reportName);
   validateProcessedRunStateConsistency(report, problems, reportName);
   validateSkippedGroups(report, problems, reportName);
@@ -802,13 +805,20 @@ async function main() {
 
   const report = normalizeReport(await readReport(reportPath));
   const reportName = path.basename(reportPath);
+  const publicRelativePath = path.relative(publicReportDir, reportPath);
+  const isPublicArtifact =
+    publicRelativePath &&
+    !publicRelativePath.startsWith("..") &&
+    !path.isAbsolute(publicRelativePath);
 
   if (args.write) {
     await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
   }
 
   if (args.check) {
-    const problems = validateReport(report, reportName);
+    const problems = validateReport(report, reportName, {
+      publicArtifact: args.public && isPublicArtifact,
+    });
     if (args.public) {
       await validatePublicArtifacts(reportPath, problems, reportName);
     }
