@@ -112,6 +112,7 @@ const publicForbiddenText = [
   /\bplanner\b/iu,
   /run cache/iu,
   /independent report QA/iu,
+  /source ledger/iu,
   /独立报告 QA/u,
   /独立二审/u,
   /cache key/iu,
@@ -763,6 +764,31 @@ function validateSkippedGroups(report, problems, reportName) {
           hasVagueOrClippedBlockerText(blocker?.summary)
         ) {
           problems.push(`${prefix} blocker summary is vague or clipped`);
+        }
+      }
+      if (
+        asArray(item?.blockers).some((blocker) =>
+          /reviewDecision=APPROVED/iu.test(
+            text([blocker?.summary, blocker?.verification]),
+          ),
+        )
+      ) {
+        const explanation = text([
+          item?.skip_reason,
+          item?.readiness_audit,
+          ...asArray(item?.blockers).map((blocker) => [
+            blocker?.summary,
+            blocker?.verification,
+          ]),
+        ]);
+        if (
+          !/pre-existing|previous|existing|did not submit an approval|no .*approval|既有|本轮.*(未|没有).*(approval|审批|批准)/iu.test(
+            explanation,
+          )
+        ) {
+          problems.push(
+            `${prefix} shows APPROVED reviewDecision without explaining it is pre-existing and no MyCR approval was submitted`,
+          );
         }
       }
       if (

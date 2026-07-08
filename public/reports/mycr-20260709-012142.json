@@ -1,0 +1,1253 @@
+{
+  "title": "MyCR full run 2026-07-09 01:25 CST",
+  "generated_at": "2026-07-08T17:21:42.166Z",
+  "repo": "trpc-group/trpc-agent-go",
+  "overview": "本次先在 mycr 仓库执行 git pull --ff-only，结果 already up to date；随后对 trpc-group/trpc-agent-go 做全量 review sweep。最终 open PR 为 55 个，最终 checks 快照为 26 个全绿、29 个非全绿。本轮严格执行 comment-only 要求，没有 LGTM、approve 或 merge。实际深审后只在 #2151 和 #2128 提交 COMMENT review：#2151 阻断点是 code review agent 示例的 diff 范围、shell 执行和本地 sandbox 默认安全边界；#2128 阻断点是 GORM memory backend 的 limit 检查顺序和软删除计数。其余 53 个 PR 按 draft/WIP、own PR、CI、既有 changes-requested、外部贡献者人工 LGTM、以及 comment-only 不合入策略分组归档，报告覆盖记录已覆盖全部 open PR。",
+  "repo_info": {
+    "owner": "trpc-group",
+    "name": "trpc-agent-go",
+    "branch": "main",
+    "initial_open_prs": 55,
+    "final_open_prs": 55,
+    "processed": 2,
+    "approved": 0,
+    "merged": 0,
+    "commented": 2,
+    "skipped": 53,
+    "policy": "comment_only_no_lgtm_no_merge",
+    "final_checks_green": 26,
+    "final_checks_non_green": 29
+  },
+  "approved": [],
+  "commented": [
+    {
+      "number": 2151,
+      "title": "examples/code_review_agent: add sandboxed code review agent example",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/2151",
+      "author": "XnLemon",
+      "status": "commented",
+      "head_sha": "fa009b42450042b858e34c8666b86096a8b39550",
+      "modules": [
+        "examples/code_review_agent"
+      ],
+      "technical_background": "The example adds an agent that fetches pull-request diffs, runs configurable checks, and can execute repository tests through a sandbox abstraction before producing review comments.",
+      "problem": "Three safety and coverage bugs make the example unsafe as a default reviewer: it only diffs the last commit, it builds a shell command from unchecked script path and arguments, and it silently falls back to host-local execution when no external sandbox is configured.",
+      "necessity_assessment": "These are blocking for an example that may be copied into real review automation, because they can miss earlier commits in a PR and can run untrusted contributor code on the reviewer machine.",
+      "evidence_checked": "Reviewed `examples/code_review_agent/main.go`, `sandbox/sandbox.go`, existing review comments, the current PR head, and the final checks snapshot.",
+      "problem_framing": "The PR changes a review workflow, so correctness depends on both diff scope and execution isolation; a passing test suite does not prove the example is safe to run on untrusted pull requests.",
+      "approach": "The implementation introduces a sandbox interface and a default local implementation, but the call sites need a fail-closed path and argv-based command execution rather than shell string construction.",
+      "implementation_derivation": "`git diff HEAD~1 HEAD` is derived from local commit history rather than the pull request merge base, and `ExecuteScript` formats `scriptPath` plus `args` into `sh -c`.",
+      "solution_fit_assessment": "The high-level example is useful, but these guardrails need to be fixed before the example can be treated as a safe reference implementation.",
+      "alternative_designs": "Use a merge-base or GitHub diff file for review scope; use `exec.CommandContext` with explicit argv for script execution; require an explicit unsafe-local flag or configured container sandbox before running tests.",
+      "tradeoffs": "Failing closed makes first-run setup slightly less convenient, but prevents a sample review agent from normalizing host execution of arbitrary PR tests.",
+      "design_assessment": "Needs changes before approval. The concerns are narrow and local to the example, but they affect the security boundary and review coverage of the new workflow.",
+      "api_surface": "No library API change, but the example CLI behavior and documented safe defaults should change.",
+      "change_inventory": "New PR fetcher, diff parser, policy detector, analyzer, comment reporter, and sandbox execution path under `examples/code_review_agent`.",
+      "semantic_changes": "Adds a runnable code-review example that can execute tests and post review output.",
+      "module_impact": "Limited to the example module, with safety implications for anyone copying the workflow.",
+      "cross_module_impact": "No direct runtime package impact, but it exercises repository tests across arbitrary target modules when enabled.",
+      "behavior_impact": "Without changes, multi-commit PRs may be only partially reviewed and contributor-controlled script arguments can affect host shell execution.",
+      "reproduction_on_base": "The problems are visible from the current implementation: `git diff HEAD~1 HEAD` cannot cover multi-commit PR history, and `sh -c` receives concatenated script path and arguments.",
+      "issue_evidence_gaps": "No additional maintainer context is needed for the command-injection and default-local-execution issues; the desired diff source may need maintainer preference.",
+      "tests_docs": "`go test ./...` passed in the example module. Existing tests do not cover multi-commit diff selection or unsafe local fallback behavior.",
+      "outcome": "Submitted a COMMENT review with three inline comments; no approval, LGTM, or merge action was taken.",
+      "ci_state": "All effective checks were green in the final snapshot.",
+      "risk": "Leaving the example as-is can train contributors to run untrusted review workloads on their host and can miss changed files outside the final commit.",
+      "review_action": "Posted GitHub review comment https://github.com/trpc-group/trpc-agent-go/pull/2151#pullrequestreview-4656403299.",
+      "merge_policy": "Comment-only run; external contributor PR also requires explicit maintainer LGTM before merge.",
+      "inline_comments": [
+        {
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2151#discussion_r3545909701",
+          "path": "examples/code_review_agent/main.go",
+          "line": 93,
+          "summary": "`git diff HEAD~1 HEAD` only reviews the last commit; use the PR merge base/base ref or an explicit diff input."
+        },
+        {
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2151#discussion_r3545909706",
+          "path": "examples/code_review_agent/sandbox/sandbox.go",
+          "line": 121,
+          "summary": "Script path and args are concatenated into `sh -c`, creating a shell-injection path; execute with argv instead."
+        },
+        {
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2151#discussion_r3545909709",
+          "path": "examples/code_review_agent/sandbox/sandbox.go",
+          "line": 160,
+          "summary": "Defaulting to LocalSandbox runs untrusted PR tests on the host; fail closed or require an explicit unsafe-local mode."
+        }
+      ]
+    },
+    {
+      "number": 2128,
+      "title": "feat(memory/gorm): Add GORM-based memory service with multi-database support",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/2128",
+      "author": "jrx2025",
+      "status": "commented",
+      "head_sha": "30342e419a0ce37c523895e7dd7709c6f106bbc5",
+      "modules": [
+        "memory/gorm",
+        "examples/memory/gorm"
+      ],
+      "technical_background": "The memory service stores user-scoped memories through GORM and supports upsert, soft delete, query filtering, and an optional per-user memory limit across multiple SQL databases.",
+      "problem": "The memory-limit check runs before canonical memory ID lookup. At the configured limit, re-adding the same memory fails even though it should update the existing row, and soft-deleted rows still count against the active-memory limit.",
+      "necessity_assessment": "This blocks normal idempotent writes and replacement flows, which are core behaviors for a memory backend that deduplicates or updates memories by generated ID.",
+      "evidence_checked": "Reviewed `memory/gorm/service.go`, compared the limit semantics with the SQLite memory service, checked current review threads, and ran targeted module tests.",
+      "problem_framing": "The limit is meant to protect active memory cardinality, not reject updates to the same canonical memory or count rows that were explicitly soft deleted.",
+      "approach": "The implementation checks count first and only later computes the memory ID, so it cannot distinguish a new insert from an update to an existing memory.",
+      "implementation_derivation": "`AddMemory` calls `countUserMemories` before `generateMemoryID`, and `countUserMemories` queries by `user_id` without excluding soft-deleted records.",
+      "solution_fit_assessment": "The GORM backend structure is broadly aligned with the package, but the order of limit enforcement should match the memory identity semantics.",
+      "alternative_designs": "Generate the memory ID first, check whether that active row already exists, and count only active rows before rejecting a truly new insert at the limit.",
+      "tradeoffs": "Checking identity first adds one lookup but preserves idempotency and makes soft delete free capacity as users expect.",
+      "design_assessment": "Needs a focused fix before approval. The issue is local to `AddMemory` and count filtering, with a small test surface.",
+      "api_surface": "No exported API change is needed; this is backend behavior under the existing memory service contract.",
+      "change_inventory": "Adds a GORM memory backend, models, filters, and an example module demonstrating SQL-backed memory storage.",
+      "semantic_changes": "Introduces persistent SQL-backed memory operations with configured limits and soft delete semantics.",
+      "module_impact": "Affects `memory/gorm` users who configure a low or exact memory limit and update or replace existing memories.",
+      "cross_module_impact": "The example module depends on the backend behavior; other memory backends are not changed.",
+      "behavior_impact": "At capacity, duplicate or replacement writes can fail incorrectly, and deleting a memory may not allow adding a new active memory.",
+      "reproduction_on_base": "A temporary focused test showed both failure modes: re-adding the same memory at limit returned a limit error, and adding a new memory after soft delete remained blocked.",
+      "issue_evidence_gaps": "The desired semantics are strongly implied by generated memory identity and soft delete behavior; no broader API decision appears necessary.",
+      "tests_docs": "`go test ./...` passed in `memory/gorm`; `go test ./...` passed in `examples/memory/gorm`. The focused reproducer failed before the fix, as expected.",
+      "outcome": "Submitted a COMMENT review with one inline blocker; no approval, LGTM, or merge action was taken.",
+      "ci_state": "All effective checks were green in the final snapshot.",
+      "risk": "Without the fix, production users can hit permanent capacity errors even when performing idempotent updates or after deleting existing active memories.",
+      "review_action": "Posted GitHub review comment https://github.com/trpc-group/trpc-agent-go/pull/2128#pullrequestreview-4656404638.",
+      "merge_policy": "Comment-only run; external contributor PR also requires explicit maintainer LGTM before merge.",
+      "inline_comments": [
+        {
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2128#discussion_r3545910890",
+          "path": "memory/gorm/service.go",
+          "line": 125,
+          "summary": "Limit enforcement happens before canonical memory identity and counts soft-deleted rows, so idempotent updates and post-delete inserts are rejected at capacity."
+        }
+      ]
+    }
+  ],
+  "maintained": [],
+  "blocked": [],
+  "skipped_groups": [
+    {
+      "title": "Own PRs kept out of review actions",
+      "reason": "own_pr_no_self_review",
+      "count": 1,
+      "prs": [
+        2155
+      ],
+      "items": [
+        {
+          "number": 2155,
+          "title": "openclaw/browser: discourage blocked search pages",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2155",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own-PR policy blocked review actions; this run was comment-only and did not self-review, self-approve, or merge.",
+          "readiness_audit": "Own-PR policy blocked review actions; this run was comment-only and did not self-review, self-approve, or merge.",
+          "ci_state": "Non-green checks in the final snapshot: check external consumer (storage/mysql/go.mod)=IN_PROGRESS, check external consumer (tool/email/go.mod)=IN_PROGRESS, check external consumer (memory/sqlite/go.mod)=IN_PROGRESS, check external consumer (server/evaluation/go.mod)=IN_PROGRESS, check external consumer (storage/postgres/go.mod)=IN_PROGRESS, check external consumer (model/ollama/go.mod)=IN_PROGRESS; plus 14 more non-green checks.",
+          "blockers": [
+            {
+              "kind": "own_pr",
+              "summary": "Own-PR policy blocked review actions; this run was comment-only and did not self-review, self-approve, or merge.",
+              "verification": "Final snapshot for PR #2155: reviewDecision=REVIEW_REQUIRED, mergeState=BLOCKED, authorAssociation=MEMBER."
+            },
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: check external consumer (storage/mysql/go.mod)=IN_PROGRESS, check external consumer (tool/email/go.mod)=IN_PROGRESS, check external consumer (memory/sqlite/go.mod)=IN_PROGRESS, check external consumer (server/evaluation/go.mod)=IN_PROGRESS, check external consumer (storage/postgres/go.mod)=IN_PROGRESS, check external consumer (model/ollama/go.mod)=IN_PROGRESS; plus 14 more non-green checks.",
+              "verification": "Final checks snapshot for PR #2155."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Draft / WIP PRs",
+      "reason": "draft_or_wip",
+      "count": 14,
+      "prs": [
+        2153,
+        2152,
+        2144,
+        2143,
+        2086,
+        2076,
+        2058,
+        2047,
+        2037,
+        2010,
+        1901,
+        1778,
+        1710,
+        1678
+      ],
+      "items": [
+        {
+          "number": 2153,
+          "title": "[codex] add tool execution safety guard",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2153",
+          "author": "GodBlf",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "ci_state": "Non-green checks in the final snapshot: codecov/patch=FAILURE, lint=FAILURE.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+              "verification": "Final snapshot for PR #2153: reviewDecision=REVIEW_REQUIRED, mergeState=BLOCKED, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            },
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: codecov/patch=FAILURE, lint=FAILURE.",
+              "verification": "Final checks snapshot for PR #2153."
+            }
+          ]
+        },
+        {
+          "number": 2152,
+          "title": "构建 Evaluation + Optimization 自动回归闭环",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2152",
+          "author": "GodBlf",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+              "verification": "Final snapshot for PR #2152: reviewDecision=REVIEW_REQUIRED, mergeState=BLOCKED, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2144,
+          "title": "openclaw: add durable request context prompts",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2144",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+              "verification": "Final snapshot for PR #2144: reviewDecision=REVIEW_REQUIRED, mergeState=BLOCKED, authorAssociation=MEMBER."
+            }
+          ]
+        },
+        {
+          "number": 2143,
+          "title": "[WIP] tool/okf: Open Knowledge Format (OKF) support",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2143",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=true).",
+          "readiness_audit": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=true).",
+          "ci_state": "Non-green checks in the final snapshot: codecov/patch=FAILURE.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=true).",
+              "verification": "Final snapshot for PR #2143: reviewDecision=REVIEW_REQUIRED, mergeState=BLOCKED, authorAssociation=MEMBER."
+            },
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: codecov/patch=FAILURE.",
+              "verification": "Final checks snapshot for PR #2143."
+            }
+          ]
+        },
+        {
+          "number": 2086,
+          "title": "fix(model/anthropic): repair truncated tool_use input before stream finalize",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2086",
+          "author": "sks",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "ci_state": "Non-green checks in the final snapshot: codecov/patch=FAILURE.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+              "verification": "Final snapshot for PR #2086: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=CONTRIBUTOR."
+            },
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: codecov/patch=FAILURE.",
+              "verification": "Final checks snapshot for PR #2086."
+            }
+          ]
+        },
+        {
+          "number": 2076,
+          "title": "feat(sandbox): add macOS denial diagnostics",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2076",
+          "author": "cuboya",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+              "verification": "Final snapshot for PR #2076: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2058,
+          "title": "a2a: add v2 packages backed by trpc-a2a-go/v2 (A2A protocol v1.0)",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2058",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "ci_state": "Non-green checks in the final snapshot: go test (tool/webfetch/httpfetch/go.mod)=FAILURE, check external consumer (tool/webfetch/httpfetch/go.mod)=FAILURE, go test (memory/postgres/go.mod)=FAILURE, go test (knowledge/vectorstore/pgvector/go.mod)=FAILURE, go test (storage/elasticsearch/go.mod)=FAILURE, go test (session/redis/go.mod)=FAILURE; plus 14 more non-green checks.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+              "verification": "Final snapshot for PR #2058: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=MEMBER."
+            },
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: go test (tool/webfetch/httpfetch/go.mod)=FAILURE, check external consumer (tool/webfetch/httpfetch/go.mod)=FAILURE, go test (memory/postgres/go.mod)=FAILURE, go test (knowledge/vectorstore/pgvector/go.mod)=FAILURE, go test (storage/elasticsearch/go.mod)=FAILURE, go test (session/redis/go.mod)=FAILURE; plus 14 more non-green checks.",
+              "verification": "Final checks snapshot for PR #2058."
+            }
+          ]
+        },
+        {
+          "number": 2047,
+          "title": "agent: add durable session context sources",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2047",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+              "verification": "Final snapshot for PR #2047: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=MEMBER."
+            }
+          ]
+        },
+        {
+          "number": 2037,
+          "title": "feat(telemetry): add invoke skill observability",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2037",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "ci_state": "Non-green checks in the final snapshot: codecov/patch=FAILURE.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+              "verification": "Final snapshot for PR #2037: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=MEMBER."
+            },
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: codecov/patch=FAILURE.",
+              "verification": "Final checks snapshot for PR #2037."
+            }
+          ]
+        },
+        {
+          "number": 2010,
+          "title": "memory/deepsearch: add progressive DeepSearch",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2010",
+          "author": "print-happy",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "ci_state": "Non-green checks in the final snapshot: codecov/patch=FAILURE, typos=FAILURE, lint=FAILURE.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+              "verification": "Final snapshot for PR #2010: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=CONTRIBUTOR."
+            },
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: codecov/patch=FAILURE, typos=FAILURE, lint=FAILURE.",
+              "verification": "Final checks snapshot for PR #2010."
+            }
+          ]
+        },
+        {
+          "number": 1901,
+          "title": "WIP: knowledge: deprecate legacy OCR path",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1901",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=true).",
+          "readiness_audit": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=true).",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=true).",
+              "verification": "Final snapshot for PR #1901: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=MEMBER."
+            }
+          ]
+        },
+        {
+          "number": 1778,
+          "title": "examples: add RLM (Recursive Language Model) demo",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1778",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "ci_state": "Non-green checks in the final snapshot: check examples (1/4)=FAILURE, check examples build script (1/4)=FAILURE.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+              "verification": "Final snapshot for PR #1778: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=MEMBER."
+            },
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: check examples (1/4)=FAILURE, check examples build script (1/4)=FAILURE.",
+              "verification": "Final checks snapshot for PR #1778."
+            }
+          ]
+        },
+        {
+          "number": 1710,
+          "title": "a2a: add input schema",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1710",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+              "verification": "Final snapshot for PR #1710: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=MEMBER."
+            }
+          ]
+        },
+        {
+          "number": 1678,
+          "title": "agent: centralize invoke_agent telemetry in RunWithPlugins",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1678",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "readiness_audit": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+          "ci_state": "Non-green checks in the final snapshot: go test (memory/sqlitevec/go.mod)=FAILURE, go test (memory/sqlite/go.mod)=FAILURE, go test (memory/redis/go.mod)=FAILURE, go test (memory/mysqlvec/go.mod)=FAILURE, go test (memory/mysql/go.mod)=FAILURE, go test (agent/n8n/go.mod)=FAILURE; plus 4 more non-green checks.",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "Draft/WIP gate blocked code review before automation actions (draft=true, wip=false).",
+              "verification": "Final snapshot for PR #1678: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=MEMBER."
+            },
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: go test (memory/sqlitevec/go.mod)=FAILURE, go test (memory/sqlite/go.mod)=FAILURE, go test (memory/redis/go.mod)=FAILURE, go test (memory/mysqlvec/go.mod)=FAILURE, go test (memory/mysql/go.mod)=FAILURE, go test (agent/n8n/go.mod)=FAILURE; plus 4 more non-green checks.",
+              "verification": "Final checks snapshot for PR #1678."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Ready or low-risk PRs left untouched by comment-only policy",
+      "reason": "comment_only_no_merge",
+      "count": 3,
+      "prs": [
+        2149,
+        2133,
+        1988
+      ],
+      "items": [
+        {
+          "number": 2149,
+          "title": "docs: add sanitized Code Executor blog",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2149",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "User requested this run to be comment-only, so ready PRs were not approved or merged.",
+          "readiness_audit": "User requested this run to be comment-only, so ready PRs were not approved or merged.",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "User requested this run to be comment-only, so ready PRs were not approved or merged.",
+              "verification": "Final snapshot for PR #2149: reviewDecision=REVIEW_REQUIRED, mergeState=BLOCKED, authorAssociation=MEMBER."
+            }
+          ]
+        },
+        {
+          "number": 2133,
+          "title": "agent/llmagent: continue after image URL failures",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2133",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "User requested this run to be comment-only, so ready PRs were not approved or merged.",
+          "readiness_audit": "User requested this run to be comment-only, so ready PRs were not approved or merged.",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "User requested this run to be comment-only, so ready PRs were not approved or merged.",
+              "verification": "Final snapshot for PR #2133: reviewDecision=REVIEW_REQUIRED, mergeState=BLOCKED, authorAssociation=MEMBER."
+            }
+          ]
+        },
+        {
+          "number": 1988,
+          "title": "memory: guard auto extraction after external context",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1988",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "User requested this run to be comment-only, so ready PRs were not approved or merged.",
+          "readiness_audit": "User requested this run to be comment-only, so ready PRs were not approved or merged.",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "User requested this run to be comment-only, so ready PRs were not approved or merged.",
+              "verification": "Final snapshot for PR #1988: pre-existing GitHub reviewDecision=APPROVED; this run did not submit an approval, LGTM, or merge. mergeState=UNKNOWN, authorAssociation=MEMBER."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "External contributors requiring maintainer LGTM",
+      "reason": "external_human_lgtm_required",
+      "count": 6,
+      "prs": [
+        2146,
+        2141,
+        2134,
+        2125,
+        2121,
+        1923
+      ],
+      "items": [
+        {
+          "number": 2146,
+          "title": "[codex] add replay consistency harness",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2146",
+          "author": "GodBlf",
+          "status": "skipped",
+          "skip_reason": "External contributor PR is otherwise reviewable but requires explicit maintainer LGTM before merge.",
+          "readiness_audit": "External contributor PR is otherwise reviewable but requires explicit maintainer LGTM before merge.",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "summary": "External contributor PR is otherwise reviewable but requires explicit maintainer LGTM before merge.",
+              "verification": "Final snapshot for PR #2146: reviewDecision=REVIEW_REQUIRED, mergeState=BLOCKED, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2141,
+          "title": "internal/telemetry:Reduce streaming TraceChat request attribute allocations",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2141",
+          "author": "cuboya",
+          "status": "skipped",
+          "skip_reason": "External contributor PR is otherwise reviewable but requires explicit maintainer LGTM before merge.",
+          "readiness_audit": "External contributor PR is otherwise reviewable but requires explicit maintainer LGTM before merge.",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "summary": "External contributor PR is otherwise reviewable but requires explicit maintainer LGTM before merge.",
+              "verification": "Final snapshot for PR #2141: reviewDecision=REVIEW_REQUIRED, mergeState=BLOCKED, authorAssociation=CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2134,
+          "title": "test: add replay consistency harness",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2134",
+          "author": "Spock12138",
+          "status": "skipped",
+          "skip_reason": "External contributor PR is otherwise reviewable but requires explicit maintainer LGTM before merge.",
+          "readiness_audit": "External contributor PR is otherwise reviewable but requires explicit maintainer LGTM before merge.",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "summary": "External contributor PR is otherwise reviewable but requires explicit maintainer LGTM before merge.",
+              "verification": "Final snapshot for PR #2134: reviewDecision=REVIEW_REQUIRED, mergeState=BLOCKED, authorAssociation=CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2125,
+          "title": "codeexecutor, agent/llmagent: make workspace registry pluggable via WorkspaceAcquirer",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2125",
+          "author": "grignolalouis",
+          "status": "skipped",
+          "skip_reason": "External contributor PR is otherwise reviewable but requires explicit maintainer LGTM before merge.",
+          "readiness_audit": "External contributor PR is otherwise reviewable but requires explicit maintainer LGTM before merge.",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "summary": "External contributor PR is otherwise reviewable but requires explicit maintainer LGTM before merge.",
+              "verification": "Final snapshot for PR #2125: reviewDecision=REVIEW_REQUIRED, mergeState=BLOCKED, authorAssociation=CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2121,
+          "title": "examples/code_review_agent: add sandboxed code review agent example",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2121",
+          "author": "XnLemon",
+          "status": "skipped",
+          "skip_reason": "External contributor PR is otherwise reviewable but requires explicit maintainer LGTM before merge.",
+          "readiness_audit": "External contributor PR is otherwise reviewable but requires explicit maintainer LGTM before merge.",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "summary": "External contributor PR is otherwise reviewable but requires explicit maintainer LGTM before merge.",
+              "verification": "Final snapshot for PR #2121: reviewDecision=REVIEW_REQUIRED, mergeState=BLOCKED, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 1923,
+          "title": "fix(codeexecutor): honor CleanEnv in e2b runtime",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1923",
+          "author": "yu-xin-c",
+          "status": "skipped",
+          "skip_reason": "External contributor PR is otherwise reviewable but requires explicit maintainer LGTM before merge.",
+          "readiness_audit": "External contributor PR is otherwise reviewable but requires explicit maintainer LGTM before merge.",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "summary": "External contributor PR is otherwise reviewable but requires explicit maintainer LGTM before merge.",
+              "verification": "Final snapshot for PR #1923: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=CONTRIBUTOR."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Non-green required checks",
+      "reason": "hard_ci_or_required_check_failure",
+      "count": 20,
+      "prs": [
+        2142,
+        2137,
+        2136,
+        2135,
+        2124,
+        2118,
+        2090,
+        2089,
+        2088,
+        2084,
+        2071,
+        2055,
+        1967,
+        1957,
+        1956,
+        1801,
+        1736,
+        1446,
+        1400,
+        1183
+      ],
+      "items": [
+        {
+          "number": 2142,
+          "title": "session/redis: add WithDisableScriptCache to run Lua scripts via EVAL",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2142",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: lint=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: lint=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: lint=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: lint=FAILURE.",
+              "verification": "Final snapshot for PR #2142: reviewDecision=REVIEW_REQUIRED, mergeState=BLOCKED, authorAssociation=MEMBER."
+            }
+          ]
+        },
+        {
+          "number": 2137,
+          "title": "feat(toolsearch): refactor into namespaced toolbox with embedding search, MCP support and two-tool mode",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2137",
+          "author": "qiefengying",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: go-apidiff=FAILURE, CLAAssistant=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: go-apidiff=FAILURE, CLAAssistant=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: go-apidiff=FAILURE, CLAAssistant=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: go-apidiff=FAILURE, CLAAssistant=FAILURE.",
+              "verification": "Final snapshot for PR #2137: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2136,
+          "title": "tool/safety: add pre-execution safety scanner",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2136",
+          "author": "XnLemon",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: lint=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: lint=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: lint=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: lint=FAILURE.",
+              "verification": "Final snapshot for PR #2136: reviewDecision=REVIEW_REQUIRED, mergeState=BLOCKED, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2135,
+          "title": "feat(examples/skills_code_review_agent): add static Go code review agent",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2135",
+          "author": "Lfan-ke",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: lint=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: lint=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: lint=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: lint=FAILURE.",
+              "verification": "Final snapshot for PR #2135: reviewDecision=REVIEW_REQUIRED, mergeState=BLOCKED, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2124,
+          "title": "tool/file: handle nil list and search requests",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2124",
+          "author": "ahfoysal",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: go test (evaluation/go.mod)=FAILURE, CLAAssistant=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: go test (evaluation/go.mod)=FAILURE, CLAAssistant=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: go test (evaluation/go.mod)=FAILURE, CLAAssistant=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: go test (evaluation/go.mod)=FAILURE, CLAAssistant=FAILURE.",
+              "verification": "Final snapshot for PR #2124: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2118,
+          "title": "feat: add Tool Execution Safety Guard for pre-execution command scanning #2002",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2118",
+          "author": "xiaobaicai66695",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: lint=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: lint=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: lint=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: lint=FAILURE.",
+              "verification": "Final snapshot for PR #2118: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2090,
+          "title": "feat(examples): add code review agent with skill, sandbox, and database storage",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2090",
+          "author": "coder-mtj",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: check examples (2/4)=FAILURE, lint=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: check examples (2/4)=FAILURE, lint=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: check examples (2/4)=FAILURE, lint=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: check examples (2/4)=FAILURE, lint=FAILURE.",
+              "verification": "Final snapshot for PR #2090: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2089,
+          "title": "feat(tool): add pre-execution safety scanner with OTel integration",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2089",
+          "author": "coder-mtj",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: lint=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: lint=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: lint=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: lint=FAILURE.",
+              "verification": "Final snapshot for PR #2089: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2088,
+          "title": "feat(session): add multi-backend replay consistency test framework",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2088",
+          "author": "coder-mtj",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: lint=FAILURE, typos=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: lint=FAILURE, typos=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: lint=FAILURE, typos=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: lint=FAILURE, typos=FAILURE.",
+              "verification": "Final snapshot for PR #2088: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2084,
+          "title": "feat(model/anthropic): retry streaming requests on transient transport failures",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2084",
+          "author": "sks",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: codecov/patch=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: codecov/patch=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: codecov/patch=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: codecov/patch=FAILURE.",
+              "verification": "Final snapshot for PR #2084: reviewDecision=CHANGES_REQUESTED, mergeState=UNKNOWN, authorAssociation=CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2071,
+          "title": "model/internal/model: add MiniMax-M3 context window",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2071",
+          "author": "octo-patch",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: CLAAssistant=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: CLAAssistant=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: CLAAssistant=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: CLAAssistant=FAILURE.",
+              "verification": "Final snapshot for PR #2071: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2055,
+          "title": "feat: 新增会话回放一致性测试工具链",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2055",
+          "author": "mingri31164",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: codecov/patch=FAILURE, check go.mod version=FAILURE, CLAAssistant=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: codecov/patch=FAILURE, check go.mod version=FAILURE, CLAAssistant=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: codecov/patch=FAILURE, check go.mod version=FAILURE, CLAAssistant=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: codecov/patch=FAILURE, check go.mod version=FAILURE, CLAAssistant=FAILURE.",
+              "verification": "Final snapshot for PR #2055: reviewDecision=REVIEW_REQUIRED, mergeState=BLOCKED, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 1967,
+          "title": "fix(sqlite): allow WithAsyncSummaryNum(0) to disable async workers",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1967",
+          "author": "YellowDusk04",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: codecov/patch=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: codecov/patch=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: codecov/patch=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: codecov/patch=FAILURE.",
+              "verification": "Final snapshot for PR #1967: reviewDecision=CHANGES_REQUESTED, mergeState=UNKNOWN, authorAssociation=CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 1957,
+          "title": "fix(session/postgres): cast JSON bytes to string for DB params",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1957",
+          "author": "Ocyss",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: go test (session/postgres/go.mod)=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: go test (session/postgres/go.mod)=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: go test (session/postgres/go.mod)=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: go test (session/postgres/go.mod)=FAILURE.",
+              "verification": "Final snapshot for PR #1957: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 1956,
+          "title": "langfuse: add environment config option and pass to OTEL resource attributes",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1956",
+          "author": "Ocyss",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: go test (go.mod)=FAILURE, lint=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: go test (go.mod)=FAILURE, lint=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: go test (go.mod)=FAILURE, lint=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: go test (go.mod)=FAILURE, lint=FAILURE.",
+              "verification": "Final snapshot for PR #1956: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 1801,
+          "title": "docs/mkdocs/zh/fix/agent.md: fix typo",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1801",
+          "author": "GongNanyue",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: go test (openclaw/go.mod)=FAILURE, CLAAssistant=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: go test (openclaw/go.mod)=FAILURE, CLAAssistant=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: go test (openclaw/go.mod)=FAILURE, CLAAssistant=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: go test (openclaw/go.mod)=FAILURE, CLAAssistant=FAILURE.",
+              "verification": "Final snapshot for PR #1801: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 1736,
+          "title": "all: add deferred tool set",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1736",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: test@PULL_REQUEST=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: test@PULL_REQUEST=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: test@PULL_REQUEST=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: test@PULL_REQUEST=FAILURE.",
+              "verification": "Final snapshot for PR #1736: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=MEMBER."
+            }
+          ]
+        },
+        {
+          "number": 1446,
+          "title": "feat(a2a): add StructuredOutput → DataPart converter for custom event…",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1446",
+          "author": "SummerLv",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: codecov/patch=FAILURE, GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE, CLAAssistant=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: codecov/patch=FAILURE, GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE, CLAAssistant=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: codecov/patch=FAILURE, GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE, CLAAssistant=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: codecov/patch=FAILURE, GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE, CLAAssistant=FAILURE.",
+              "verification": "Final snapshot for PR #1446: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 1400,
+          "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: codecov/patch=FAILURE, go-apidiff=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: codecov/patch=FAILURE, go-apidiff=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: codecov/patch=FAILURE, go-apidiff=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: codecov/patch=FAILURE, go-apidiff=FAILURE.",
+              "verification": "Final snapshot for PR #1400: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=MEMBER."
+            },
+            {
+              "kind": "comment_delivery",
+              "summary": "Conversation is locked; comment delivery requires an unlock or collaborator-only posting path.",
+              "verification": "REST snapshot reports locked=true for PR #1400."
+            }
+          ]
+        },
+        {
+          "number": 1183,
+          "title": "internal/util: add util for streaming parsing of JSON returned by LLM",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1183",
+          "author": "hongxiuzhe",
+          "status": "skipped",
+          "skip_reason": "Non-green checks in the final snapshot: codecov/patch=FAILURE, lint=FAILURE, CLAAssistant=FAILURE.",
+          "readiness_audit": "Non-green checks in the final snapshot: codecov/patch=FAILURE, lint=FAILURE, CLAAssistant=FAILURE.",
+          "ci_state": "Non-green checks in the final snapshot: codecov/patch=FAILURE, lint=FAILURE, CLAAssistant=FAILURE.",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks in the final snapshot: codecov/patch=FAILURE, lint=FAILURE, CLAAssistant=FAILURE.",
+              "verification": "Final snapshot for PR #1183: reviewDecision=REVIEW_REQUIRED, mergeState=UNKNOWN, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            },
+            {
+              "kind": "comment_delivery",
+              "summary": "Conversation is locked; comment delivery requires an unlock or collaborator-only posting path.",
+              "verification": "REST snapshot reports locked=true for PR #1183."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Existing actionable reviews",
+      "reason": "manual_review_or_existing_actionable_review",
+      "count": 9,
+      "prs": [
+        2109,
+        2097,
+        2087,
+        2051,
+        2050,
+        2045,
+        2044,
+        2028,
+        1930
+      ],
+      "items": [
+        {
+          "number": 2109,
+          "title": "memoryutils: export helpers and adopt in built-in backends",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2109",
+          "author": "sks",
+          "status": "skipped",
+          "skip_reason": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+          "readiness_audit": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+              "verification": "Final snapshot for PR #2109: reviewDecision=CHANGES_REQUESTED, mergeState=UNKNOWN, authorAssociation=CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2097,
+          "title": "feat(session,tool/context): Pensieve context self-pruning with example",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2097",
+          "author": "sks",
+          "status": "skipped",
+          "skip_reason": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+          "readiness_audit": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+              "verification": "Final snapshot for PR #2097: reviewDecision=CHANGES_REQUESTED, mergeState=UNKNOWN, authorAssociation=CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2087,
+          "title": "codeexecutor/opensandbox: add OpenSandbox remote executor",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2087",
+          "author": "Violet2314",
+          "status": "skipped",
+          "skip_reason": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+          "readiness_audit": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+              "verification": "Final snapshot for PR #2087: reviewDecision=CHANGES_REQUESTED, mergeState=BLOCKED, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2051,
+          "title": "session/replaytest: add multi-backend replay consistency test framework",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2051",
+          "author": "xiaosansh",
+          "status": "skipped",
+          "skip_reason": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+          "readiness_audit": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+              "verification": "Final snapshot for PR #2051: reviewDecision=CHANGES_REQUESTED, mergeState=UNKNOWN, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2050,
+          "title": "feat(tool/safety): add tool execution safety guard",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2050",
+          "author": "d2bz",
+          "status": "skipped",
+          "skip_reason": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+          "readiness_audit": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+              "verification": "Final snapshot for PR #2050: reviewDecision=CHANGES_REQUESTED, mergeState=UNKNOWN, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2045,
+          "title": "feat: add tool execution safety guard for secure command scanning and…",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2045",
+          "author": "everfid-ever",
+          "status": "skipped",
+          "skip_reason": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+          "readiness_audit": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+              "verification": "Final snapshot for PR #2045: reviewDecision=CHANGES_REQUESTED, mergeState=BLOCKED, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2044,
+          "title": "feat: Tool Safety Scanner with 8 rules and structured audit",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2044",
+          "author": "Nerdlet369",
+          "status": "skipped",
+          "skip_reason": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+          "readiness_audit": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+              "verification": "Final snapshot for PR #2044: reviewDecision=CHANGES_REQUESTED, mergeState=BLOCKED, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        },
+        {
+          "number": 2028,
+          "title": "dynamicworkflow: add dynamic workflow orchestration",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2028",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+          "readiness_audit": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+              "verification": "Final snapshot for PR #2028: reviewDecision=CHANGES_REQUESTED, mergeState=BLOCKED, authorAssociation=MEMBER."
+            }
+          ]
+        },
+        {
+          "number": 1930,
+          "title": "fix: set default HTTP client timeout to prevent goroutine leaks",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1930",
+          "author": "123456wda",
+          "status": "skipped",
+          "skip_reason": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+          "readiness_audit": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+          "ci_state": "All effective checks were green in the final snapshot.",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Existing changes-requested review remains active, so automation must not override the outstanding human review state.",
+              "verification": "Final snapshot for PR #1930: reviewDecision=CHANGES_REQUESTED, mergeState=UNKNOWN, authorAssociation=FIRST_TIME_CONTRIBUTOR."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "follow_up": [
+    {
+      "title": "Ready PR queue needs explicit human action",
+      "reason": "Several green PRs are held by external-contributor or comment-only policy rather than code findings.",
+      "next": "Maintainers should decide which ready PRs receive explicit LGTM after the contributor-program review batch is complete."
+    },
+    {
+      "title": "Own PR merge-conflict maintenance path",
+      "reason": "The workflow should repair WineChord-owned dirty merge states in a temporary worktree when the user allows maintenance actions.",
+      "next": "Add a guarded maintenance step that fetches base, attempts a no-commit merge or rebase in an isolated worktree, runs focused tests, and pushes only when clean."
+    },
+    {
+      "title": "Report completeness guard",
+      "reason": "A PR head moved during the run, so the initial checks snapshot became stale for that PR.",
+      "next": "Keep the final checks refresh as a required report-generation input and fail report generation when final PR heads differ from the checks snapshot."
+    }
+  ],
+  "timeline": [
+    {
+      "event": "Refreshed mycr repository",
+      "detail": "`git pull --ff-only` reported already up to date."
+    },
+    {
+      "event": "Collected PR inventory",
+      "detail": "Final open PR count: 55; delta from previous report: new 3, closed 4, head-changed 9."
+    },
+    {
+      "event": "Collected final checks",
+      "detail": "Final checks snapshot: green=26, non_green=29."
+    },
+    {
+      "event": "Reviewed candidate PRs",
+      "detail": "Focused review and targeted tests were performed for #2151, #2128, #2125, #2141, #2146, and #2134; only #2151 and #2128 produced new blockers."
+    },
+    {
+      "event": "Posted comments only",
+      "detail": "Submitted COMMENT reviews on #2151 and #2128. No LGTM, approval, explicit merge, or self-review was performed."
+    },
+    {
+      "event": "Generated auditable report",
+      "detail": "Skipped groups cover 53 PRs, and the report coverage record covers all 55 open PRs for the next review run."
+    }
+  ],
+  "skill_evolution": [
+    {
+      "area": "final-checks-refresh",
+      "note": "A PR head changed after the initial collection; future full runs should refresh checks immediately before report generation and compare head SHAs before classifying readiness."
+    },
+    {
+      "area": "report-completeness",
+      "note": "Every open PR should appear exactly once in processed or skipped coverage, with item-level readiness audit and concrete CI/review blockers."
+    },
+    {
+      "area": "comment-only-policy",
+      "note": "When the user requests comments only, ready PRs should be visibly separated from CI/review-blocked PRs so the HTML does not look incomplete."
+    },
+    {
+      "area": "own-pr-maintenance",
+      "note": "Design a guarded path for WineChord-owned merge conflicts: isolated worktree, base reconciliation, focused tests, and no self-review action."
+    }
+  ]
+}
