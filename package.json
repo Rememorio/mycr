@@ -10,7 +10,7 @@
     "test:incremental": "node scripts/test-incremental-plan.mjs",
     "test:cache": "node scripts/test-cache-manifest.mjs",
     "check:reports": "node scripts/check-reports.mjs",
-    "check:latest-report-quality": "node scripts/report-quality.mjs --latest --check",
+    "check:latest-report-quality": "node scripts/report-quality.mjs --latest --check --public",
     "verify": "npm run test:incremental && npm run test:cache && npm run check:reports && npm run check:latest-report-quality && npm run build"
   },
   "devDependencies": {

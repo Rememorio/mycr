@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sourceReportDir = path.join(repoRoot, "src", "data", "reports");
+const publicReportDir = path.join(repoRoot, "public", "reports");
 const jsonExtension = ".json";
+const htmlExtension = ".html";
 
 const processedGroups = ["approved", "commented", "maintained", "blocked"];
 const allowedStatusByGroup = {
@@ -87,10 +89,46 @@ const richBlockedFields = [
   "behavior_impact",
   "outcome",
 ];
+const publicForbiddenKeys = new Set([
+  "run_state",
+  "incremental_plan",
+  "metadata_cache_key",
+  "checks_fingerprint",
+  "review_threads_fingerprint",
+  "comments_fingerprint",
+  "ledger_bucket",
+  "planning_reasons",
+  "target_checkout",
+]);
+const publicForbiddenText = [
+  /\/Users\/guoqizhou/u,
+  /\.mycr-cache/u,
+  /\bheartbeat\b/iu,
+  /\bsubagent\b/iu,
+  /\bxhigh\b/iu,
+  /\bfinalizer\b/iu,
+  /\bcollector\b/iu,
+  /\bplanner\b/iu,
+  /run cache/iu,
+  /independent report QA/iu,
+  /独立报告 QA/u,
+  /独立二审/u,
+  /cache key/iu,
+  /fingerprint/iu,
+  /cache\/fingerprint\/planning/iu,
+  /计划元数据/u,
+];
+const publicVisiblePlaceholderText = [
+  /\bundefined\b/iu,
+  /\bnull\b/iu,
+  /\bTODO\b/u,
+  /\bplaceholder\b/iu,
+  /待补充/u,
+];
 
 function usage() {
   console.error(
-    "usage: node scripts/report-quality.mjs (--latest | --file <report.json>) [--check] [--write]",
+    "usage: node scripts/report-quality.mjs (--latest | --file <report.json>) [--check] [--write] [--public]",
   );
 }
 
@@ -100,6 +138,7 @@ function parseArgs(argv) {
     latest: false,
     check: false,
     write: false,
+    public: false,
   };
   const args = [...argv];
   while (args.length > 0) {
@@ -118,6 +157,10 @@ function parseArgs(argv) {
     }
     if (arg === "--write") {
       parsed.write = true;
+      continue;
+    }
+    if (arg === "--public") {
+      parsed.public = true;
       continue;
     }
     throw new Error(`unexpected argument: ${arg}`);
@@ -502,6 +545,110 @@ function validateTimeline(report, problems, reportName) {
   });
 }
 
+function publicPath(pathParts) {
+  return pathParts.length ? pathParts.join(".") : "<root>";
+}
+
+function patternLabel(pattern) {
+  return pattern.source.replaceAll("\\", "");
+}
+
+function validatePublicValue(value, problems, reportName, pathParts = []) {
+  if (Array.isArray(value)) {
+    value.forEach((item, index) =>
+      validatePublicValue(item, problems, reportName, [...pathParts, String(index)]),
+    );
+    return;
+  }
+  if (value && typeof value === "object") {
+    for (const [key, child] of Object.entries(value)) {
+      const childPath = [...pathParts, key];
+      if (publicForbiddenKeys.has(key)) {
+        problems.push(
+          `${reportName}: public JSON exposes internal key "${publicPath(childPath)}"`,
+        );
+      }
+      validatePublicValue(child, problems, reportName, childPath);
+    }
+    return;
+  }
+  if (typeof value !== "string") {
+    return;
+  }
+  for (const pattern of publicForbiddenText) {
+    if (pattern.test(value)) {
+      problems.push(
+        `${reportName}: public JSON ${publicPath(pathParts)} contains internal text /${patternLabel(pattern)}/`,
+      );
+    }
+  }
+}
+
+function visibleHtmlText(rawHtml) {
+  return rawHtml
+    .replace(/<script[\s\S]*?<\/script>/giu, " ")
+    .replace(/<style[\s\S]*?<\/style>/giu, " ")
+    .replace(/<[^>]+>/gu, " ")
+    .replace(/\s+/gu, " ");
+}
+
+function validatePublicHtml(rawHtml, problems, reportName) {
+  const rawForbidden = [
+    ...publicForbiddenText,
+    /\brun_state\b/iu,
+    /\bincremental_plan\b/iu,
+    /\bmetadata_cache_key\b/iu,
+    /\bchecks_fingerprint\b/iu,
+    /\breview_threads_fingerprint\b/iu,
+    /\bcomments_fingerprint\b/iu,
+    /\bplanning_reasons\b/iu,
+  ];
+  for (const pattern of rawForbidden) {
+    if (pattern.test(rawHtml)) {
+      problems.push(
+        `${reportName}: public HTML contains internal text /${patternLabel(pattern)}/`,
+      );
+    }
+  }
+
+  const visible = visibleHtmlText(rawHtml);
+  for (const pattern of publicVisiblePlaceholderText) {
+    if (pattern.test(visible)) {
+      problems.push(
+        `${reportName}: public HTML visible text contains placeholder /${patternLabel(pattern)}/`,
+      );
+    }
+  }
+}
+
+async function validatePublicArtifacts(reportPath, problems, reportName) {
+  const fileName = path.basename(reportPath);
+  const publicJsonPath = path.join(publicReportDir, fileName);
+  const publicHtmlPath = path.join(
+    publicReportDir,
+    fileName.replace(/\.json$/u, htmlExtension),
+  );
+
+  if (!(await exists(publicJsonPath))) {
+    problems.push(`${reportName}: missing public JSON artifact`);
+    return;
+  }
+  if (!(await exists(publicHtmlPath))) {
+    problems.push(`${reportName}: missing public HTML artifact`);
+    return;
+  }
+
+  let publicReport;
+  try {
+    publicReport = await readReport(publicJsonPath);
+  } catch (error) {
+    problems.push(`${reportName}: invalid public JSON (${error.message})`);
+    return;
+  }
+  validatePublicValue(publicReport, problems, reportName);
+  validatePublicHtml(await readFile(publicHtmlPath, "utf8"), problems, reportName);
+}
+
 function validateProcessedEntries(report, problems, reportName) {
   for (const group of processedGroups) {
     for (const entry of asArray(report[group])) {
@@ -662,6 +809,9 @@ async function main() {
 
   if (args.check) {
     const problems = validateReport(report, reportName);
+    if (args.public) {
+      await validatePublicArtifacts(reportPath, problems, reportName);
+    }
     if (problems.length > 0) {
       for (const problem of problems) {
         console.error(problem);

@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { copyFile, mkdir } from "node:fs/promises";
+import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -11,6 +11,13 @@ const qualityPath = path.join(repoRoot, "scripts", "report-quality.mjs");
 const jsonExtension = ".json";
 const htmlExtension = ".html";
 const htmlFlag = "--html";
+const privateTopLevelFields = [
+  "run_state",
+  "incremental_plan",
+  "metadata_cache",
+  "metadata_cache_key",
+  "reviewability_ledger",
+];
 
 function usage() {
   console.error(
@@ -51,6 +58,19 @@ function parseArgs(argv) {
   return parsed;
 }
 
+async function readJson(filePath) {
+  const raw = await readFile(filePath, "utf8");
+  return JSON.parse(raw);
+}
+
+function publicReportFrom(report) {
+  const publicReport = JSON.parse(JSON.stringify(report));
+  for (const field of privateTopLevelFields) {
+    delete publicReport[field];
+  }
+  return publicReport;
+}
+
 async function main() {
   let args;
   try {
@@ -80,7 +100,8 @@ async function main() {
     throw new Error(`report quality check exited with status ${quality.status}`);
   }
 
-  await copyFile(sourceJsonPath, publicJsonPath);
+  const publicReport = publicReportFrom(await readJson(sourceJsonPath));
+  await writeFile(publicJsonPath, `${JSON.stringify(publicReport, null, 2)}\n`, "utf8");
 
   if (args.htmlPath) {
     console.warn(
@@ -89,7 +110,7 @@ async function main() {
   }
   const result = spawnSync(
     "python3",
-    [rendererPath, sourceJsonPath, "--output", publicHtmlPath],
+    [rendererPath, publicJsonPath, "--output", publicHtmlPath],
     { stdio: "inherit" },
   );
   if (result.status !== 0) {

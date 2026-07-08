@@ -1358,7 +1358,6 @@ function prs() {{
 }}
 
 function skippedGroups() {{
-  const stateByPr = (reportData.run_state && reportData.run_state.pull_requests) || {{}};
   const processedNumbers = new Set([
     ...(reportData.approved || []),
     ...(reportData.commented || []),
@@ -1374,30 +1373,20 @@ function skippedGroups() {{
       }};
     }}
     const items = (group.prs || []).filter(number => !processedNumbers.has(Number(number))).map(number => {{
-      const state = stateByPr[String(number)] || {{}};
       const reason = group.reason || "skipped";
-      const nonGreenChecks = (state.checks || []).filter(check => {{
-        const status = String(check.state || check.conclusion || check.bucket || "").toLowerCase();
-        return status && !["success", "pass", "passed", "neutral"].includes(status);
-      }}).map(check => `${{check.name || "check"}}=${{check.state || check.bucket || "unknown"}}`);
-      const summary = nonGreenChecks.length
-        ? `${{reason}} · ${{nonGreenChecks.slice(0, 4).join(", ")}}`
-        : reason;
+      const summary = text(group.title_zh || group.title || reason);
       return {{
         number,
-        title: state.title || "",
-        url: state.url || "",
-        author: state.author || "",
+        title: `PR #${{number}}`,
+        url: "",
+        author: "",
         status: "skipped",
         skip_reason: summary,
         readiness_audit: summary,
-        ci_state: nonGreenChecks.length
-          ? nonGreenChecks.join(", ")
-          : "",
+        ci_state: "",
         blockers: [{{
           kind: reason,
-          summary,
-          verification: "Hydrated from run_state.pull_requests."
+          summary
         }}]
       }};
     }});
