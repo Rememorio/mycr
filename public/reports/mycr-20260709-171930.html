@@ -1,0 +1,2130 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyCR comment-only full sweep 2026-07-09 16:53</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f4f7fb;
+  --panel: rgba(255, 255, 255, 0.94);
+  --ink: #19202a;
+  --muted: #667085;
+  --line: #d8dee8;
+  --accent: #116466;
+  --accent-soft: #e8f7f4;
+  --accent-2: #d17a22;
+  --ok: #188038;
+  --warn: #b45309;
+  --bad: #b42318;
+  --info: #1d4ed8;
+  --soft: #f8fafc;
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+  --shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+  --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 22px 54px rgba(15, 23, 42, 0.12);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(17, 100, 102, 0.16), transparent 28rem),
+    radial-gradient(circle at 88% 5%, rgba(29, 78, 216, 0.10), transparent 24rem),
+    linear-gradient(180deg, #fbfcff 0%, var(--bg) 34rem);
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  line-height: 1.5;
+}
+a { color: var(--accent); text-decoration-thickness: 1px; }
+.shell { max-width: 1180px; margin: 0 auto; padding: 28px 18px 56px; }
+.topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+h1 {
+  margin: 0 0 8px;
+  font-size: clamp(34px, 5vw, 64px);
+  line-height: 1.04;
+  letter-spacing: -0.055em;
+}
+.subtitle { color: var(--muted); max-width: 760px; margin: 0; }
+.toggle {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 999px;
+  padding: 3px;
+  box-shadow: var(--shadow);
+  flex: none;
+}
+.toggle button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 8px 13px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.toggle button.active { background: var(--accent); color: white; }
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+.metric {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-soft);
+}
+.metric .value { font-size: 32px; line-height: 1; font-weight: 800; }
+.metric .label { color: var(--muted); margin-top: 7px; font-size: 13px; }
+.dashboard {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 16px;
+  align-items: start;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+.panel h2 { margin: 0 0 12px; font-size: 18px; }
+.bars { display: grid; gap: 12px; }
+.bar-row {
+  display: grid;
+  grid-template-columns: 122px 1fr 36px;
+  gap: 10px;
+  align-items: center;
+}
+.bar-label { color: var(--muted); font-size: 13px; }
+.bar-track {
+  height: 12px;
+  background: #eef2f7;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.bar-fill { height: 100%; border-radius: 999px; background: var(--accent); }
+.bar-fill.approved, .bar-fill.merged { background: var(--ok); }
+.bar-fill.commented { background: var(--accent-2); }
+.bar-fill.maintained { background: var(--accent); }
+.bar-fill.skipped { background: var(--info); }
+.bar-fill.blocked { background: var(--bad); }
+.timeline { display: grid; gap: 10px; }
+.timeline-item {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #edf0f5;
+}
+.timeline-item:last-child { border-bottom: 0; }
+.time { color: var(--muted); font-size: 13px; }
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 18px 0 12px;
+}
+.search {
+  flex: 1 1 280px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  background: white;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 8px 11px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.chip.active { background: var(--ink); color: white; border-color: var(--ink); }
+.cards { display: grid; gap: 12px; }
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 22px 0 12px;
+}
+.section-heading h2 { margin: 0; font-size: 20px; }
+.section-heading .hint { color: var(--muted); font-size: 13px; }
+.card {
+  min-width: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.card[data-status="approved"],
+.card[data-status="merged"] { border-left-color: var(--ok); }
+.card[data-status="commented"] { border-left-color: var(--accent-2); }
+.card[data-status="maintained"] { border-left-color: var(--accent); }
+.card[data-status="skipped"] { border-left-color: var(--info); }
+.card[data-status="blocked"] { border-left-color: var(--bad); }
+.card-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  padding: 18px;
+  cursor: pointer;
+}
+.card-title { margin: 0; font-size: 17px; overflow-wrap: anywhere; }
+.card-title a { overflow-wrap: anywhere; }
+.meta {
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-size: 13px;
+  margin-top: 5px;
+  min-width: 0;
+}
+.card-summary {
+  color: #42526a;
+  display: -webkit-box;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-top: 8px;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.card-actions {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.card-toggle {
+  border: 1px solid #d8e1ec;
+  background: #fff;
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+.card-toggle:hover { border-color: #9aa8bb; color: var(--ink); }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  background: #eef2f7;
+}
+.badge.approved, .badge.merged { color: var(--ok); background: #e7f5ec; }
+.badge.commented { color: var(--warn); background: #fff4e5; }
+.badge.maintained { color: var(--accent); background: #e6fffb; }
+.badge.skipped { color: var(--info); background: #eaf1ff; }
+.badge.blocked { color: var(--bad); background: #fff0ee; }
+.read-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.read-pill.critical {
+  color: #9f1239;
+  background: #fff1f2;
+  border-color: #fecdd3;
+}
+.read-pill.focus {
+  color: #92400e;
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+.read-pill.skim {
+  color: #166534;
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+}
+.read-pill.follow {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+.headline-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.advice-reason {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: italic;
+}
+.reading-guide {
+  margin-top: 16px;
+}
+.guide-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.guide-head h2 { margin: 0; }
+.guide-head span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.guide-card {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid #e5edf5;
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  background: linear-gradient(180deg, #fff, #fbfcfe);
+}
+.guide-card.critical { border-left-color: #e11d48; }
+.guide-card.focus { border-left-color: #d97706; }
+.guide-card.skim { border-left-color: #16a34a; }
+.guide-card.follow { border-left-color: #2563eb; }
+.guide-card a {
+  color: var(--ink);
+  font-weight: 900;
+  text-decoration: none;
+}
+.guide-card a:hover { color: var(--accent); }
+.guide-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.guide-reason {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.card-body {
+  display: none;
+  border-top: 1px solid #edf0f5;
+  padding: 0 18px 18px;
+}
+.card.open .card-body { display: block; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.field {
+  border: 1px solid #edf0f5;
+  background: #fbfcfe;
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+.field strong {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+.field-body {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.overview-content {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  color: var(--ink);
+}
+.comment {
+  border-left: 3px solid var(--accent-2);
+  padding: 10px 12px;
+  background: #fffaf2;
+  border-radius: var(--radius-sm);
+  margin-top: 10px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.comment-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.comment-link {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.pr-readout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  padding-top: 18px;
+}
+.pr-story {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.story-block {
+  border-top: 1px solid #e7edf4;
+  padding-top: 14px;
+}
+.story-block:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.story-block.hero-block {
+  border: 1px solid #dce9e7;
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-md);
+  padding: 15px 16px;
+  background: linear-gradient(180deg, #fbfffe, #f8fbfd);
+}
+.story-block h4,
+.review-rail h4,
+.comments-panel h4 {
+  margin: 0 0 9px;
+  color: #17202a;
+  font-size: 14px;
+  letter-spacing: 0;
+}
+.story-line {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr);
+  gap: 12px;
+  margin: 0;
+  padding: 9px 0;
+  border-top: 1px solid #edf2f7;
+  color: #1f2937;
+  line-height: 1.68;
+}
+.story-line:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+.story-label {
+  color: #536175;
+  font-size: 12px;
+  font-weight: 850;
+}
+.story-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.review-rail {
+  position: static;
+  display: grid;
+  gap: 14px;
+  align-self: start;
+}
+.reading-callout {
+  display: grid;
+  gap: 6px;
+  border: 1px solid #e5edf5;
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  background: #fff;
+}
+.reading-callout.critical {
+  border-left-color: #e11d48;
+  background: linear-gradient(180deg, #fff7f8, #fff);
+}
+.reading-callout.focus {
+  border-left-color: #d97706;
+  background: linear-gradient(180deg, #fffbeb, #fff);
+}
+.reading-callout.skim {
+  border-left-color: #16a34a;
+  background: linear-gradient(180deg, #f0fdf4, #fff);
+}
+.reading-callout.follow {
+  border-left-color: #2563eb;
+  background: linear-gradient(180deg, #eff6ff, #fff);
+}
+.reading-callout strong {
+  font-size: 13px;
+}
+.reading-callout span {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.5;
+}
+.story-text mark,
+.fact dd mark,
+.field-body mark,
+.card-summary mark,
+.overview-content mark,
+.comment mark,
+.skip-detail mark {
+  border-radius: 5px;
+  padding: 0 4px;
+  font-weight: 850;
+}
+.mark-good {
+  color: #166534;
+  background: #dcfce7;
+}
+.mark-warn {
+  color: #92400e;
+  background: #fef3c7;
+}
+.mark-bad {
+  color: #9f1239;
+  background: #ffe4e6;
+}
+.mark-info {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+.fact-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+}
+.fact {
+  border-top: 1px solid #e7edf4;
+  padding-top: 10px;
+}
+.fact:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.fact dt {
+  margin: 0 0 4px;
+  color: #536175;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+.fact dd {
+  margin: 0;
+  color: #1f2937;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.comments-panel {
+  border-top: 1px solid #e7edf4;
+  padding-top: 14px;
+}
+.comment-list {
+  display: grid;
+  gap: 10px;
+}
+.skip-groups { display: grid; gap: 14px; margin-top: 12px; }
+.skip-group {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.skip-group-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  padding: 15px 16px;
+  cursor: pointer;
+  background: #fbfcfe;
+}
+.skip-group-title { margin: 0; font-size: 16px; }
+.skip-group-count {
+  color: var(--info);
+  background: #eaf1ff;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-weight: 800;
+  font-size: 12px;
+}
+.skip-group-body { display: none; border-top: 1px solid #edf0f5; }
+.skip-group.open .skip-group-body { display: block; }
+.skip-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 0.7fr);
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid #edf0f5;
+}
+.skip-row:last-child { border-bottom: 0; }
+.skip-title { font-weight: 750; }
+.skip-detail { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.blocker-list {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.blocker-item {
+  border: 1px solid #e5edf5;
+  border-left: 3px solid var(--warn);
+  border-radius: var(--radius-sm);
+  padding: 9px 10px;
+  background: #fff;
+}
+.blocker-item a {
+  color: var(--accent);
+  font-weight: 800;
+}
+.blocker-meta {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin-top: 4px;
+}
+.empty {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 22px;
+  color: var(--muted);
+  text-align: center;
+  background: rgba(255, 255, 255, 0.68);
+}
+.evolution-list {
+  display: grid;
+  gap: 10px;
+}
+.evolution-item {
+  border: 1px solid #e5edf5;
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: #fbfcfe;
+  padding: 12px 14px;
+}
+.evolution-area {
+  color: #17202a;
+  font-size: 13px;
+  font-weight: 900;
+  margin-bottom: 5px;
+}
+.evolution-note {
+  color: #42526a;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.footer {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 22px;
+}
+body {
+  font-size: 14px;
+}
+a:hover { color: #0a5d57; }
+.shell { max-width: 1280px; padding: 24px 20px 64px; }
+.topbar {
+  align-items: center;
+  background:
+    linear-gradient(135deg, var(--accent-soft), rgba(37, 99, 235, 0.04)),
+    var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-lg);
+}
+.subtitle { max-width: 860px; font-size: 14px; }
+.toggle { box-shadow: none; }
+.toggle button { padding: 7px 12px; }
+.metrics {
+  grid-template-columns: repeat(5, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+.metric {
+  position: relative;
+  overflow: hidden;
+  padding: 14px 16px;
+}
+.metric::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--accent);
+}
+.metric .value { font-size: 30px; }
+.metric .label {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.dashboard {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+}
+.panel {
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+.panel h2 {
+  font-size: 15px;
+  letter-spacing: 0;
+}
+.bar-row {
+  grid-template-columns: 112px 1fr 32px;
+  padding: 4px 0;
+}
+.bar-label { font-weight: 700; }
+.bar-track { height: 9px; background: #edf2f7; }
+.timeline-item {
+  grid-template-columns: 74px 1fr;
+  padding: 9px 0;
+}
+.time {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+.overview-content {
+  background: var(--soft);
+  border: 1px solid #e7edf4;
+  border-radius: 8px;
+  padding: 14px;
+}
+.controls {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(244, 246, 248, 0.88);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(220, 227, 236, 0.86);
+  border-radius: 8px;
+  padding: 10px;
+  margin: 18px 0 14px;
+  box-shadow: var(--shadow);
+}
+.search {
+  min-height: 40px;
+  border-color: #cfd8e3;
+  box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.02);
+}
+.search:focus {
+  outline: 2px solid rgba(15, 118, 110, 0.22);
+  border-color: var(--accent);
+}
+.chips { align-items: center; }
+.chip, .utility-button {
+  min-height: 34px;
+  border: 1px solid #cfd8e3;
+  background: #fff;
+  border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 750;
+  padding: 7px 11px;
+}
+.chip:hover, .utility-button:hover { border-color: #9aa8bb; }
+.chip.active {
+  background: #15202b;
+  border-color: #15202b;
+  color: #fff;
+}
+.utilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+.utility-button {
+  color: var(--muted);
+  font-size: 12px;
+}
+.section-heading {
+  margin: 24px 0 12px;
+  padding-top: 2px;
+}
+.section-heading h2 { font-size: 18px; }
+.cards { gap: 14px; }
+.card {
+  border-left: 0;
+  box-shadow: var(--shadow);
+  transition: box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease;
+}
+.card:hover {
+  border-color: #c8d2df;
+  box-shadow: var(--shadow-lg);
+}
+.card-head {
+  align-items: center;
+  background: linear-gradient(180deg, #fff, #fbfcfe);
+  border-left: 4px solid var(--accent);
+}
+.card[data-status="approved"] .card-head,
+.card[data-status="merged"] .card-head { border-left-color: var(--ok); }
+.card[data-status="commented"] .card-head { border-left-color: var(--accent-2); }
+.card[data-status="maintained"] .card-head { border-left-color: var(--accent); }
+.card[data-status="skipped"] .card-head { border-left-color: var(--info); }
+.card[data-status="blocked"] .card-head { border-left-color: var(--bad); }
+.card.priority-critical .card-head {
+  background: linear-gradient(180deg, #fff7f8, #fff);
+}
+.card.priority-focus .card-head {
+  background: linear-gradient(180deg, #fffbeb, #fff);
+}
+.card.priority-follow .card-head {
+  background: linear-gradient(180deg, #eff6ff, #fff);
+}
+.card-title {
+  font-size: 16px;
+  line-height: 1.42;
+}
+.meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 7px;
+}
+.badge {
+  gap: 7px;
+  min-width: 0;
+  padding: 6px 11px;
+  text-transform: none;
+  white-space: nowrap;
+}
+.card-summary {
+  color: #526173;
+  margin-top: 9px;
+}
+.badge::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.card-body {
+  background: #fff;
+  padding: 0 18px 18px;
+}
+.grid {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.field {
+  background: #fbfcfe;
+  border-color: #e6ecf3;
+  padding: 13px 14px;
+}
+.field strong {
+  color: #536175;
+  font-size: 11px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+.field-body {
+  color: #1f2937;
+  line-height: 1.62;
+}
+.comment {
+  background: #fff8ed;
+  border-left-color: var(--accent-2);
+  color: #1f2937;
+}
+.comment-head {
+  color: #1f2937;
+}
+.pr-readout {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+}
+.story-block {
+  border-top-color: #e2e8f0;
+}
+.story-block.hero-block {
+  background: linear-gradient(180deg, #fbfffe, #f7fbfa);
+  border-color: #d5e7e4;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+.story-block h4,
+.review-rail h4,
+.comments-panel h4 {
+  font-size: 13px;
+  font-weight: 900;
+}
+.story-line {
+  grid-template-columns: 116px minmax(0, 1fr);
+  border-top-color: #e9eef5;
+}
+.story-label {
+  color: #607086;
+}
+.review-rail {
+  border: 1px solid #e3eaf2;
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcfe;
+}
+.review-rail .fact-list {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.fact {
+  border-top-color: #e8eef5;
+}
+.comments-panel {
+  border-top-color: #e2e8f0;
+}
+.comment-list {
+  gap: 12px;
+}
+.skip-group {
+  box-shadow: var(--shadow);
+}
+.skip-group-head {
+  align-items: center;
+  background: linear-gradient(180deg, #fff, #fbfcfe);
+}
+.skip-row {
+  grid-template-columns: minmax(0, 1.15fr) minmax(220px, 0.85fr);
+}
+.blocker-item {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+.empty {
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+@media (max-width: 840px) {
+  .topbar, .card-head { grid-template-columns: 1fr; display: grid; }
+  .card-actions { align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
+  .dashboard, .grid, .metrics { grid-template-columns: 1fr; }
+  .guide-grid { grid-template-columns: 1fr; }
+  .headline-row { align-items: flex-start; flex-direction: column; }
+  .pr-readout { grid-template-columns: 1fr; }
+  .review-rail { position: static; }
+  .story-line { grid-template-columns: 1fr; gap: 4px; }
+  .timeline-item { grid-template-columns: 1fr; }
+  .controls { position: static; }
+  .utilities { width: 100%; margin-left: 0; }
+  .utility-button { flex: 1 1 auto; }
+  .skip-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <div>
+      <h1 data-i18n="title">MyCR 审核报告</h1>
+      <p class="subtitle" id="subtitle"></p>
+    </div>
+    <div class="toggle" aria-label="Language">
+      <button type="button" data-lang-button="zh" class="active">中文</button>
+      <button type="button" data-lang-button="en">EN</button>
+    </div>
+  </div>
+  <section class="metrics" id="metrics"></section>
+  <section class="dashboard">
+    <div class="panel">
+      <h2 data-i18n="statusDistribution">状态分布</h2>
+      <div class="bars" id="bars"></div>
+    </div>
+    <div class="panel">
+      <h2 data-i18n="timeline">执行时间线</h2>
+      <div class="timeline" id="timeline"></div>
+    </div>
+  </section>
+  <section class="panel" id="overviewPanel" style="display: none; margin-top: 16px;">
+    <h2 data-i18n="overviewSection">整体摘要</h2>
+    <div class="overview-content" id="overviewContent"></div>
+  </section>
+  <section class="panel reading-guide" id="readingGuidePanel" style="display: none;">
+    <div class="guide-head">
+      <h2 data-i18n="readingGuide">阅读建议</h2>
+      <span data-i18n="readingGuideHint">先看高风险和高影响 PR</span>
+    </div>
+    <div class="guide-grid" id="readingGuide"></div>
+  </section>
+  <section class="controls">
+    <input class="search" id="search" type="search">
+    <div class="chips" id="chips"></div>
+    <div class="utilities">
+      <button type="button" class="utility-button" id="openAll"></button>
+      <button type="button" class="utility-button" id="closeAll"></button>
+    </div>
+  </section>
+  <section class="section-heading">
+    <h2 data-i18n="reviewedSection">已处理 PR</h2>
+    <div class="hint" data-i18n="reviewedHint">点击卡片查看细节</div>
+  </section>
+  <main class="cards" id="cards"></main>
+  <section class="section-heading" id="skippedHeading">
+    <h2 data-i18n="skippedGroups">未审核 PR 分类</h2>
+    <div class="hint" data-i18n="skippedHint">按排除原因分组</div>
+  </section>
+  <section class="skip-groups" id="skipGroups"></section>
+  <section class="section-heading" id="followUpHeading">
+    <h2 data-i18n="followUpSection">后续关注</h2>
+    <div class="hint" data-i18n="followUpHint">接近可处理但仍有阻塞</div>
+  </section>
+  <section class="cards" id="followUpCards"></section>
+  <section class="panel" id="evolutionPanel" style="display: none; margin-top: 18px;">
+    <h2 data-i18n="selfEvolutionSection">自进化记录</h2>
+    <div class="evolution-list" id="evolutionList"></div>
+  </section>
+  <div class="footer" id="footer"></div>
+</div>
+<script>
+const reportData = {"approved":[],"blocked":[],"commented":[{"alternative_designs":"Alternatives include keeping the old stateless builder for all callers, caching only serialized message bytes, or making the processor own a precomputed request attribute slice.","api_surface":"Adds `ChatTraceState` as a reusable tracing helper; existing `TraceChat` remains the stateless public helper.","approach":"The PR adds `ChatTraceState`, moves reusable request fields into `chatRequestAttributes`, and lets streaming processors call the stateful tracing path so repeated request attributes can be reused across chunks.","author":"cuboya","behavior_impact":"Expected before/after: streaming spans carry the same request attributes, but repeated chunks allocate less when a persistent trace state is used.","change_inventory":"Introduces reusable request attribute slots, message identity checks, stateful trace calls from llmflow, and benchmark/test coverage for cache behavior.","ci_state":"green (162 checks)","cross_module_impact":"llmflow benefits from lower repeated attribute work; OpenTelemetry export content should stay compatible.","design_assessment":"The design is directionally sound for streaming trace spans, with one localized regression in the nil-state path that should be fixed before the allocation claim is fully true.","evidence_checked":"PR body, changed telemetry code, checks, benchmark notes from the reviewer, and targeted telemetry/llmflow tests were inspected.","head_sha":"f844a0748ceeab1f2b89df9d576bdd3e12721090","implementation_derivation":"Putting reusable request attribute state next to the streaming chat span is the right locality for chunked responses; the issue is that the nil-state fallback also uses the cache-filling path.","inline_comments":[{"body":"The stateless path now builds a throwaway `chatRequestAttributes` when `requestAttrs` is nil, so ordinary `TraceChat` / `buildRequestAttributes` calls still populate `slot.attrs` and allocate cloned message attributes that are immediately discarded. Please keep the uncached request-attribute builder for the nil-state path, and reserve cache-slot population for a persistent `ChatTraceState`.\n\n<details><summary>中文<\/summary>\n无状态路径现在会在 `requestAttrs` 为 nil 时创建一个一次性的 `chatRequestAttributes`，导致普通 `TraceChat` / `buildRequestAttributes` 调用也会填充 `slot.attrs`，并分配马上被丢弃的 message 属性副本。建议 nil-state 路径保留未缓存的 request attribute 构造逻辑，只在持久的 `ChatTraceState` 中写入缓存槽。\n<\/details>","line":185,"path":"internal/telemetry/trace.go","url":"https://github.com/trpc-group/trpc-agent-go/pull/2141#discussion_r3550332243"}],"module_impact":"Direct impact is telemetry allocation behavior; indirect impact is any caller relying on `TraceChat` as a cheap one-shot helper.","modules":"internal/telemetry trace builders and internal/flow/llmflow streaming instrumentation.","necessity_assessment":"confirmed: the touched path rebuilds request attributes repeatedly during streaming, and the PR adds reusable per-span request attribute state to reduce that cost.","number":2141,"outcome":"Commented on the nil-state fallback because it still populates cache slots and clones attributes that are immediately discarded.","problem":"The PR tries to reduce allocation churn while tracing streaming chat requests, especially in `llmflow`, where the request portion stays stable while response chunks change over time.","problem_framing":"The immediate problem is allocation pressure, but the underlying contract is whether `TraceChat` remains a cheap stateless helper while `ChatTraceState` owns reusable per-span cache state.","review_action":"Submitted COMMENT review only; no approval, no LGTM, no merge. Review URL: https://github.com/trpc-group/trpc-agent-go/pull/2141#pullrequestreview-4661543244","risk":"If unfixed, the non-stateful path can regress allocation behavior even while the streaming stateful path improves.","semantic_changes":"Streaming trace emission can reuse request attributes across chunks; stateless `TraceChat` behavior should remain equivalent but currently takes the cache population path.","solution_fit_assessment":"The stateful API fits streaming reuse, but the stateless fallback should stay uncached so ordinary one-shot calls do not pay cache bookkeeping or clone allocation costs.","status":"commented","technical_background":"Telemetry trace code turns chat requests and responses into OpenTelemetry span attributes. Streaming model calls may emit many chunks for the same request, so request-side attributes are a hot path where repeated JSON marshaling and attribute allocation can add avoidable latency and heap pressure.","tests_docs":"`go test ./internal/telemetry ./internal/flow/llmflow` and targeted telemetry tests were reported passing by the reviewer; benchmark inspection showed the cache reduces streaming allocations.","title":"internal/telemetry:Reduce streaming TraceChat request attribute allocations","tradeoffs":"A reusable trace state reduces repeated work in streaming paths, but it adds cache invalidation and message-identity comparison complexity that should be limited to callers with persistent state.","url":"https://github.com/trpc-group/trpc-agent-go/pull/2141"},{"alternative_designs":"The example could be smaller with one scenario, or could rely on live models, but that would reduce audit coverage or reproducibility.","api_surface":"Adds example CLI flags such as `--mode`, `--scenario`, `--data-dir`, and `--output-dir`; no core runtime API is changed.","approach":"The PR builds a fake-mode example under `examples/evaluation/promptiter/regressionloop`, adds attribution data, scenario selection, reports, and reusable regression-loop helpers.","author":"d2bz","behavior_impact":"Expected before/after: users can run `--scenario=all` or individual scenarios; `--help` should expose every individual scenario.","change_inventory":"Adds attribution datasets, scenario definitions, fake runner wiring, sample optimization reports, and tests for the regression loop.","ci_state":"green (164 checks)","cross_module_impact":"PromptIter evaluation artifacts and example docs now depend on the scenario list being complete and consistent.","design_assessment":"The example structure is useful; the missing `attribution` help text is a small but real usability gap because it hides one supported scenario.","evidence_checked":"Issue #2003, PR body, scenario code, README, generated sample reports, checks, and reviewer-run tests were inspected.","head_sha":"b15379b1e3d165de6a4d9f4c2e1bfed15eabcd99","implementation_derivation":"A deterministic fake runner is appropriate because it lets CI and reviewers reproduce accepted, ineffective, overfit, and attribution scenarios without model credentials.","inline_comments":[{"body":"The CLI help still omits `attribution`, even though it is a supported scenario and part of the sample reports. Please add it to the `--scenario` flag text so `--help` matches the README and users can discover the attribution run.\n\n<details><summary>中文<\/summary>\nCLI 帮助文本仍然漏掉了 `attribution`，但它已经是受支持场景，也是示例报告的一部分。请把它加入 `--scenario` 的说明里，让 `--help` 与 README 保持一致，并方便用户发现 attribution 运行模式。\n<\/details>","line":27,"path":"examples/evaluation/promptiter/regressionloop/main.go","url":"https://github.com/trpc-group/trpc-agent-go/pull/2157#discussion_r3550332251"}],"module_impact":"Direct impact is example and evaluation workflow code; indirect impact is documentation expectations for PromptIter regression checks.","modules":"examples/evaluation/promptiter/regressionloop, evaluation/workflow/promptiter/regloop, sample eval sets and reports.","necessity_assessment":"confirmed as a feature need: the linked maintainer task asks for auditability, failure attribution, validation regression, and release gating around prompt optimization.","number":2157,"outcome":"Commented that `--scenario` help omits the supported `attribution` scenario.","problem":"The PR adds a reproducible evaluation to failure-attribution to PromptIter optimization loop, including multiple deterministic scenarios and committed sample reports.","problem_framing":"The immediate goal is a runnable example, but the deeper goal is a regression contract that keeps prompt optimization from accepting hidden validation failures.","review_action":"Submitted COMMENT review only; no approval, no LGTM, no merge. Review URL: https://github.com/trpc-group/trpc-agent-go/pull/2157#pullrequestreview-4661543248","risk":"If unfixed, the attribution demo exists but is less discoverable from the command-line entry point.","semantic_changes":"Users can run deterministic scenario-specific PromptIter regression demos and inspect JSON/Markdown output.","solution_fit_assessment":"The CLI scenario surface is the right user control, but its help text must match the implemented scenario list so users can discover all modes.","status":"commented","technical_background":"PromptIter examples demonstrate evaluation and optimization flows with deterministic fake runners, sample eval sets, metrics, and generated reports. The command-line flags are part of the example contract because users discover scenarios through `--help` before reading all fixtures.","tests_docs":"Reviewer reported package tests, coverage checks, fake-mode runs, and committed report diff checks passing.","title":"evaluation/promptiter: add eval+optimization regression loop with aud…","tradeoffs":"More committed fixtures and reports increase maintenance cost, but make the optimization behavior easy to verify in CI and review.","url":"https://github.com/trpc-group/trpc-agent-go/pull/2157"},{"alternative_designs":"Alternatives include only documenting host-owned `WithDB`, only supporting `WithDialector`, or adding a small wrapper type in examples that owns the opened DB.","api_surface":"Adds exported GORM memory service constructors/options such as `NewService`, `WithDB`, `WithDialector`, `WithSkipDBInit`, `WithSoftDelete`, tool options, and the `gorm` memory type in examples.","approach":"The PR introduces `memory/gorm`, service options for `WithDB`, `WithDialector`, table/init/soft-delete configuration, tests, and shared example selection via `-memory=gorm`.","author":"sks","behavior_impact":"Expected before/after: users can run simple/auto memory examples with a GORM backend and get matching startup info, configuration docs, and closed resources.","change_inventory":"Adds a GORM memory submodule, tests, shared example factory support, GORM reference docs, and example dependency updates.","ci_state":"green (166 checks)","cross_module_impact":"Example runners, memory tools, GORM storage configuration, docs, and tests all need consistent lifecycle and option semantics.","design_assessment":"The package design is broadly useful; the lifecycle and documentation gaps need fixing before the examples are safe and discoverable.","evidence_checked":"PR body, related #2109 discussion, GORM service options, service close behavior, example util code, README files, checks, and review comments were inspected.","head_sha":"55897e8f2a0714c945ea92673b2dddfc2da83c29","implementation_derivation":"A new backend package is the right abstraction because it keeps storage-specific code behind the existing memory interface while preserving the public contract.","inline_comments":[{"body":"`newGormMemoryService` opens the GORM handle here, but passes it as `WithDB`, so `memory/gorm.Close()` intentionally will not close it. Use a dialector so the service owns the client, or wrap the returned service to close the opened `sql.DB`.\n\n<details><summary>中文<\/summary>\n`newGormMemoryService` 在这里打开 GORM 连接后通过 `WithDB` 传入，因此 `memory/gorm.Close()` 按设计不会关闭它。请改用 dialector 让 service 持有连接，或包装返回的 service 来关闭这里打开的 `sql.DB`。\n<\/details>","line":213,"path":"examples/memory/util.go","url":"https://github.com/trpc-group/trpc-agent-go/pull/2128#discussion_r3550332240"},{"body":"`-memory=gorm` now creates a GORM service, but `PrintMemoryInfo` still falls through to `In-memory`. Add a `MemoryGORM` case that prints GORM-specific, non-secret settings so the startup output matches the selected backend.\n\n<details><summary>中文<\/summary>\n`-memory=gorm` 现在会创建 GORM service，但 `PrintMemoryInfo` 仍会落到 `In-memory`。请增加 `MemoryGORM` 分支，输出 GORM 相关且不含敏感信息的配置，让启动信息和实际后端一致。\n<\/details>","line":135,"path":"examples/memory/util.go","url":"https://github.com/trpc-group/trpc-agent-go/pull/2128#discussion_r3550332248"},{"body":"This README points users to `simple` / `auto` with `-memory=gorm`, but those actual discovery surfaces still omit GORM and its environment variables. Please update the flag help and the `simple` / `auto` READMEs so users can discover and configure the new backend from the real entrypoints.\n\n<details><summary>中文<\/summary>\n这里引导用户通过 `simple` / `auto` 使用 `-memory=gorm`，但真实入口的帮助信息和 README 仍缺少 GORM 及其环境变量。请同步更新 flag help 以及 `simple` / `auto` README，让用户能从真实入口发现并配置新后端。\n<\/details>","line":79,"path":"examples/memory/README.md","url":"https://github.com/trpc-group/trpc-agent-go/pull/2128#discussion_r3550332258"},{"body":"After the standalone GORM app was removed, this README still describes removed flags, stale default tool behavior, and a `go test ./...` command for a README-only directory. Please merge the remaining reference material into the real example docs, or rewrite this file so it no longer reads like a runnable example.\n\n<details><summary>中文<\/summary>\n独立 GORM app 删除后，这个 README 仍在描述已移除的 flag、过期的默认工具行为，以及 README-only 目录下的 `go test ./...`。请把剩余参考内容合并到真实示例文档，或重写此文件，避免它继续表现成可运行示例。\n<\/details>","line":89,"path":"examples/memory/gorm/README.md","url":"https://github.com/trpc-group/trpc-agent-go/pull/2128#discussion_r3550332262"}],"module_impact":"Direct impact is memory backend storage and example setup; indirect impact is memory tool behavior and shutdown semantics in examples.","modules":"memory/gorm backend, examples/memory shared util, examples/memory README files, simple and auto memory examples.","necessity_assessment":"confirmed as a design need: prior maintainer discussion asked for a contributed backend rather than exporting framework-internal memory helpers.","number":2128,"outcome":"Commented on DB lifecycle leakage, wrong startup backend label, missing simple/auto discovery docs, and stale GORM reference README content.","problem":"The PR adds a first-party `memory/gorm` backend and wires it into shared memory examples so users can use GORM-managed databases instead of exporting internal helper logic.","problem_framing":"The user pain is integration with existing GORM-backed applications; the root contract is clear ownership of database lifecycle and clear discovery from the actual example entry points.","review_action":"Submitted COMMENT review only; no approval, no LGTM, no merge. Review URL: https://github.com/trpc-group/trpc-agent-go/pull/2128#pullrequestreview-4661543241","risk":"If unfixed, examples can leak database pools and users can receive misleading backend information or stale commands.","semantic_changes":"Users can select `-memory=gorm`; GORM service may auto-migrate unless skip init is configured; injected DB handles are intentionally caller-owned.","solution_fit_assessment":"The backend direction fits, but the examples currently open a DB and pass it as caller-owned, and the docs/help surfaces do not fully describe the new backend.","status":"commented","technical_background":"The memory service abstraction stores long-term user memories behind a common `memory.Service` interface. GORM-backed services can either own a database connection they open themselves or receive a caller-owned `*gorm.DB`; that ownership choice determines whether `Close()` should release the underlying pool.","tests_docs":"CI checks were green. Review focused on service option semantics and docs because the issues are not caught by existing tests.","title":"memory/gorm: GORM-backed memory.Service with shared DB injection","tradeoffs":"Supporting shared `*gorm.DB` is important for applications, but examples that open their own connection should either use owned dialectors or close the injected pool explicitly.","url":"https://github.com/trpc-group/trpc-agent-go/pull/2128"},{"alternative_designs":"Alternatives include using an existing diff parser library, parsing hunk lines before headers only when inside a hunk, or keeping a stricter state machine.","api_surface":"Adds example CLI and internal example packages; no exported core framework API changes.","approach":"The PR introduces an isolated example with internal packages for diff parsing, rules, redaction, sandbox execution, report generation, and durable storage.","author":"XnLemon","behavior_impact":"Expected before/after: legal hunk content starting with `--- ` or `+++ ` should remain a changed line, not become a new file header.","change_inventory":"Adds README/design docs, fixtures, parser/rules/redaction/report/sandbox/store packages, fake runtime, and tests.","ci_state":"green (164 checks)","cross_module_impact":"Rules, redaction, sandbox, and report packages depend on the parser preserving correct file/hunk identity.","design_assessment":"The example is useful, with a concrete parser correctness bug that can misplace later findings.","evidence_checked":"Issue #2004, PR body, diff parser, fixtures, generated reports, checks, and reviewer-run example commands/tests were inspected.","head_sha":"a49fa7ff05a80fe92c90967c20a755c245f1af10","implementation_derivation":"Keeping this as an example package is reasonable because it demonstrates composition of existing framework tools without changing core runtime APIs.","inline_comments":[{"body":"Inside an active hunk, a real changed line can start with `--- ` or `+++ `, but these cases run before hunk-line parsing and reclassify that content as a file header/path. Handle hunk lines before file headers, or only accept headers outside active hunks, so valid diff content does not create phantom files or shift later findings.\n\n<details><summary>中文<\/summary>\n在已经进入 hunk 后，真实变更内容也可能以 `--- ` 或 `+++ ` 开头，但这里会先按文件头处理，导致这些内容被误判成文件路径。建议先处理 active hunk 内的 diff 行，或只在 hunk 外接受文件头，避免合法 diff 内容制造假文件或影响后续 finding 的行号归属。\n<\/details>","line":52,"path":"examples/code_review_agent/internal/diffparse/parser.go","url":"https://github.com/trpc-group/trpc-agent-go/pull/2121#discussion_r3550375352"}],"module_impact":"Direct impact is the example parser; indirect impact is any rule or report that relies on parsed hunk line numbers.","modules":"examples/code_review_agent/internal/diffparse plus downstream rules/reporting that consume parsed file and line metadata.","necessity_assessment":"confirmed as a feature need: issue #2004 asks for a sandboxed code-review agent example and the base tree has no such example.","number":2121,"outcome":"Commented on the active-hunk parser ordering bug.","problem":"The PR adds a sandboxed code review agent example with skill files, diff parsing, fake runtime, persistence, reports, and safety controls.","problem_framing":"The core product need is an auditable example; the parser must preserve exact changed file and line mapping or later review findings become unreliable.","review_action":"Submitted COMMENT review only; no approval, no LGTM, no merge. Review URL: https://github.com/trpc-group/trpc-agent-go/pull/2121#pullrequestreview-4661593247","risk":"If unfixed, valid diffs can create phantom files or shift finding locations.","semantic_changes":"Users can run a local code-review example on fixtures, diff files, file lists, or repositories and receive findings/reports.","solution_fit_assessment":"The architecture fits an example, but the diff parser needs a format-correct hunk/file-header boundary to avoid wrong file attribution.","status":"commented","technical_background":"A code-review example that parses unified diffs depends on precise file and hunk parsing. In unified diff format, `---` and `+++` mark file headers only outside hunks; inside a hunk, changed content can also begin with those characters.","tests_docs":"Reviewer reported `go test -count=1 ./...` and several fake-mode example runs passing; the parser edge case still needs a regression test.","title":"examples/code_review_agent: add sandboxed code review agent example","tradeoffs":"A small custom parser is easy to read but must cover ambiguous-looking hunk content; a library would reduce edge cases but add dependency weight.","url":"https://github.com/trpc-group/trpc-agent-go/pull/2121"},{"alternative_designs":"Alternatives include narrowing the PR to an unsafe-local prototype, wiring existing `codeexecutor` backends now, or splitting local-workspace and committed-PR modes.","api_surface":"Adds example flags such as `--repo-path`, `--dry-run`, sandbox env selection, report outputs, and internal example package APIs.","approach":"The PR builds an example CLI with diff/repo inputs, sandbox abstraction, dry-run mode, permission and storage layers, and Markdown reporting.","author":"xiaoyulox","behavior_impact":"Expected before/after: documented sandbox modes should run, local workspace changes should be included, dry-run should still exercise static checks, and documented JSON/Markdown reports should exist.","change_inventory":"Adds a large example tree with skill files, fixtures, parser/rules/sandbox/storage/output code, and generated report paths.","ci_state":"green (164 checks)","cross_module_impact":"The example references existing codeexecutor concepts, permission policy, storage, and report consumers even though it is isolated from core packages.","design_assessment":"The prototype has useful structure but is not yet aligned with its documented contract; the comments identify concrete contract gaps.","evidence_checked":"Issue #2004, PR body, latest patch, sandbox constructors, repo diff collection, dry-run flow, report generation, checks, and review comments were inspected.","head_sha":"b97c606dee26a48edb314bd73e61d093b39b9de7","implementation_derivation":"An isolated example is a reasonable place to prototype the workflow, but advertised production sandbox and artifact contracts need to be real or explicitly out of scope.","inline_comments":[{"body":"This advertises E2B/container sandbox selection, but both selected backends still return `not implemented`, so a production configuration with those env vars cannot run sandbox checks. Wire these paths to the existing `codeexecutor/e2b` or `codeexecutor/container` workspace runtimes, or narrow the contract to an explicit unsafe-local prototype until isolated backends are implemented.\n\n<details><summary>中文<\/summary>\n这里声明会选择 E2B/container 沙箱，但两个被选中的后端仍然只返回 `not implemented`，所以配置了这些环境变量的生产运行无法执行沙箱检查。请把这些路径接到现有的 `codeexecutor/e2b` 或 `codeexecutor/container` workspace runtime，或者在真正实现隔离后端前，把契约收窄为显式 unsafe-local 原型。\n<\/details>","line":224,"path":"examples/code_review_agent/sandbox/sandbox.go","url":"https://github.com/trpc-group/trpc-agent-go/pull/2151#discussion_r3550375350"},{"body":"The default `--repo-path` flow only diffs `merge-base..HEAD`, so staged or uncommitted local changes are omitted. Since the issue requires reviewing a local changed directory, include the working-tree/index diff or split this into an explicit committed-PR mode and local-workspace mode with tests.\n\n<details><summary>中文<\/summary>\n默认 `--repo-path` 流程只比较 `merge-base..HEAD`，因此会漏掉 staged 或未提交的本地变更。由于 issue 要求支持本地变更目录，请把 working tree/index 的 diff 也纳入，或者明确拆成“已提交 PR 模式”和“本地工作区模式”并补测试。\n<\/details>","line":112,"path":"examples/code_review_agent/main.go","url":"https://github.com/trpc-group/trpc-agent-go/pull/2151#discussion_r3550375354"},{"body":"Dry-run currently skips the entire static-analysis/sandbox block, even though the docs promise dry-run still runs static analysis and rule matching without LLM calls. Keep deterministic sandbox/static checks enabled in dry-run, or split this into a separate no-sandbox mode and update the docs/tests.\n\n<details><summary>中文<\/summary>\n当前 dry-run 会跳过整个静态分析/沙箱块，但文档承诺 dry-run 仍会在不调用 LLM 的情况下运行静态分析和规则匹配。请在 dry-run 中保留确定性的沙箱/静态检查，或者拆出单独的 no-sandbox 模式并同步更新文档和测试。\n<\/details>","line":232,"path":"examples/code_review_agent/main.go","url":"https://github.com/trpc-group/trpc-agent-go/pull/2151#discussion_r3550375359"},{"body":"`GenerateReport` only writes `report.md`, but the PR/docs contract requires `review_report.json` and `review_report.md`. Emit both documented artifacts with the structured findings, metrics, sandbox, and permission data, and add a test that verifies the expected filenames and contents.\n\n<details><summary>中文<\/summary>\n`GenerateReport` 目前只写 `report.md`，但 PR/文档契约要求输出 `review_report.json` 和 `review_report.md`。请输出这两个文档化产物，并包含结构化 findings、metrics、sandbox、permission 数据，同时补测试校验文件名和内容。\n<\/details>","line":124,"path":"examples/code_review_agent/output/report.go","url":"https://github.com/trpc-group/trpc-agent-go/pull/2151#discussion_r3550375364"}],"module_impact":"Direct impact is the example; indirect impact is contributor expectations for sandboxed review-agent patterns.","modules":"examples/code_review_agent main CLI, sandbox package, output reporting package, skill docs, storage and static-analysis flow.","necessity_assessment":"confirmed as a feature need from issue #2004; the base tree has no complete code-review-agent example with skill, sandbox, database persistence, reports, fake mode, and safety controls.","number":2151,"outcome":"Commented on unimplemented E2B/container backends, missing working-tree diff, dry-run skipping static/sandbox checks, and report filenames/artifacts not matching docs.","problem":"The PR adds a full code review agent prototype with skill, sandbox selection, database persistence, reports, and fake/no-key operation.","problem_framing":"The stated goal is a complete runnable review chain; the deeper requirement is that each advertised mode actually exercises the chain it claims to validate.","review_action":"Submitted COMMENT review only; no approval, no LGTM, no merge. Review URL: https://github.com/trpc-group/trpc-agent-go/pull/2151#pullrequestreview-4661593245. Contributor-program/manual-selection context still requires explicit maintainer decision; these comments do not imply merge readiness.","risk":"If unfixed, users can run a green example that does not exercise the advertised safety, local review, or reporting behavior.","semantic_changes":"Users can run the example in several modes, but E2B/container selection, local dirty-diff review, dry-run semantics, and report output names currently diverge from the contract.","solution_fit_assessment":"The selected control surfaces are understandable, but several flags and outputs currently do less than the docs promise.","status":"commented","technical_background":"A code-review agent example combines repository diff collection, deterministic static checks, sandbox execution, permissions, and report artifacts. The command-line contract matters because users rely on documented flags and output filenames to validate the whole review chain.","tests_docs":"CI was green. Review relied on source inspection because the contract gaps are around mode behavior and artifact names.","title":"实现自动代码评审Agent全套能力","tradeoffs":"A broad example demonstrates integration value, but broad scope raises the bar for accurate docs, real sandbox backends, and end-to-end artifact tests.","url":"https://github.com/trpc-group/trpc-agent-go/pull/2151"},{"alternative_designs":"Alternatives include failing missing cases during delta computation, validating eval-set identity before scoring, or rendering all prompt text in fenced blocks.","api_surface":"Adds regression-loop package types, config JSON fields, output report paths, and example CLI configuration; no existing core API is removed.","approach":"The PR adds a reusable regression-loop package, delta computation, gate policies, JSON/Markdown reporting, and an example with fake runner data.","author":"GodBlf","behavior_impact":"Expected before/after: missing validation cases should fail the gate, and real prompt text should not break Markdown reports.","change_inventory":"Adds gate policy evaluation, attribution, delta computation, pipeline orchestration, JSON/Markdown report generation, tests, and example fixtures.","ci_state":"green (164 checks)","cross_module_impact":"PromptIter engine adapters, examples, report consumers, and release gating all depend on complete validation case coverage.","design_assessment":"The package is directionally useful, with two correctness/reporting gaps that should be fixed before relying on its acceptance result.","evidence_checked":"Issue #2003, latest diff, gate logic, report renderer, checks, and reviewer-run package/example tests were inspected.","head_sha":"ccbe5800be5e19a0e8e4097006e2a8a2f1ae4da6","implementation_derivation":"A package-level regression loop is a reasonable implementation point because it can be reused by examples and future prompt surfaces.","inline_comments":[{"body":"Missing validation cases never fail the gate: `ComputeDeltas` emits `TransitionMissing`, but `EvaluateGate` only checks score, hard fails, critical regressions, and budgets, so a candidate can be accepted after skipping baseline validation cases. Add a gate rule that rejects missing validation cases before `Accepted` is set, and cover baseline-only/candidate-only deltas in tests.\n\n<details><summary>中文<\/summary>\n缺失的验证用例不会让 gate 失败：`ComputeDeltas` 会产生 `TransitionMissing`，但 `EvaluateGate` 只检查分数、hard fail、关键回归和预算，所以候选 prompt 即使跳过了 baseline 验证用例也可能被接受。请在设置 `Accepted` 前增加缺失验证用例的拒绝规则，并补充 baseline-only / candidate-only delta 测试。\n<\/details>","line":69,"path":"evaluation/workflow/promptiter/regressionloop/gate.go","url":"https://github.com/trpc-group/trpc-agent-go/pull/2152#discussion_r3550375342"},{"body":"`MarkdownReport` inserts candidate prompts into a single inline code span without escaping, so prompts containing backticks, pipes, or newlines can corrupt `optimization_report.md` and make the required audit report hard to read. Render prompts and other dynamic report text through Markdown escaping or fenced blocks, and add a report test with those characters.\n\n<details><summary>中文<\/summary>\n`MarkdownReport` 会把候选 prompt 原样写进单行内联代码块，包含反引号、管道符或换行的真实 prompt 会破坏 `optimization_report.md`，导致必须交付的人类可读审计报告难以阅读。请对 prompt 和其他动态报告文本做 Markdown 转义，或改用代码块渲染，并补充覆盖这些字符的报告测试。\n<\/details>","line":93,"path":"evaluation/workflow/promptiter/regressionloop/report.go","url":"https://github.com/trpc-group/trpc-agent-go/pull/2152#discussion_r3550375348"}],"module_impact":"Direct impact is evaluation/promptiter workflow code; indirect impact is any future automation that trusts the gate decision.","modules":"evaluation/workflow/promptiter/regressionloop gate, delta, report, pipeline, and examples/evaluation promptiter regression loop.","necessity_assessment":"confirmed as a feature need from issue #2003; the base tree lacks this regression-loop package and example.","number":2152,"outcome":"Commented on missing-case acceptance and unescaped Markdown prompt rendering.","problem":"The PR builds an evaluation and optimization regression loop with failure attribution, baseline/candidate deltas, release gates, and audit reports.","problem_framing":"The immediate need is a reproducible loop; the root correctness issue is making the gate reject hidden regressions and making reports robust for arbitrary prompt text.","review_action":"Submitted COMMENT review only; no approval, no LGTM, no merge. Review URL: https://github.com/trpc-group/trpc-agent-go/pull/2152#pullrequestreview-4661593240","risk":"If unfixed, the regression loop can accept incomplete validation results or produce broken audit reports.","semantic_changes":"Users can run a deterministic optimization loop and inspect accepted/rejected candidates, deltas, and reports.","solution_fit_assessment":"The structure fits the need, but the gate omits missing-case failure handling and the Markdown report does not escape dynamic prompt text.","status":"commented","technical_background":"Evaluation regression gates compare baseline and candidate results case by case. A gate must treat missing validation cases as a failure because a candidate can otherwise appear safer by not evaluating a difficult case.","tests_docs":"Reviewer reported workflow and example tests passing; additional gate/report edge tests are needed.","title":"构建 Evaluation + Optimization 自动回归闭环","tradeoffs":"Strict missing-case rejection may fail more runs early, but it prevents false acceptance; fenced report text is less compact but safer for real prompts.","url":"https://github.com/trpc-group/trpc-agent-go/pull/2152"},{"alternative_designs":"Alternatives include making `NewPermissionPolicy` accept a full `Policy`, exposing scanner policy accessors, or requiring explicit adapter options and removing the file-field promise.","api_surface":"Adds `Policy`, `AuditFailureMode`, scanner constructors, `NewPermissionPolicy`, `WithAuditFailureMode`, policy file fields, and example integration APIs.","approach":"The PR introduces `tool/safety` scanner policy, default rules, audit failure modes, permission adapter, examples, and tests.","author":"XnLemon","behavior_impact":"Expected before/after: `audit_failure_mode: strict` in policy should make the documented adapter path fail closed on audit write failure.","change_inventory":"Adds policy parsing/validation, scanner rules, permission adapter, audit failure handling, telemetry/docs/examples, and tests.","ci_state":"green (164 checks)","cross_module_impact":"Policy files, scanner state, permission policy, audit writer, and tool execution wrappers must agree on audit semantics.","design_assessment":"The package direction is sound; this one wiring gap weakens strict audit guarantees and should be fixed with a regression test.","evidence_checked":"Issue #2002, policy loader, permission adapter, docs/example integration path, checks, and reviewer-run tests/example were inspected.","head_sha":"61fea51207537f16f7ad8b82cfdec3b94088651f","implementation_derivation":"A scanner plus permission adapter is the right layer because it can inspect tool requests before execution and centralize audit behavior.","inline_comments":[{"body":"`audit_failure_mode` is accepted in the policy file, but the documented `NewPermissionPolicy(scanner)` path always resets the adapter to best-effort auditing. Initialize the permission policy from `*DefaultScanner`'s policy audit mode, while keeping `WithAuditFailureMode` as an override, and cover the strict-mode audit failure path without passing the option explicitly.\n\n<details><summary>中文<\/summary>\n策略文件会接受 `audit_failure_mode`，但文档里的 `NewPermissionPolicy(scanner)` 接入路径总是把适配器重置成 best-effort 审计。请从 `*DefaultScanner` 的 policy 中初始化 permission policy 的 audit mode，同时保留 `WithAuditFailureMode` 作为显式覆盖，并补一个不传该 option 时 strict 审计失败会生效的回归测试。\n<\/details>","line":45,"path":"tool/safety/permission.go","url":"https://github.com/trpc-group/trpc-agent-go/pull/2136#discussion_r3550375339"}],"module_impact":"Direct impact is tool safety checks; indirect impact is codeexec or hostexec tool calls that adopt the permission adapter.","modules":"tool/safety policy, scanner, permission adapter, audit writer, docs and example module.","necessity_assessment":"confirmed as a feature need from issue #2002; the base tree has no `tool/safety` package.","number":2136,"outcome":"Commented that `NewPermissionPolicy(scanner)` resets audit mode to best-effort instead of inheriting scanner policy strict mode.","problem":"The PR adds a tool execution safety guard with policy loading, scanner decisions, permission-policy integration, audit records, telemetry, examples, and docs.","problem_framing":"The user pain is safer tool execution; the root contract is that a policy file must actually control the adapter used at execution time.","review_action":"Submitted COMMENT review only; no approval, no LGTM, no merge. Review URL: https://github.com/trpc-group/trpc-agent-go/pull/2136#pullrequestreview-4661593234","risk":"If unfixed, users can configure strict audit in YAML/JSON and still get fail-open behavior through the documented path.","semantic_changes":"Users can configure command safety and audit handling before tool execution; strict audit mode should fail closed when audit writes fail.","solution_fit_assessment":"The design fits, but the adapter currently ignores `audit_failure_mode` from the loaded scanner policy unless the caller separately passes an option.","status":"commented","technical_background":"Tool permission policies sit between a tool call and execution. A scanner policy may allow or deny commands, and audit mode decides whether failure to record an audit event should fail closed or remain best-effort.","tests_docs":"Reviewer reported `go test ./tool/safety ./tool/codeexec ./internal/shellsafe`, example tests, example run, and redaction grep passing.","title":"tool/safety: add pre-execution safety scanner","tradeoffs":"Propagating policy audit mode keeps YAML/JSON behavior intuitive; explicit options still need to override for callers that intentionally differ.","url":"https://github.com/trpc-group/trpc-agent-go/pull/2136"}],"follow_up":[{"next":"下一轮优先拉取 #2128、#2136、#2141、#2151、#2152、#2157、#2121 的最新 head 和 review threads。","reason":"本轮对 7 个 PR 发出 14 条 inline comments，后续应优先检查作者是否修复并重新跑对应 tests。","title":"复核已评论 PR 的后续修复"},{"next":"若下一轮允许 LGTM，可优先从本轮 clean 的 #2158/#2159 和未触达绿色 PR 中挑选。","reason":"部分绿色 PR 未能在本轮完成深审或被 LGTM，因为本轮禁止 approval 和 merge。","title":"只评论模式下的绿色 PR 积压"},{"next":"下一轮先刷新 effective checks，避免使用旧 rollup 状态。","reason":"#2160 和 #2050 等 PR 在抓取时仍有 pending/failed checks。","title":"CI pending 的新 PR"}],"generated_at":"2026-07-09T09:19:30.256Z","maintained":[],"overview":"本轮从 mycr 仓库执行 git pull 后刷新 trpc-group/trpc-agent-go 的完整 open PR 列表。当前 open PR 为 59 个，其中 28 个 checks 全绿、31 个非绿或仍在 pending。本轮严格执行只发 comments：没有 LGTM、没有 approval、没有 merge，也没有对自己的 PR 做自审或合入。实际提交 COMMENT review 的 PR 为 #2121、#2128、#2136、#2141、#2151、#2152、#2157，共 14 条 inline comments；#2158 与 #2159 经深度复核未发现新阻塞，但按只评论策略不提交 LGTM。#2028 自上次报告后已关闭；新增 open PR 为 #2157、#2158、#2159、#2160。","repo":"trpc-group/trpc-agent-go","repo_info":{"name":"trpc-agent-go","owner":"trpc-group","skipped":52},"skill_evolution":[{"area":"Report outcomes","note":"Comment-only runs need first-class reviewed-clean deferred cards so clean reviews do not look like missing coverage."},{"area":"CI refresh","note":"gh pr checks snapshots should be refreshed near report time for PRs that were pending during the initial sweep."}],"skipped_groups":[{"count":2,"items":[{"author":"Rememorio","blockers":[{"kind":"manual_review","summary":"No LGTM, approval, or merge was allowed in this comment-only run."}],"ci_state":"green (164 checks)","number":2158,"readiness_audit":"Reviewed managed-skill deletion isolation in evolution worker and tests; no new issue was found.","review_summary":{"design_assessment":"No blocking issue found; deferred only by comment-only policy.","evidence_checked":"PR body, diff, checks, and reviewer validation were checked.","modules":"evolution worker deletion path and tests","tests_docs":"`go test ./evolution` passed in reviewer validation."},"skip_reason":"Deep check found no blocking issue, but this run was restricted to comments only and did not submit LGTM.","status":"skipped","title":"evolution: protect managed skill deletion","url":"https://github.com/trpc-group/trpc-agent-go/pull/2158"},{"author":"Rememorio","blockers":[{"kind":"manual_review","summary":"No LGTM, approval, or merge was allowed in this comment-only run."}],"ci_state":"green (164 checks)","number":2159,"readiness_audit":"Reviewed Linux-only hostexec SysProcAttr test split and cross-platform premise; no new issue was found.","review_summary":{"design_assessment":"No blocking issue found; deferred only by comment-only policy.","evidence_checked":"PR body, diff, checks, and reviewer validation were checked.","modules":"tool/hostexec Unix and Linux tests","tests_docs":"`go test ./tool/hostexec` passed after the PR on Darwin; Linux compile test also passed."},"skip_reason":"Deep check found no blocking issue, but this run was restricted to comments only and did not submit LGTM.","status":"skipped","title":"tool/hostexec: split linux sysproc tests","url":"https://github.com/trpc-group/trpc-agent-go/pull/2159"}],"prs":[2158,2159],"reason":"reviewed_clean_comment_only_deferred","title":"已复核但只评论模式不 LGTM"},{"count":24,"items":[{"author":"hongxiuzhe","blockers":[{"kind":"ci","summary":"codecov/patch=FAILURE; lint=FAILURE; CLAAssistant=FAILURE"}],"ci_state":"non-green (79 checks): codecov/patch=FAILURE; lint=FAILURE; CLAAssistant=FAILURE","number":1183,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 53b1a26538f2; CI state: non-green (79 checks): codecov/patch=FAILURE; lint=FAILURE; CLAAssistant=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"internal/util: add util for streaming parsing of JSON returned by LLM","url":"https://github.com/trpc-group/trpc-agent-go/pull/1183"},{"author":"liuzengh","blockers":[{"kind":"ci","summary":"codecov/patch=FAILURE; go-apidiff=FAILURE"}],"ci_state":"non-green (78 checks): codecov/patch=FAILURE; go-apidiff=FAILURE","number":1400,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 2e5bf368ac08; CI state: non-green (78 checks): codecov/patch=FAILURE; go-apidiff=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content","url":"https://github.com/trpc-group/trpc-agent-go/pull/1400"},{"author":"SummerLv","blockers":[{"kind":"ci","summary":"codecov/patch=FAILURE; GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE; CLAAssistant=FAILURE"}],"ci_state":"non-green (80 checks): codecov/patch=FAILURE; GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE; CLAAssistant=FAILURE","number":1446,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 79557d7bf2c6; CI state: non-green (80 checks): codecov/patch=FAILURE; GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE; CLAAssistant=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=DIRTY.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"feat(a2a): add StructuredOutput → DataPart converter for custom event…","url":"https://github.com/trpc-group/trpc-agent-go/pull/1446"},{"author":"liuzengh","blockers":[{"kind":"ci","summary":"test@PULL_REQUEST=FAILURE"}],"ci_state":"non-green (4 checks): test@PULL_REQUEST=FAILURE","number":1736,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 384aa5d638c4; CI state: non-green (4 checks): test@PULL_REQUEST=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=DIRTY.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"all: add deferred tool set","url":"https://github.com/trpc-group/trpc-agent-go/pull/1736"},{"author":"GongNanyue","blockers":[{"kind":"ci","summary":"go test (openclaw/go.mod)=FAILURE; CLAAssistant=FAILURE"}],"ci_state":"non-green (149 checks): go test (openclaw/go.mod)=FAILURE; CLAAssistant=FAILURE","number":1801,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head ef95fa2eee09; CI state: non-green (149 checks): go test (openclaw/go.mod)=FAILURE; CLAAssistant=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"docs/mkdocs/zh/fix/agent.md: fix typo","url":"https://github.com/trpc-group/trpc-agent-go/pull/1801"},{"author":"Ocyss","blockers":[{"kind":"ci","summary":"go test (go.mod)=FAILURE; lint=FAILURE"}],"ci_state":"non-green (159 checks): go test (go.mod)=FAILURE; lint=FAILURE","number":1956,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 604d75d058af; CI state: non-green (159 checks): go test (go.mod)=FAILURE; lint=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"langfuse: add environment config option and pass to OTEL resource attributes","url":"https://github.com/trpc-group/trpc-agent-go/pull/1956"},{"author":"Ocyss","blockers":[{"kind":"ci","summary":"go test (session/postgres/go.mod)=FAILURE"}],"ci_state":"non-green (159 checks): go test (session/postgres/go.mod)=FAILURE","number":1957,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 53153210b0c6; CI state: non-green (159 checks): go test (session/postgres/go.mod)=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"fix(session/postgres): cast JSON bytes to string for DB params","url":"https://github.com/trpc-group/trpc-agent-go/pull/1957"},{"author":"YellowDusk04","blockers":[{"kind":"ci","summary":"codecov/patch=FAILURE"}],"ci_state":"non-green (160 checks): codecov/patch=FAILURE","number":1967,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 49bac0ed9e90; CI state: non-green (160 checks): codecov/patch=FAILURE; reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"fix(sqlite): allow WithAsyncSummaryNum(0) to disable async workers","url":"https://github.com/trpc-group/trpc-agent-go/pull/1967"},{"author":"d2bz","blockers":[{"kind":"ci","summary":"go test (model/tiktoken/go.mod)=IN_PROGRESS; go test (agent/weknora/go.mod)=IN_PROGRESS; go test (agent/extension/toolpipe/go.mod)=IN_PROGRESS; go test (knowledge/vectorstore/qdrant/go.mod)=IN_PROGRESS; go test (codeexecutor/container/go.mod)=IN_PROGRESS; check go.mod version=FAILURE; ..."}],"ci_state":"non-green (162 checks): go test (model/tiktoken/go.mod)=IN_PROGRESS; go test (agent/weknora/go.mod)=IN_PROGRESS; go test (agent/extension/toolpipe/go.mod)=IN_PROGRESS; go test (knowledge/vectorstore/qdrant/go.mod)=IN_PROGRESS; go test (codeexecutor/container/go.mod)=IN_PROGRESS; check go.mod version=FAILURE; ...","number":2050,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 9336d31484d6; CI state: non-green (162 checks): go test (model/tiktoken/go.mod)=IN_PROGRESS; go test (agent/weknora/go.mod)=IN_PROGRESS; go test (agent/extension/toolpipe/go.mod)=IN_PROGRESS; go test (knowledge/vectorstore/qdrant/go.mod)=IN_PROGRESS; go test (codeexecutor/container/go.mod)=IN_PROGRESS; check go.mod version=FAILURE; ...; reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"feat(tool/safety): add tool execution safety guard","url":"https://github.com/trpc-group/trpc-agent-go/pull/2050"},{"author":"mingri31164","blockers":[{"kind":"ci","summary":"codecov/patch=FAILURE; check go.mod version=FAILURE; CLAAssistant=FAILURE"}],"ci_state":"non-green (166 checks): codecov/patch=FAILURE; check go.mod version=FAILURE; CLAAssistant=FAILURE","number":2055,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 322fba1998e2; CI state: non-green (166 checks): codecov/patch=FAILURE; check go.mod version=FAILURE; CLAAssistant=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"feat: 新增会话回放一致性测试工具链","url":"https://github.com/trpc-group/trpc-agent-go/pull/2055"},{"author":"octo-patch","blockers":[{"kind":"ci","summary":"CLAAssistant=FAILURE"}],"ci_state":"non-green (162 checks): CLAAssistant=FAILURE","number":2071,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head a00992d13f88; CI state: non-green (162 checks): CLAAssistant=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"model/internal/model: add MiniMax-M3 context window","url":"https://github.com/trpc-group/trpc-agent-go/pull/2071"},{"author":"sks","blockers":[{"kind":"ci","summary":"codecov/patch=FAILURE"}],"ci_state":"non-green (162 checks): codecov/patch=FAILURE","number":2084,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 664c8ed93f02; CI state: non-green (162 checks): codecov/patch=FAILURE; reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"feat(model/anthropic): retry streaming requests on transient transport failures","url":"https://github.com/trpc-group/trpc-agent-go/pull/2084"},{"author":"coder-mtj","blockers":[{"kind":"ci","summary":"lint=FAILURE; typos=FAILURE"}],"ci_state":"non-green (162 checks): lint=FAILURE; typos=FAILURE","number":2088,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 914e015d63c5; CI state: non-green (162 checks): lint=FAILURE; typos=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"feat(session): add multi-backend replay consistency test framework","url":"https://github.com/trpc-group/trpc-agent-go/pull/2088"},{"author":"coder-mtj","blockers":[{"kind":"ci","summary":"lint=FAILURE"}],"ci_state":"non-green (162 checks): lint=FAILURE","number":2089,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 54862a063d37; CI state: non-green (162 checks): lint=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"feat(tool): add pre-execution safety scanner with OTel integration","url":"https://github.com/trpc-group/trpc-agent-go/pull/2089"},{"author":"coder-mtj","blockers":[{"kind":"ci","summary":"check examples (2/4)=FAILURE; lint=FAILURE"}],"ci_state":"non-green (162 checks): check examples (2/4)=FAILURE; lint=FAILURE","number":2090,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 87f0a57d1827; CI state: non-green (162 checks): check examples (2/4)=FAILURE; lint=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"feat(examples): add code review agent with skill, sandbox, and database storage","url":"https://github.com/trpc-group/trpc-agent-go/pull/2090"},{"author":"xiaobaicai66695","blockers":[{"kind":"ci","summary":"lint=FAILURE"}],"ci_state":"non-green (162 checks): lint=FAILURE","number":2118,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head fc357b9bcb1e; CI state: non-green (162 checks): lint=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"feat: add Tool Execution Safety Guard for pre-execution command scanning #2002","url":"https://github.com/trpc-group/trpc-agent-go/pull/2118"},{"author":"ahfoysal","blockers":[{"kind":"ci","summary":"go test (evaluation/go.mod)=FAILURE; CLAAssistant=FAILURE"}],"ci_state":"non-green (161 checks): go test (evaluation/go.mod)=FAILURE; CLAAssistant=FAILURE","number":2124,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 1f6731c5e26a; CI state: non-green (161 checks): go test (evaluation/go.mod)=FAILURE; CLAAssistant=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"tool/file: handle nil list and search requests","url":"https://github.com/trpc-group/trpc-agent-go/pull/2124"},{"author":"Lfan-ke","blockers":[{"kind":"ci","summary":"lint=FAILURE"}],"ci_state":"non-green (162 checks): lint=FAILURE","number":2135,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 7eec376219fa; CI state: non-green (162 checks): lint=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"feat(examples/skills_code_review_agent): add static Go code review agent","url":"https://github.com/trpc-group/trpc-agent-go/pull/2135"},{"author":"qiefengying","blockers":[{"kind":"ci","summary":"go-apidiff=FAILURE"}],"ci_state":"non-green (162 checks): go-apidiff=FAILURE","number":2137,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head d6c90d2af825; CI state: non-green (162 checks): go-apidiff=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"feat(toolsearch): refactor into namespaced toolbox with embedding search, MCP support and two-tool mode","url":"https://github.com/trpc-group/trpc-agent-go/pull/2137"},{"author":"hyprh","blockers":[{"kind":"ci","summary":"lint=FAILURE"}],"ci_state":"non-green (160 checks): lint=FAILURE","number":2142,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head c30cfd484d65; CI state: non-green (160 checks): lint=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"session/redis: add WithDisableScriptCache to run Lua scripts via EVAL","url":"https://github.com/trpc-group/trpc-agent-go/pull/2142"},{"author":"GodBlf","blockers":[{"kind":"ci","summary":"go test (tool/claudecode/go.mod)=FAILURE"}],"ci_state":"non-green (163 checks): go test (tool/claudecode/go.mod)=FAILURE","number":2146,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 549d411d4e3c; CI state: non-green (163 checks): go test (tool/claudecode/go.mod)=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"[codex] add replay consistency harness","url":"https://github.com/trpc-group/trpc-agent-go/pull/2146"},{"author":"liuzengh","blockers":[{"kind":"ci","summary":"coverage=QUEUED"}],"ci_state":"non-green (163 checks): coverage=QUEUED","number":2149,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head a383d0c759ba; CI state: non-green (163 checks): coverage=QUEUED; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"docs: add sanitized Code Executor blog","url":"https://github.com/trpc-group/trpc-agent-go/pull/2149"},{"author":"GodBlf","blockers":[{"kind":"ci","summary":"codecov/patch=FAILURE"}],"ci_state":"non-green (164 checks): codecov/patch=FAILURE","number":2153,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head dc0e0809c6fb; CI state: non-green (164 checks): codecov/patch=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"[codex] add tool execution safety guard","url":"https://github.com/trpc-group/trpc-agent-go/pull/2153"},{"author":"xyxhhhhh","blockers":[{"kind":"ci","summary":"check external consumer (tool/email/go.mod)=IN_PROGRESS; go test (storage/postgres/go.mod)=IN_PROGRESS; go test (tool/claudecode/go.mod)=IN_PROGRESS; go test (tool/google/go.mod)=IN_PROGRESS; go test (server/evaluation/go.mod)=IN_PROGRESS; go test (session/mysql/go.mod)=IN_PROGRESS; ..."}],"ci_state":"non-green (162 checks): check external consumer (tool/email/go.mod)=IN_PROGRESS; go test (storage/postgres/go.mod)=IN_PROGRESS; go test (tool/claudecode/go.mod)=IN_PROGRESS; go test (tool/google/go.mod)=IN_PROGRESS; go test (server/evaluation/go.mod)=IN_PROGRESS; go test (session/mysql/go.mod)=IN_PROGRESS; ...","number":2160,"readiness_audit":"Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 5335974d22e8; CI state: non-green (162 checks): check external consumer (tool/email/go.mod)=IN_PROGRESS; go test (storage/postgres/go.mod)=IN_PROGRESS; go test (tool/claudecode/go.mod)=IN_PROGRESS; go test (tool/google/go.mod)=IN_PROGRESS; go test (server/evaluation/go.mod)=IN_PROGRESS; go test (session/mysql/go.mod)=IN_PROGRESS; ...; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Current head has pending, queued, or failing checks, so code review was not started in this run.","status":"skipped","title":"test: add session memory replay consistency harness","url":"https://github.com/trpc-group/trpc-agent-go/pull/2160"}],"prs":[1183,1400,1446,1736,1801,1956,1957,1967,2050,2055,2071,2084,2088,2089,2090,2118,2124,2135,2137,2142,2146,2149,2153,2160],"reason":"ci_not_green","title":"CI 未全绿或仍在 pending"},{"count":2,"items":[{"author":"yu-xin-c","blockers":[{"kind":"merge_conflict","summary":"GitHub mergeStateStatus is DIRTY."}],"ci_state":"green (156 checks)","number":1923,"readiness_audit":"Current head has a merge conflict or dirty mergeability state, so review was deferred. Current head c424527fe8c6; CI state: green (156 checks); reviewDecision=REVIEW_REQUIRED; mergeState=DIRTY.","skip_reason":"Current head has a merge conflict or dirty mergeability state, so review was deferred.","status":"skipped","title":"fix(codeexecutor): honor CleanEnv in e2b runtime","url":"https://github.com/trpc-group/trpc-agent-go/pull/1923"},{"author":"123456wda","blockers":[{"kind":"merge_conflict","summary":"GitHub mergeStateStatus is DIRTY."}],"ci_state":"green (156 checks)","number":1930,"readiness_audit":"Current head has a merge conflict or dirty mergeability state, so review was deferred. Current head 576b11d6d1f4; CI state: green (156 checks); reviewDecision=CHANGES_REQUESTED; mergeState=DIRTY.","skip_reason":"Current head has a merge conflict or dirty mergeability state, so review was deferred.","status":"skipped","title":"fix: set default HTTP client timeout to prevent goroutine leaks","url":"https://github.com/trpc-group/trpc-agent-go/pull/1930"}],"prs":[1923,1930],"reason":"merge_conflict","title":"存在 merge conflict / dirty 状态"},{"count":13,"items":[{"author":"liuzengh","blockers":[{"kind":"draft_wip","summary":"GitHub draft flag is set."}],"ci_state":"non-green (85 checks): go test (memory/sqlitevec/go.mod)=FAILURE; go test (memory/sqlite/go.mod)=FAILURE; go test (memory/redis/go.mod)=FAILURE; go test (memory/mysqlvec/go.mod)=FAILURE; go test (memory/mysql/go.mod)=FAILURE; go test (agent/n8n/go.mod)=FAILURE; ...","number":1678,"readiness_audit":"Draft or WIP gate blocked review before code audit. Current head 657cf9c04385; CI state: non-green (85 checks): go test (memory/sqlitevec/go.mod)=FAILURE; go test (memory/sqlite/go.mod)=FAILURE; go test (memory/redis/go.mod)=FAILURE; go test (memory/mysqlvec/go.mod)=FAILURE; go test (memory/mysql/go.mod)=FAILURE; go test (agent/n8n/go.mod)=FAILURE; ...; reviewDecision=REVIEW_REQUIRED; mergeState=DIRTY.","skip_reason":"Draft or WIP gate blocked review before code audit.","status":"skipped","title":"agent: centralize invoke_agent telemetry in RunWithPlugins","url":"https://github.com/trpc-group/trpc-agent-go/pull/1678"},{"author":"liuzengh","blockers":[{"kind":"draft_wip","summary":"GitHub draft flag is set."}],"ci_state":"green (87 checks)","number":1710,"readiness_audit":"Draft or WIP gate blocked review before code audit. Current head 1a4057120129; CI state: green (87 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Draft or WIP gate blocked review before code audit.","status":"skipped","title":"a2a: add input schema","url":"https://github.com/trpc-group/trpc-agent-go/pull/1710"},{"author":"hyprh","blockers":[{"kind":"draft_wip","summary":"GitHub draft flag is set."}],"ci_state":"non-green (305 checks): check examples (1/4)=FAILURE; check examples build script (1/4)=FAILURE","number":1778,"readiness_audit":"Draft or WIP gate blocked review before code audit. Current head 403338f0c461; CI state: non-green (305 checks): check examples (1/4)=FAILURE; check examples build script (1/4)=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Draft or WIP gate blocked review before code audit.","status":"skipped","title":"examples: add RLM (Recursive Language Model) demo","url":"https://github.com/trpc-group/trpc-agent-go/pull/1778"},{"author":"hyprh","blockers":[{"kind":"draft_wip","summary":"GitHub draft flag is set."}],"ci_state":"green (156 checks)","number":1901,"readiness_audit":"Draft or WIP gate blocked review before code audit. Current head 5c5f62838568; CI state: green (156 checks); reviewDecision=REVIEW_REQUIRED; mergeState=DIRTY.","skip_reason":"Draft or WIP gate blocked review before code audit.","status":"skipped","title":"WIP: knowledge: deprecate legacy OCR path","url":"https://github.com/trpc-group/trpc-agent-go/pull/1901"},{"author":"print-happy","blockers":[{"kind":"draft_wip","summary":"GitHub draft flag is set."}],"ci_state":"non-green (162 checks): codecov/patch=FAILURE; typos=FAILURE; lint=FAILURE","number":2010,"readiness_audit":"Draft or WIP gate blocked review before code audit. Current head e587e79d75d2; CI state: non-green (162 checks): codecov/patch=FAILURE; typos=FAILURE; lint=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Draft or WIP gate blocked review before code audit.","status":"skipped","title":"memory/deepsearch: add progressive DeepSearch","url":"https://github.com/trpc-group/trpc-agent-go/pull/2010"},{"author":"liuzengh","blockers":[{"kind":"draft_wip","summary":"GitHub draft flag is set."}],"ci_state":"non-green (162 checks): codecov/patch=FAILURE","number":2037,"readiness_audit":"Draft or WIP gate blocked review before code audit. Current head e21156d28a93; CI state: non-green (162 checks): codecov/patch=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Draft or WIP gate blocked review before code audit.","status":"skipped","title":"feat(telemetry): add invoke skill observability","url":"https://github.com/trpc-group/trpc-agent-go/pull/2037"},{"author":"bytethm","blockers":[{"kind":"draft_wip","summary":"GitHub draft flag is set."}],"ci_state":"green (162 checks)","number":2047,"readiness_audit":"Draft or WIP gate blocked review before code audit. Current head 2d9deb64810f; CI state: green (162 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Draft or WIP gate blocked review before code audit.","status":"skipped","title":"agent: add durable session context sources","url":"https://github.com/trpc-group/trpc-agent-go/pull/2047"},{"author":"hyprh","blockers":[{"kind":"draft_wip","summary":"GitHub draft flag is set."}],"ci_state":"non-green (161 checks): go test (tool/webfetch/httpfetch/go.mod)=FAILURE; check external consumer (tool/webfetch/httpfetch/go.mod)=FAILURE; go test (memory/postgres/go.mod)=FAILURE; go test (knowledge/vectorstore/pgvector/go.mod)=FAILURE; go test (storage/elasticsearch/go.mod)=FAILURE; go test (session/redis/go.mod)=FAILURE; ...","number":2058,"readiness_audit":"Draft or WIP gate blocked review before code audit. Current head 3655c93792ff; CI state: non-green (161 checks): go test (tool/webfetch/httpfetch/go.mod)=FAILURE; check external consumer (tool/webfetch/httpfetch/go.mod)=FAILURE; go test (memory/postgres/go.mod)=FAILURE; go test (knowledge/vectorstore/pgvector/go.mod)=FAILURE; go test (storage/elasticsearch/go.mod)=FAILURE; go test (session/redis/go.mod)=FAILURE; ...; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Draft or WIP gate blocked review before code audit.","status":"skipped","title":"a2a: add v2 packages backed by trpc-a2a-go/v2 (A2A protocol v1.0)","url":"https://github.com/trpc-group/trpc-agent-go/pull/2058"},{"author":"cuboya","blockers":[{"kind":"draft_wip","summary":"GitHub draft flag is set."}],"ci_state":"green (162 checks)","number":2076,"readiness_audit":"Draft or WIP gate blocked review before code audit. Current head 9b9d81e8a6ac; CI state: green (162 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Draft or WIP gate blocked review before code audit.","status":"skipped","title":"feat(sandbox): add macOS denial diagnostics","url":"https://github.com/trpc-group/trpc-agent-go/pull/2076"},{"author":"sks","blockers":[{"kind":"draft_wip","summary":"GitHub draft flag is set."}],"ci_state":"non-green (162 checks): codecov/patch=FAILURE","number":2086,"readiness_audit":"Draft or WIP gate blocked review before code audit. Current head 4ab44893e9af; CI state: non-green (162 checks): codecov/patch=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Draft or WIP gate blocked review before code audit.","status":"skipped","title":"fix(model/anthropic): repair truncated tool_use input before stream finalize","url":"https://github.com/trpc-group/trpc-agent-go/pull/2086"},{"author":"bytethm","blockers":[{"kind":"draft_wip","summary":"GitHub draft flag is set."}],"ci_state":"green (164 checks)","number":2133,"readiness_audit":"Draft or WIP gate blocked review before code audit. Current head 891b37f767a2; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Draft or WIP gate blocked review before code audit.","status":"skipped","title":"agent/llmagent: continue after image URL failures","url":"https://github.com/trpc-group/trpc-agent-go/pull/2133"},{"author":"hyprh","blockers":[{"kind":"draft_wip","summary":"GitHub draft flag is set."}],"ci_state":"non-green (162 checks): codecov/patch=FAILURE","number":2143,"readiness_audit":"Draft or WIP gate blocked review before code audit. Current head 7283f9ca03e9; CI state: non-green (162 checks): codecov/patch=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Draft or WIP gate blocked review before code audit.","status":"skipped","title":"[WIP] tool/okf: Open Knowledge Format (OKF) support","url":"https://github.com/trpc-group/trpc-agent-go/pull/2143"},{"author":"bytethm","blockers":[{"kind":"draft_wip","summary":"GitHub draft flag is set."}],"ci_state":"green (162 checks)","number":2144,"readiness_audit":"Draft or WIP gate blocked review before code audit. Current head 4b6d1768fdb8; CI state: green (162 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Draft or WIP gate blocked review before code audit.","status":"skipped","title":"openclaw: add durable request context prompts","url":"https://github.com/trpc-group/trpc-agent-go/pull/2144"}],"prs":[1678,1710,1778,1901,2010,2037,2047,2058,2076,2086,2133,2143,2144],"reason":"draft_or_wip","title":"Draft 或 WIP"},{"count":2,"items":[{"author":"WineChord","blockers":[{"kind":"own_pr","summary":"Own PR is reserved for external maintainer review in this run."}],"ci_state":"green (164 checks)","number":2155,"readiness_audit":"Own PR was audited only at status level in this comment-only run; no self-review, branch fix, approval, or merge was performed. Current head 4d70aedf1bb6; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Own PR was audited only at status level in this comment-only run; no self-review, branch fix, approval, or merge was performed.","status":"skipped","title":"openclaw,tool: guard blocked web research routes","url":"https://github.com/trpc-group/trpc-agent-go/pull/2155"},{"author":"WineChord","blockers":[{"kind":"own_pr","summary":"Own PR is reserved for external maintainer review in this run."}],"ci_state":"green (164 checks)","number":2156,"readiness_audit":"Own PR was audited only at status level in this comment-only run; no self-review, branch fix, approval, or merge was performed. Current head d8976001ebd3; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"Own PR was audited only at status level in this comment-only run; no self-review, branch fix, approval, or merge was performed.","status":"skipped","title":"agent,openclaw: repair text-form tool calls","url":"https://github.com/trpc-group/trpc-agent-go/pull/2156"}],"prs":[2155,2156],"reason":"own_pr_comment_only_status","title":"自己的 PR 仅做状态归档"},{"count":9,"items":[{"author":"liuzengh","blockers":[{"kind":"not_reached","summary":"Not reached after priority went to newly changed unreviewed PRs; this PR already had a pre-existing APPROVED decision, but this run was comment-only and submitted no MyCR approval or merge."}],"ci_state":"green (323 checks)","number":1988,"readiness_audit":"PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review. Current head cac7e22bdbe7; CI state: green (323 checks); reviewDecision=APPROVED; mergeState=CLEAN.","skip_reason":"PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review.","status":"skipped","title":"memory: guard auto extraction after external context","url":"https://github.com/trpc-group/trpc-agent-go/pull/1988"},{"author":"Nerdlet369","blockers":[{"kind":"not_reached","summary":"Not reached after priority went to newly changed candidates; the prior CHANGES_REQUESTED aggregate needs a fresh thread-level audit before any new review action."}],"ci_state":"green (161 checks)","number":2044,"readiness_audit":"PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review. Current head 2e7bf1ec19ad; CI state: green (161 checks); reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.","skip_reason":"PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review.","status":"skipped","title":"feat: Tool Safety Scanner with 8 rules and structured audit","url":"https://github.com/trpc-group/trpc-agent-go/pull/2044"},{"author":"everfid-ever","blockers":[{"kind":"not_reached","summary":"Not reached after priority went to newly changed candidates; the prior safety-rule discussion remains important but was not re-audited in this run."}],"ci_state":"green (161 checks)","number":2045,"readiness_audit":"PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review. Current head 0e3bfbf1aa01; CI state: green (161 checks); reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.","skip_reason":"PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review.","status":"skipped","title":"feat: add tool execution safety guard for secure command scanning and…","url":"https://github.com/trpc-group/trpc-agent-go/pull/2045"},{"author":"xiaosansh","blockers":[{"kind":"not_reached","summary":"Not reached after priority went to newly changed candidates; the replaytest framework still needs a fresh thread and diff audit before any review action."}],"ci_state":"green (166 checks)","number":2051,"readiness_audit":"PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review. Current head a9c7ea990c12; CI state: green (166 checks); reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.","skip_reason":"PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review.","status":"skipped","title":"session/replaytest: add multi-backend replay consistency test framework","url":"https://github.com/trpc-group/trpc-agent-go/pull/2051"},{"author":"Violet2314","blockers":[{"kind":"not_reached","summary":"Not reached after priority went to newly changed candidates; the OpenSandbox executor follow-up needs a fresh thread and diff audit before any review action."}],"ci_state":"green (163 checks)","number":2087,"readiness_audit":"PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review. Current head fb13ad7a1485; CI state: green (163 checks); reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.","skip_reason":"PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review.","status":"skipped","title":"codeexecutor/opensandbox: add OpenSandbox remote executor","url":"https://github.com/trpc-group/trpc-agent-go/pull/2087"},{"author":"sks","blockers":[{"kind":"not_reached","summary":"Not reached after priority went to newly changed candidates; the Pensieve context masking discussion needs a fresh thread and diff audit before any review action."}],"ci_state":"green (162 checks)","number":2097,"readiness_audit":"PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review. Current head e2bb4bc8fe32; CI state: green (162 checks); reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.","skip_reason":"PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review.","status":"skipped","title":"feat(session,tool/context): Pensieve context self-pruning with example","url":"https://github.com/trpc-group/trpc-agent-go/pull/2097"},{"author":"sks","blockers":[{"kind":"not_reached","summary":"Not reached after priority went to newly changed candidates; the memoryutils design discussion needs a fresh thread and diff audit before any review action."}],"ci_state":"green (162 checks)","number":2109,"readiness_audit":"PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review. Current head 597e87acb103; CI state: green (162 checks); reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.","skip_reason":"PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review.","status":"skipped","title":"memoryutils: export helpers and adopt in built-in backends","url":"https://github.com/trpc-group/trpc-agent-go/pull/2109"},{"author":"grignolalouis","blockers":[{"kind":"not_reached","summary":"Not reached after priority went to newly changed candidates; this unchanged green WorkspaceAcquirer PR remains in backlog for a future comment-only or approval-enabled pass."}],"ci_state":"green (162 checks)","number":2125,"readiness_audit":"PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review. Current head 4fa403fd31dd; CI state: green (162 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review.","status":"skipped","title":"codeexecutor, agent/llmagent: make workspace registry pluggable via WorkspaceAcquirer","url":"https://github.com/trpc-group/trpc-agent-go/pull/2125"},{"author":"Spock12138","blockers":[{"kind":"not_reached","summary":"Not reached after priority went to newly changed candidates; the replay consistency harness remains green but was behind higher-priority changed PRs."}],"ci_state":"green (163 checks)","number":2134,"readiness_audit":"PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review. Current head 816df087f11b; CI state: green (163 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.","skip_reason":"PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review.","status":"skipped","title":"test: add replay consistency harness","url":"https://github.com/trpc-group/trpc-agent-go/pull/2134"}],"prs":[1988,2044,2045,2051,2087,2097,2109,2125,2134],"reason":"not_reached_comment_only","title":"绿色但本轮未触达深审"}],"timeline":[{"detail":"Ran git pull --ff-only in the MyCR workspace; it was already up to date.","event":"Repository refresh"},{"detail":"Collected 59 open PRs and per-PR effective checks with gh/REST.","event":"Open PR snapshot"},{"detail":"Submitted COMMENT reviews on #2141, #2157, #2128, #2121, #2151, #2152, and #2136; submitted no approval and no merge.","event":"Comment-only reviews"},{"detail":"#2158 and #2159 were checked deeply and had no new blocking finding, but no LGTM was submitted.","event":"Clean deferred reviews"}],"title":"MyCR comment-only full sweep 2026-07-09 16:53"};
+const labels = {
+  zh: {
+    title: "MyCR 审核报告",
+    subtitle: "仓库 {repo}，生成时间 {time}。默认展示中文，可切换英文。",
+    statusDistribution: "状态分布",
+    timeline: "执行时间线",
+    all: "全部",
+    approved: "已批准",
+    commented: "已评论",
+    maintained: "已维护",
+    merged: "已合并",
+    skipped: "未审核",
+    blocked: "阻塞",
+    total: "总 PR",
+    reviewed: "已审核",
+    comments: "评论",
+    followups: "需关注",
+    search: "搜索 PR、作者、标题、原因",
+    author: "作者",
+    technicalBackground: "技术背景",
+    problem: "解决的问题",
+    necessityAssessment: "必要性判断",
+    evidenceChecked: "已核验证据",
+    reproductionOnBase: "基线复现",
+    issueEvidenceGaps: "证据缺口",
+    problemFraming: "问题本质与视角",
+    rootCause: "根因判断",
+    approach: "实现方式",
+    implementationDerivation: "实现推导链",
+    solutionFitAssessment: "方案适配性",
+    alternativeDesigns: "可选设计方案",
+    tradeoffs: "设计取舍",
+    designAssessment: "设计评估",
+    outcome: "审核结果",
+    risk: "剩余风险",
+    ci: "CI / 线程状态",
+    backgroundAndProblem: "背景与问题",
+    solutionAndTradeoffs: "方案与取舍",
+    impactAndEvidence: "影响与证据",
+    reviewSummary: "审查结论",
+    overviewSection: "整体摘要",
+    readingGuide: "阅读建议",
+    readingGuideHint: "先看高风险和高影响 PR",
+    readingAdvice: "阅读建议",
+    modules: "涉及模块",
+    apiSurface: "导出 API 变化",
+    changeInventory: "具体变更清单",
+    semanticChanges: "语义变化",
+    moduleImpact: "模块影响",
+    crossModuleImpact: "模块交叉影响",
+    behaviorImpact: "行为与兼容性影响",
+    testsDocs: "测试与文档",
+    attentionPoints: "需要注意",
+    directFixes: "直接修复",
+    selfReviewPolicy: "自审策略",
+    reviewAction: "执行动作",
+    mergePolicy: "合入策略",
+    headSha: "Head SHA",
+    mergeCommit: "Merge Commit",
+    reason: "跳过原因",
+    reviewedSection: "已处理 PR",
+    reviewedHint: "点击卡片查看细节",
+    skippedGroups: "未审核 PR 分类",
+    skippedHint: "按排除原因分组",
+    followUpSection: "后续关注",
+    followUpHint: "接近可处理但仍有阻塞",
+    selfEvolutionSection: "自进化记录",
+    items: "项",
+    blocker: "阻塞点",
+    blockerDetails: "具体阻塞点",
+    nonBlockerDetails: "未处理原因",
+    readinessAudit: "就绪性审计",
+    blockerKinds: {
+      ci: "CI",
+      human_review: "人类评审",
+      bot_review: "机器人评审",
+      merge_conflict: "合并冲突",
+      draft_wip: "Draft/WIP",
+      own_pr: "自己发起",
+      soft_ci: "软门禁",
+      necessity: "必要性",
+      insufficient_evidence: "证据不足",
+      stale_issue: "问题已失效",
+      implementation_scope: "实现范围",
+      solution_fit: "方案适配性",
+      manual_review: "人工合入",
+      not_reached: "本轮未处理",
+      other: "其他"
+    },
+    inlineComments: "内联评论",
+    focus: "审核重点",
+    severity: "严重级别",
+    expandAll: "展开全部",
+    collapseAll: "收起全部",
+    expandDetails: "展开详情",
+    collapseDetails: "收起详情",
+    summaryFallback: "展开查看完整审查结论、风险和证据。",
+    empty: "当前筛选条件下没有 PR。",
+    footer: "报告文件为自包含 HTML，默认保存在 public/reports 并由 /mycr 站点归档。"
+  },
+  en: {
+    title: "MyCR Review Report",
+    subtitle: "Repository {repo}, generated at {time}. Chinese is the default view; English is available here.",
+    statusDistribution: "Status Distribution",
+    timeline: "Run Timeline",
+    all: "All",
+    approved: "Approved",
+    commented: "Commented",
+    maintained: "Maintained",
+    merged: "Merged",
+    skipped: "Not Reviewed",
+    blocked: "Blocked",
+    total: "Total PRs",
+    reviewed: "Reviewed",
+    comments: "Comments",
+    followups: "Follow-ups",
+    search: "Search PR, author, title, or reason",
+    author: "Author",
+    technicalBackground: "Technical Background",
+    problem: "Problem",
+    necessityAssessment: "Necessity Assessment",
+    evidenceChecked: "Evidence Checked",
+    reproductionOnBase: "Base Reproduction",
+    issueEvidenceGaps: "Evidence Gaps",
+    problemFraming: "Problem Framing",
+    rootCause: "Root Cause",
+    approach: "Implementation",
+    implementationDerivation: "Implementation Derivation",
+    solutionFitAssessment: "Solution Fit",
+    alternativeDesigns: "Alternative Designs",
+    tradeoffs: "Tradeoffs",
+    designAssessment: "Design Assessment",
+    outcome: "Outcome",
+    risk: "Remaining Risk",
+    ci: "CI / Thread State",
+    backgroundAndProblem: "Background and Problem",
+    solutionAndTradeoffs: "Solution and Tradeoffs",
+    impactAndEvidence: "Impact and Evidence",
+    reviewSummary: "Review Summary",
+    overviewSection: "Overview",
+    readingGuide: "Reading Guide",
+    readingGuideHint: "Start with high-risk or high-impact PRs",
+    readingAdvice: "Reading Advice",
+    modules: "Touched Modules",
+    apiSurface: "Exported API Changes",
+    changeInventory: "Concrete Change Inventory",
+    semanticChanges: "Semantic Changes",
+    moduleImpact: "Module Impact",
+    crossModuleImpact: "Cross-module Impact",
+    behaviorImpact: "Behavior and Compatibility Impact",
+    testsDocs: "Tests and Docs",
+    attentionPoints: "Attention Points",
+    directFixes: "Direct Fixes",
+    selfReviewPolicy: "Self-review Policy",
+    reviewAction: "Review Action",
+    mergePolicy: "Merge Policy",
+    headSha: "Head SHA",
+    mergeCommit: "Merge Commit",
+    reason: "Skip Reason",
+    reviewedSection: "Processed PRs",
+    reviewedHint: "Click a card for details",
+    skippedGroups: "Not Reviewed by Reason",
+    skippedHint: "Grouped by exclusion reason",
+    followUpSection: "Follow-up Attention",
+    followUpHint: "Close to ready but still blocked",
+    selfEvolutionSection: "Self-evolution Notes",
+    items: "items",
+    blocker: "Blocker",
+    blockerDetails: "Concrete Blockers",
+    nonBlockerDetails: "Why Not Reviewed",
+    readinessAudit: "Readiness Audit",
+    blockerKinds: {
+      ci: "CI",
+      human_review: "Human Review",
+      bot_review: "Bot Review",
+      merge_conflict: "Merge Conflict",
+      draft_wip: "Draft/WIP",
+      own_pr: "Own PR",
+      soft_ci: "Soft CI",
+      necessity: "Necessity",
+      insufficient_evidence: "Insufficient Evidence",
+      stale_issue: "Stale Problem",
+      implementation_scope: "Implementation Scope",
+      solution_fit: "Solution Fit",
+      manual_review: "Manual Review",
+      not_reached: "Not Reached",
+      other: "Other"
+    },
+    inlineComments: "Inline Comments",
+    focus: "Review Focus",
+    severity: "Severity",
+    expandAll: "Expand all",
+    collapseAll: "Collapse all",
+    expandDetails: "Expand details",
+    collapseDetails: "Collapse details",
+    summaryFallback: "Expand for the full review outcome, risk, and evidence.",
+    empty: "No PRs match the current filters.",
+    footer: "This self-contained HTML report is saved under public/reports by default and archived by the /mycr site."
+  }
+};
+
+let lang = "zh";
+let filter = "all";
+const statusOrder = ["approved", "commented", "maintained", "merged", "skipped", "blocked"];
+
+function text(value, fallback = "") {
+  if (value === undefined || value === null || value === "") return fallback;
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return value[lang] || value.zh || value.en || value.summary || value.body || value.mode || fallback;
+  }
+  return String(value);
+}
+
+function escapeHtml(value) {
+  return text(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function formatRich(value) {
+  let html = escapeHtml(value);
+  const replacements = [
+    [
+      /(P[0-2]|codecov\/patch=FAILURE|go-apidiff=FAILURE|go-apidiff|FAILURE|失败|阻塞|不能合入|不能 merge|未合并|破坏性|breaking|unbounded|无界|绕过|丢失|重复|不稳定|风险)/gi,
+      "mark-bad"
+    ],
+    [
+      /(LGTM|已合并|已批准|squash merge|merged|approved|CI 全绿|全绿|修复有效|\bresolved\b|\bresolve\b)/gi,
+      "mark-good"
+    ],
+    [
+      /(pending|soft[- ]?CI|软门禁|follow-up|后续|关注|CodeRabbit|review readiness|not_reached)/gi,
+      "mark-info"
+    ],
+    [
+      /(导出 API|\bAPI\b|兼容性|\bsession\b|\brunner\b|\bmemory\b|GraphRAG|workspace_exec|OpenAPI|\bpolicy\b|security|安全)/gi,
+      "mark-warn"
+    ]
+  ];
+  for (const [pattern, className] of replacements) {
+    html = html.replace(pattern, `<mark class="${className}">$1</mark>`);
+  }
+  return html;
+}
+
+function prs() {
+  const skippedByNumber = new Map();
+  for (const group of skippedGroups()) {
+    for (const item of (group.items || [])) {
+      const key = item.number ? String(item.number) : `${group.reason || "skipped"}:${text(item.title)}`;
+      if (skippedByNumber.has(key)) continue;
+      skippedByNumber.set(key, {
+      ...item,
+      status: item.status || "skipped",
+      skip_reason: item.skip_reason || group.reason
+      });
+    }
+  }
+  const skipped = [...skippedByNumber.values()];
+  return [
+    ...(reportData.approved || []),
+    ...(reportData.commented || []),
+    ...(reportData.maintained || []),
+    ...(reportData.blocked || []),
+    ...skipped
+  ];
+}
+
+function skippedGroups() {
+  const processedNumbers = new Set([
+    ...(reportData.approved || []),
+    ...(reportData.commented || []),
+    ...(reportData.maintained || []),
+    ...(reportData.blocked || [])
+  ].map(item => Number(item.number)).filter(Boolean));
+  return (reportData.skipped_groups || []).map(group => {
+    const existingItems = group.items || [];
+    if (existingItems.length) {
+      return {
+        ...group,
+        items: existingItems.filter(item => !processedNumbers.has(Number(item.number)))
+      };
+    }
+    const items = (group.prs || []).filter(number => !processedNumbers.has(Number(number))).map(number => {
+      const reason = group.reason || "skipped";
+      const summary = text(group.title_zh || group.title || reason);
+      return {
+        number,
+        title: `PR #${number}`,
+        url: "",
+        author: "",
+        status: "skipped",
+        skip_reason: summary,
+        readiness_audit: summary,
+        ci_state: "",
+        blockers: [{
+          kind: reason,
+          summary
+        }]
+      };
+    });
+    return { ...group, items, count: items.length };
+  }).filter(group => group.items.length > 0);
+}
+
+function counts(items) {
+  const result = Object.fromEntries(statusOrder.map(status => [status, 0]));
+  for (const item of items) {
+    const status = item.status || "skipped";
+    result[status] = (result[status] || 0) + 1;
+  }
+  return result;
+}
+
+function setLanguage(nextLang) {
+  lang = nextLang;
+  document.documentElement.lang = nextLang === "zh" ? "zh-CN" : "en";
+  document.querySelectorAll("[data-lang-button]").forEach(button => {
+    button.classList.toggle("active", button.dataset.langButton === nextLang);
+  });
+  render();
+}
+
+function renderStatic() {
+  document.querySelectorAll("[data-i18n]").forEach(node => {
+    node.textContent = labels[lang][node.dataset.i18n];
+  });
+  const repo = reportData.repo || "trpc-group/trpc-agent-go";
+  const generated = reportData.generated_at || "2026-07-09T09:19:30.256Z";
+  document.getElementById("subtitle").textContent = labels[lang].subtitle
+    .replace("{repo}", repo)
+    .replace("{time}", generated);
+  document.getElementById("search").placeholder = labels[lang].search;
+  document.getElementById("openAll").textContent = labels[lang].expandAll;
+  document.getElementById("closeAll").textContent = labels[lang].collapseAll;
+  document.getElementById("footer").textContent = labels[lang].footer;
+}
+
+function renderMetrics(items) {
+  const totalComments = items.reduce((sum, item) =>
+    sum + ((item.inline_comments || []).length || item.comment_count || 0), 0);
+  const followups = (reportData.follow_up || []).length;
+  const reviewed = items.filter(item =>
+    ["approved", "commented", "maintained", "merged", "blocked"].includes(item.status)
+  ).length;
+  const metricRows = [
+    [labels[lang].total, items.length],
+    [labels[lang].reviewed, reviewed],
+    [labels[lang].approved, items.filter(item =>
+      ["approved", "merged"].includes(item.status)).length],
+    [labels[lang].comments, totalComments],
+    [labels[lang].followups, followups]
+  ];
+  document.getElementById("metrics").innerHTML = metricRows.map(([label, value]) => `
+    <div class="metric">
+      <div class="value">${value}</div>
+      <div class="label">${escapeHtml(label)}</div>
+    </div>
+  `).join("");
+}
+
+function renderBars(items) {
+  const byStatus = counts(items);
+  const maxCount = Math.max(1, ...Object.values(byStatus));
+  document.getElementById("bars").innerHTML = statusOrder.map(status => {
+    const value = byStatus[status] || 0;
+    const width = value === 0 ? 0 : Math.max(3, Math.round((value / maxCount) * 100));
+    return `
+      <div class="bar-row">
+        <div class="bar-label">${labels[lang][status]}</div>
+        <div class="bar-track"><div class="bar-fill ${status}" style="width:${width}%"></div></div>
+        <strong>${value}</strong>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderTimeline() {
+  const events = reportData.timeline || [];
+  const container = document.getElementById("timeline");
+  if (!events.length) {
+    container.innerHTML = `<div class="empty">${labels[lang].empty}</div>`;
+    return;
+  }
+  container.innerHTML = events.map(event => {
+    const data = typeof event === "object" && event !== null && !Array.isArray(event)
+      ? event
+      : { detail: event };
+    const eventName = text(data.event || data.type || data.label || "");
+    const detail = text(data.detail || data.text || (!eventName ? data : ""));
+    const body = eventName && detail && eventName !== detail
+      ? `<strong>${escapeHtml(eventName)}</strong><div>${formatRich(detail)}</div>`
+      : formatRich(detail || eventName);
+    return `
+      <div class="timeline-item">
+        <div class="time">${escapeHtml(data.time || "")}</div>
+        <div>${body}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderOverview() {
+  const panel = document.getElementById("overviewPanel");
+  const content = document.getElementById("overviewContent");
+  const overview = reportData.overview || reportData.summary;
+  const body = text(overview);
+  if (!body) {
+    panel.style.display = "none";
+    content.textContent = "";
+    return;
+  }
+  panel.style.display = "block";
+  content.innerHTML = formatRich(body);
+}
+
+function renderChips() {
+  const chipRows = ["all", ...statusOrder];
+  document.getElementById("chips").innerHTML = chipRows.map(status => `
+    <button type="button" class="chip ${filter === status ? "active" : ""}"
+      data-filter="${status}">${labels[lang][status]}</button>
+  `).join("");
+  document.querySelectorAll("[data-filter]").forEach(button => {
+    button.addEventListener("click", () => {
+      filter = button.dataset.filter;
+      renderCards();
+      renderSkipGroups();
+      renderFollowUp();
+      renderChips();
+    });
+  });
+}
+
+function matchesSearch(item, query) {
+  if (!query) return true;
+  const haystack = [
+    item.number,
+    text(item.title),
+    item.author,
+    text(item.problem),
+    text(item.necessity_assessment),
+    text(item.evidence_checked),
+    text(item.reproduction_on_base),
+    text(item.issue_evidence_gaps),
+    text(item.approach),
+    text(item.implementation_derivation),
+    text(item.solution_fit_assessment),
+    text(item.outcome),
+    text(item.merge_policy),
+    text(item.skip_reason),
+    text(item.group_reason),
+    text(item.readiness_audit),
+    blockersSearchText(item.blockers),
+    text(item.risk),
+    text(item.ci_state)
+  ].join(" ").toLowerCase();
+  return haystack.includes(query.toLowerCase());
+}
+
+function blockersSearchText(blockers) {
+  if (!Array.isArray(blockers)) return "";
+  return blockers.map(blocker => {
+    if (typeof blocker !== "object" || blocker === null) return text(blocker);
+    return [
+      blocker.kind,
+      blocker.summary,
+      blocker.reviewer,
+      blocker.path,
+      blocker.line,
+      blocker.latest_response,
+      blocker.verification,
+      blocker.url
+    ].map(value => text(value)).join(" ");
+  }).join(" ");
+}
+
+function field(label, value) {
+  const body = text(value);
+  if (!body) return "";
+  return `<div class="field"><strong>${label}</strong><div class="field-body">${formatRich(body)}</div></div>`;
+}
+
+function renderBlockers(item) {
+  const blockers = Array.isArray(item.blockers) ? item.blockers : [];
+  if (!blockers.length) return "";
+  const isNonBlockerList = blockers.every(blocker => {
+    const kind = typeof blocker === "object" && blocker !== null ? String(blocker.kind || "") : "";
+    return kind === "not_reached";
+  });
+  const detailLabel = isNonBlockerList
+    ? labels[lang].nonBlockerDetails
+    : labels[lang].blockerDetails;
+  const rendered = blockers.map(blocker => {
+    const data = typeof blocker === "object" && blocker !== null
+      ? blocker
+      : { summary: blocker };
+    const location = [data.path, data.line ? `:${data.line}` : ""].filter(Boolean).join("");
+    const meta = [
+      data.kind ? blockerKindLabel(data.kind) : "",
+      data.reviewer ? `reviewer: ${text(data.reviewer)}` : "",
+      location,
+      data.latest_response ? `latest: ${text(data.latest_response)}` : "",
+      data.verification ? text(data.verification) : ""
+    ].filter(Boolean).join(" · ");
+    const summary = formatRich(data.summary || blocker);
+    const link = data.url
+      ? ` <a href="${escapeHtml(data.url)}">link</a>`
+      : "";
+    return `<li class="blocker-item"><div>${summary}${link}</div>${meta ? `<div class="blocker-meta">${escapeHtml(meta)}</div>` : ""}</li>`;
+  }).join("");
+  return `<div class="skip-detail"><strong>${detailLabel}:</strong></div><ul class="blocker-list">${rendered}</ul>`;
+}
+
+function blockerKindLabel(kind) {
+  return (labels[lang].blockerKinds || {})[kind] || text(kind);
+}
+
+  function inlineCommentText(comment) {
+    if (comment === undefined || comment === null) return "";
+    if (typeof comment !== "object" || Array.isArray(comment)) {
+      return text(comment);
+    }
+    if (lang === "zh") {
+      return text(comment.summary_zh || comment.summary || comment.body || comment.message || "");
+    }
+    return text(comment.body || comment.summary_en || comment.summary || comment.message || "");
+  }
+
+function allPrText(item) {
+  const comments = (item.inline_comments || []).map(comment => [
+    comment.severity,
+    comment.focus,
+    comment.body,
+    comment.summary,
+    comment.path
+  ].map(value => text(value)).join(" ")).join(" ");
+  const blockers = blockersSearchText(item.blockers);
+  return [
+    item.status,
+    item.number,
+    item.title,
+    item.author,
+    item.problem,
+    item.necessity_assessment,
+    item.evidence_checked,
+    item.reproduction_on_base,
+    item.issue_evidence_gaps,
+    item.approach,
+    item.implementation_derivation,
+    item.solution_fit_assessment,
+    item.outcome,
+    item.risk,
+    item.ci_state,
+    item.skip_reason,
+    item.readiness_audit,
+    item.modules,
+    item.api_surface,
+    comments,
+    blockers
+  ].map(value => text(value)).join(" ").toLowerCase();
+}
+
+function readingAdvice(item) {
+  const status = item.status || "skipped";
+  const comments = item.inline_comments || [];
+  const blockers = item.blockers || [];
+  const body = allPrText(item);
+  const hasP1 = comments.some(comment =>
+    /\bP[01]\b/i.test(text(comment.severity)) ||
+    /\bP[01]\b/i.test(inlineCommentText(comment))
+  );
+  const hasCriticalRisk = hasP1 ||
+    /(security|安全|bypass|绕过|breaking|破坏性|unbounded|无界|丢失|重复|不稳定|兼容|api|go-apidiff|failure|失败|不能 merge|不能合入|race|并发)/i.test(body);
+  const highImpactFeature =
+    /(add|new|新增|support|支持|agent|runner|session|memory|graphrag|knowledge|openapi|workspace_exec|policy|extension|tool|graph|api)/i.test(body);
+
+  const copy = {
+    critical: {
+      icon: "🔥",
+      zh: "重点精读",
+      en: "Deep Read",
+      reasonZh: comments.length
+        ? `有 ${comments.length} 条行级评论，且包含 P1/兼容/正确性/安全类风险。`
+        : "包含高风险兼容性或正确性信号，需要重点复核。",
+      reasonEn: comments.length
+        ? `${comments.length} inline comment(s), including P1, compatibility, correctness, or security risk.`
+        : "High-risk compatibility or correctness signal; review carefully."
+    },
+    focus: {
+      icon: "🔎",
+      zh: "建议细看",
+      en: "Read Carefully",
+      reasonZh: comments.length
+        ? `有 ${comments.length} 条评论或重要设计取舍，建议看完整结论。`
+        : "涉及核心模块、导出 API 或较大功能，建议细看。",
+      reasonEn: comments.length
+        ? `${comments.length} comment(s) or important design tradeoffs; read the full conclusion.`
+        : "Core module, exported API, or larger feature; read carefully."
+    },
+    skim: {
+      icon: "✅",
+      zh: "快速略看",
+      en: "Quick Skim",
+      reasonZh: "风险低或改动较直接，扫结论和 CI 状态即可。",
+      reasonEn: "Low risk or straightforward change; skim outcome and CI state."
+    },
+    follow: {
+      icon: "⏳",
+      zh: "只看阻塞",
+      en: "Blocker Only",
+      reasonZh: blockers.length
+        ? `主要看 ${blockers.length} 个具体阻塞点，暂不需要读完整实现。`
+        : "当前不是可合并状态，先看阻塞和后续动作。",
+      reasonEn: blockers.length
+        ? `Focus on ${blockers.length} concrete blocker(s); no need to read the full implementation yet.`
+        : "Not merge-ready; focus on blockers and next action."
+    }
+  };
+
+  let level = "skim";
+  if (status === "blocked") {
+    level = "follow";
+  } else if (status === "commented") {
+    level = hasCriticalRisk ? "critical" : "focus";
+  } else if (status === "maintained") {
+    level = hasCriticalRisk || highImpactFeature ? "focus" : "skim";
+  } else if (status === "approved") {
+    level = hasCriticalRisk || highImpactFeature ? "focus" : "skim";
+  } else if (status === "merged") {
+    level = highImpactFeature || hasCriticalRisk ? "focus" : "skim";
+  } else if (status === "skipped") {
+    level = blockers.length || /(conflict|ci|failure|失败|未回应|review)/i.test(body)
+      ? "follow"
+      : "skim";
+  }
+
+  const selected = copy[level];
+  return {
+    level,
+    icon: selected.icon,
+    label: lang === "zh" ? selected.zh : selected.en,
+    reason: lang === "zh" ? selected.reasonZh : selected.reasonEn
+  };
+}
+
+function priorityRank(level) {
+  return { critical: 4, focus: 3, follow: 2, skim: 1 }[level] || 0;
+}
+
+function renderReadingGuide(items) {
+  const panel = document.getElementById("readingGuidePanel");
+  const container = document.getElementById("readingGuide");
+  const candidates = [
+    ...items.filter(item => (item.status || "skipped") !== "skipped"),
+    ...(reportData.follow_up || []).map(item => {
+      if (typeof item === "object" && item !== null && !Array.isArray(item)) {
+        return { ...item, status: item.status || "blocked" };
+      }
+      const body = text(item);
+      return { title: body, next: body, status: "blocked", plain: true };
+    })
+  ].map(item => ({ item, advice: readingAdvice(item) }))
+    .filter(entry => entry.advice.level !== "skim")
+    .sort((left, right) => priorityRank(right.advice.level) - priorityRank(left.advice.level));
+
+  if (!candidates.length) {
+    panel.style.display = "none";
+    container.innerHTML = "";
+    return;
+  }
+
+  panel.style.display = "block";
+  container.innerHTML = candidates.slice(0, 9).map(entry => {
+    const item = entry.item;
+    const advice = entry.advice;
+    const prText = item.number ? `#${item.number}` : "PR";
+    const prLink = item.url
+      ? `<a href="${escapeHtml(item.url)}">${prText} · ${escapeHtml(text(item.title))}</a>`
+      : `<span>${prText} · ${escapeHtml(text(item.title))}</span>`;
+    return `
+      <article class="guide-card ${advice.level}">
+        <div class="guide-meta">
+          <span class="read-pill ${advice.level}">${advice.icon} ${escapeHtml(advice.label)}</span>
+          <span class="badge ${item.status || "skipped"}">${labels[lang][item.status] || item.status || labels[lang].skipped}</span>
+        </div>
+        <div>${prLink}</div>
+        <div class="guide-reason">${escapeHtml(advice.reason)}</div>
+      </article>
+    `;
+  }).join("");
+}
+
+function storyLine(label, value) {
+  const body = text(value);
+  if (!body) return "";
+  return `
+    <p class="story-line">
+      <span class="story-label">${escapeHtml(label)}</span>
+      <span class="story-text">${formatRich(body)}</span>
+    </p>
+  `;
+}
+
+function storyBlock(title, rows, className = "") {
+  const body = rows.filter(Boolean).join("");
+  if (!body) return "";
+  const classes = ["story-block", className].filter(Boolean).join(" ");
+  return `<section class="${classes}"><h4>${escapeHtml(title)}</h4>${body}</section>`;
+}
+
+function compactSummary(item) {
+  const candidates = [
+    item.problem,
+    item.design_assessment,
+    item.solution_fit_assessment,
+    item.approach,
+    item.skip_reason,
+    item.reason,
+    item.outcome,
+    item.risk
+  ].map(value => text(value).trim()).filter(Boolean);
+  return candidates[0] || labels[lang].summaryFallback;
+}
+
+function updateCardToggle(card) {
+  const button = card.querySelector(".card-toggle");
+  if (!button) return;
+  const open = card.classList.contains("open");
+  button.textContent = open ? labels[lang].collapseDetails : labels[lang].expandDetails;
+  button.setAttribute("aria-expanded", open ? "true" : "false");
+}
+
+function setCardOpen(card, open) {
+  card.classList.toggle("open", open);
+  updateCardToggle(card);
+}
+
+function factItem(label, value) {
+  const body = text(value);
+  if (!body) return "";
+  return `
+    <div class="fact">
+      <dt>${escapeHtml(label)}</dt>
+      <dd>${formatRich(body)}</dd>
+    </div>
+  `;
+}
+
+function directFixesText(fixes) {
+  if (!Array.isArray(fixes) || !fixes.length) return "";
+  return fixes.map(fix => {
+    if (typeof fix !== "object" || fix === null) return text(fix);
+    return [
+      fix.branch ? `branch: ${text(fix.branch)}` : "",
+      fix.commit ? `commit: ${text(fix.commit)}` : "",
+      fix.message ? `message: ${text(fix.message)}` : "",
+      fix.files ? `files: ${Array.isArray(fix.files) ? fix.files.map(file => text(file)).join(", ") : text(fix.files)}` : "",
+      fix.tests ? `tests: ${Array.isArray(fix.tests) ? fix.tests.map(test => text(test)).join(", ") : text(fix.tests)}` : "",
+      fix.push_state ? `push: ${text(fix.push_state)}` : "",
+      fix.ci_state ? `CI: ${text(fix.ci_state)}` : ""
+    ].filter(Boolean).join(" · ");
+  }).join("\n");
+}
+
+function renderReviewRail(item) {
+  const advice = readingAdvice(item);
+  const callout = `
+    <div class="reading-callout ${advice.level}">
+      <strong>${advice.icon} ${escapeHtml(advice.label)}</strong>
+      <span>${escapeHtml(advice.reason)}</span>
+    </div>
+  `;
+  const facts = [
+    factItem(labels[lang].outcome, item.outcome),
+    factItem(labels[lang].reviewAction, item.review_action),
+    factItem(labels[lang].mergePolicy, item.merge_policy),
+    factItem(labels[lang].headSha, item.head_sha),
+    factItem(labels[lang].mergeCommit, item.merge_commit),
+    factItem(labels[lang].necessityAssessment, item.necessity_assessment),
+    factItem(labels[lang].reproductionOnBase, item.reproduction_on_base),
+    factItem(labels[lang].solutionFitAssessment, item.solution_fit_assessment),
+    factItem(labels[lang].risk, item.risk),
+    factItem(labels[lang].ci, item.ci_state),
+    factItem(labels[lang].attentionPoints, item.attention_points),
+    factItem(labels[lang].directFixes, directFixesText(item.direct_fixes)),
+    factItem(labels[lang].selfReviewPolicy, item.self_review_policy),
+    factItem(labels[lang].testsDocs, item.tests_docs),
+    factItem(labels[lang].modules, item.modules),
+    factItem(labels[lang].apiSurface, item.api_surface),
+    factItem(labels[lang].reason, item.skip_reason)
+  ].filter(Boolean).join("");
+  if (!facts) return `<aside class="review-rail">${callout}</aside>`;
+  return `<aside class="review-rail">${callout}<h4>${labels[lang].reviewSummary}</h4><dl class="fact-list">${facts}</dl></aside>`;
+}
+
+function renderComments(item) {
+  const comments = item.inline_comments || [];
+  if (!comments.length) return "";
+  const rendered = comments.map(comment => {
+    const data = typeof comment === "object" && comment !== null && !Array.isArray(comment)
+      ? comment
+      : { body: comment };
+    const location = `${escapeHtml(data.path || "")}${data.line ? ":" + escapeHtml(data.line) : ""}`;
+    const source = data.url
+      ? `<a class="comment-link" href="${escapeHtml(data.url)}">GitHub</a>`
+      : "";
+    return `
+      <div class="comment">
+        <div class="comment-head">
+          <strong>${location}</strong>
+          ${source}
+        </div>
+        <div>${formatRich(inlineCommentText(data))}</div>
+        ${data.focus ? `<div><strong>${labels[lang].focus}:</strong> ${escapeHtml(text(data.focus))}</div>` : ""}
+        ${data.severity ? `<div><strong>${labels[lang].severity}:</strong> ${escapeHtml(text(data.severity))}</div>` : ""}
+      </div>
+    `;
+  }).join("");
+  return `<section class="comments-panel">
+    <h4>${labels[lang].inlineComments}</h4>
+    <div class="comment-list">${rendered}</div>
+  </section>`;
+}
+
+function renderPrReadout(item) {
+  const story = [
+    storyBlock(labels[lang].backgroundAndProblem, [
+      storyLine(labels[lang].technicalBackground, item.technical_background),
+      storyLine(labels[lang].problem, item.problem),
+      storyLine(labels[lang].necessityAssessment, item.necessity_assessment),
+      storyLine(labels[lang].evidenceChecked, item.evidence_checked),
+      storyLine(labels[lang].reproductionOnBase, item.reproduction_on_base),
+      storyLine(labels[lang].issueEvidenceGaps, item.issue_evidence_gaps),
+      storyLine(labels[lang].problemFraming, item.problem_framing),
+      storyLine(labels[lang].rootCause, item.root_cause)
+    ], "hero-block"),
+    storyBlock(labels[lang].solutionAndTradeoffs, [
+      storyLine(labels[lang].approach, item.approach),
+      storyLine(labels[lang].implementationDerivation, item.implementation_derivation),
+      storyLine(labels[lang].solutionFitAssessment, item.solution_fit_assessment),
+      storyLine(labels[lang].alternativeDesigns, item.alternative_designs),
+      storyLine(labels[lang].tradeoffs, item.tradeoffs),
+      storyLine(labels[lang].designAssessment, item.design_assessment)
+    ]),
+    storyBlock(labels[lang].impactAndEvidence, [
+      storyLine(labels[lang].changeInventory, item.change_inventory),
+      storyLine(labels[lang].semanticChanges, item.semantic_changes),
+      storyLine(labels[lang].behaviorImpact, item.behavior_impact),
+      storyLine(labels[lang].moduleImpact, item.module_impact),
+      storyLine(labels[lang].crossModuleImpact, item.cross_module_impact)
+    ]),
+    renderComments(item)
+  ].filter(Boolean).join("");
+  return `<div class="pr-readout"><div class="pr-story">${story}</div>${renderReviewRail(item)}</div>`;
+}
+
+function renderCards() {
+  const query = document.getElementById("search").value.trim();
+  const visible = prs().filter(item => (item.status || "skipped") !== "skipped")
+    .filter(item => {
+    const status = item.status || "skipped";
+    return (filter === "all" || status === filter) && matchesSearch(item, query);
+  });
+  const container = document.getElementById("cards");
+  if (!visible.length) {
+    container.innerHTML = `<div class="empty">${labels[lang].empty}</div>`;
+    return;
+  }
+  container.innerHTML = visible.map(item => {
+    const status = item.status || "skipped";
+    const advice = readingAdvice(item);
+    const summary = compactSummary(item);
+    const prText = item.number ? `#${item.number}` : "PR";
+    const prLink = item.url
+      ? `<a href="${escapeHtml(item.url)}">${prText}</a>`
+      : prText;
+    return `
+      <article class="card priority-${advice.level}" data-status="${status}">
+        <div class="card-head">
+          <div>
+            <div class="headline-row">
+              <h3 class="card-title">${prLink} · ${escapeHtml(text(item.title))}</h3>
+              <span class="read-pill ${advice.level}">${advice.icon} ${escapeHtml(advice.label)}</span>
+            </div>
+            <div class="meta">
+              <span>${labels[lang].author}: ${escapeHtml(item.author || "")}</span>
+              <span class="advice-reason">${escapeHtml(advice.reason)}</span>
+            </div>
+            <div class="card-summary">${formatRich(summary)}</div>
+          </div>
+          <div class="card-actions">
+            <span class="badge ${status}">${labels[lang][status] || status}</span>
+            <button class="card-toggle" type="button" aria-expanded="false">${labels[lang].expandDetails}</button>
+          </div>
+        </div>
+        <div class="card-body">
+          ${renderPrReadout(item)}
+        </div>
+      </article>
+    `;
+  }).join("");
+  document.querySelectorAll(".card-head").forEach(head => {
+    head.addEventListener("click", event => {
+      if (event.target.closest("a")) return;
+      const card = head.closest(".card");
+      setCardOpen(card, !card.classList.contains("open"));
+    });
+  });
+  document.querySelectorAll(".card").forEach(card => updateCardToggle(card));
+}
+
+function renderSkipGroups() {
+  const heading = document.getElementById("skippedHeading");
+  const container = document.getElementById("skipGroups");
+  if (!["all", "skipped"].includes(filter)) {
+    heading.style.display = "none";
+    container.style.display = "none";
+    return;
+  }
+  heading.style.display = "flex";
+  container.style.display = "grid";
+  const query = document.getElementById("search").value.trim();
+  const groups = skippedGroups().map(group => {
+    const reason = group.reason || "";
+    const title = lang === "zh"
+      ? text(group.title_zh || group.title || group.reason)
+      : text(group.title_en || group.title || group.reason);
+    const items = (group.items || []).map(item => ({
+      ...item,
+      status: item.status || "skipped",
+      group_reason: reason,
+      skip_reason: item.skip_reason || reason
+    })).filter(item => matchesSearch(item, query));
+    return { reason, title, items };
+  }).filter(group => group.items.length > 0);
+  if (!groups.length) {
+    container.innerHTML = `<div class="empty">${labels[lang].empty}</div>`;
+    return;
+  }
+  container.innerHTML = groups.map((group, index) => `
+    <article class="skip-group open">
+      <div class="skip-group-head" data-skip-group="${index}">
+        <h3 class="skip-group-title">${escapeHtml(text(group.title || group.reason))}</h3>
+        <span class="skip-group-count">${group.items.length} ${labels[lang].items}</span>
+      </div>
+      <div class="skip-group-body">
+        ${group.items.map(item => {
+          const prText = item.number ? `#${item.number}` : "PR";
+          const prLink = item.url
+            ? `<a href="${escapeHtml(item.url)}">${prText}</a>`
+            : prText;
+          return `
+            <div class="skip-row">
+              <div>
+                <div class="skip-title">${prLink} · ${escapeHtml(text(item.title))}</div>
+                <div class="skip-detail">${labels[lang].author}: ${escapeHtml(item.author || "")}</div>
+              </div>
+              <div>
+                <div><strong>${labels[lang].reason}:</strong> ${formatRich(text(item.skip_reason))}</div>
+                ${item.readiness_audit ? `<div class="skip-detail"><strong>${labels[lang].readinessAudit}:</strong> ${formatRich(text(item.readiness_audit))}</div>` : ""}
+                ${item.necessity_assessment ? `<div class="skip-detail"><strong>${labels[lang].necessityAssessment}:</strong> ${formatRich(text(item.necessity_assessment))}</div>` : ""}
+                ${item.evidence_checked ? `<div class="skip-detail"><strong>${labels[lang].evidenceChecked}:</strong> ${formatRich(text(item.evidence_checked))}</div>` : ""}
+                ${item.reproduction_on_base ? `<div class="skip-detail"><strong>${labels[lang].reproductionOnBase}:</strong> ${formatRich(text(item.reproduction_on_base))}</div>` : ""}
+                ${item.issue_evidence_gaps ? `<div class="skip-detail"><strong>${labels[lang].issueEvidenceGaps}:</strong> ${formatRich(text(item.issue_evidence_gaps))}</div>` : ""}
+                ${item.implementation_derivation ? `<div class="skip-detail"><strong>${labels[lang].implementationDerivation}:</strong> ${formatRich(text(item.implementation_derivation))}</div>` : ""}
+                ${item.solution_fit_assessment ? `<div class="skip-detail"><strong>${labels[lang].solutionFitAssessment}:</strong> ${formatRich(text(item.solution_fit_assessment))}</div>` : ""}
+                ${renderBlockers(item)}
+                ${item.ci_state ? `<div class="skip-detail">${formatRich(text(item.ci_state))}</div>` : ""}
+                ${item.risk ? `<div class="skip-detail">${formatRich(text(item.risk))}</div>` : ""}
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </article>
+  `).join("");
+  document.querySelectorAll("[data-skip-group]").forEach(head => {
+    head.addEventListener("click", () => {
+      head.closest(".skip-group").classList.toggle("open");
+    });
+  });
+}
+
+function renderFollowUp() {
+  const heading = document.getElementById("followUpHeading");
+  const container = document.getElementById("followUpCards");
+  if (!["all", "skipped", "blocked"].includes(filter)) {
+    heading.style.display = "none";
+    container.style.display = "none";
+    return;
+  }
+  const query = document.getElementById("search").value.trim().toLowerCase();
+  const items = (reportData.follow_up || []).map(item => {
+    if (typeof item === "object" && item !== null && !Array.isArray(item)) return item;
+    const body = text(item);
+    return {
+      title: body,
+      next: body,
+      plain: true
+    };
+  }).filter(item => {
+    if (!query) return true;
+    return [
+      item.number,
+      item.author,
+      text(item.title),
+      text(item.reason),
+      text(item.next)
+    ].join(" ").toLowerCase().includes(query);
+  });
+  if (!items.length) {
+    heading.style.display = "none";
+    container.style.display = "none";
+    return;
+  }
+  heading.style.display = "flex";
+  container.style.display = "grid";
+  container.innerHTML = items.map(item => {
+    const hasPrIdentity = Boolean(item.number || item.url);
+    const prText = item.number ? `#${item.number}` : "PR";
+    const prLink = item.url
+      ? `<a href="${escapeHtml(item.url)}">${prText}</a>`
+      : prText;
+    const title = escapeHtml(text(item.title || item.next || item.reason));
+    const cardTitle = hasPrIdentity ? `${prLink} · ${title}` : title;
+    const meta = item.author
+      ? `<div class="meta">${labels[lang].author}: ${escapeHtml(item.author)}</div>`
+      : "";
+    const body = item.plain
+      ? `<div>${formatRich(text(item.next || item.title))}</div>`
+      : `<div class="grid">
+          ${field(labels[lang].reason, item.reason)}
+          ${field(labels[lang].outcome, item.next)}
+        </div>`;
+    return `
+      <article class="card open" data-status="blocked">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">${cardTitle}</h3>
+            ${meta}
+          </div>
+          <span class="badge blocked">${labels[lang].followups}</span>
+        </div>
+        <div class="card-body">
+          ${body}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderEvolution() {
+  const panel = document.getElementById("evolutionPanel");
+  const container = document.getElementById("evolutionList");
+  const items = reportData.skill_evolution || [];
+  if (!items.length) {
+    panel.style.display = "none";
+    container.innerHTML = "";
+    return;
+  }
+  panel.style.display = "block";
+  container.innerHTML = items.map(item => {
+    const data = typeof item === "object" && item !== null && !Array.isArray(item)
+      ? item
+      : { area: labels[lang].selfEvolutionSection, note: item };
+    return `
+      <article class="evolution-item">
+        <div class="evolution-area">${escapeHtml(text(data.area || labels[lang].selfEvolutionSection))}</div>
+        <div class="evolution-note">${formatRich(text(data.note || data.summary || data.body || ""))}</div>
+      </article>
+    `;
+  }).join("");
+}
+
+function render() {
+  const items = prs();
+  renderStatic();
+  renderMetrics(items);
+  renderBars(items);
+  renderTimeline();
+  renderOverview();
+  renderReadingGuide(items);
+  renderChips();
+  renderCards();
+  renderSkipGroups();
+  renderFollowUp();
+  renderEvolution();
+}
+
+document.querySelectorAll("[data-lang-button]").forEach(button => {
+  button.addEventListener("click", () => setLanguage(button.dataset.langButton));
+});
+document.getElementById("search").addEventListener("input", () => {
+  renderCards();
+  renderSkipGroups();
+  renderFollowUp();
+});
+document.getElementById("openAll").addEventListener("click", () => {
+  document.querySelectorAll(".card").forEach(card => setCardOpen(card, true));
+  document.querySelectorAll(".skip-group").forEach(node => node.classList.add("open"));
+});
+document.getElementById("closeAll").addEventListener("click", () => {
+  document.querySelectorAll(".card").forEach(card => setCardOpen(card, false));
+  document.querySelectorAll(".skip-group").forEach(node => node.classList.remove("open"));
+});
+render();
+</script>
+</body>
+</html>

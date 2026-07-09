@@ -1455,7 +1455,7 @@ function renderBars(items) {{
   const maxCount = Math.max(1, ...Object.values(byStatus));
   document.getElementById("bars").innerHTML = statusOrder.map(status => {{
     const value = byStatus[status] || 0;
-    const width = Math.max(3, Math.round((value / maxCount) * 100));
+    const width = value === 0 ? 0 : Math.max(3, Math.round((value / maxCount) * 100));
     return `
       <div class="bar-row">
         <div class="bar-label">${{labels[lang][status]}}</div>

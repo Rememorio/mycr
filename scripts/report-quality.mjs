@@ -99,6 +99,7 @@ const publicForbiddenKeys = new Set([
   "ledger_bucket",
   "planning_reasons",
   "target_checkout",
+  "target_checkout_dirty_preserved",
   "target_worktree_dirty_preserved",
 ]);
 const publicForbiddenText = [

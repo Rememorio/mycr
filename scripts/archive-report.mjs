@@ -19,6 +19,7 @@ const privateTopLevelFields = [
   "reviewability_ledger",
 ];
 const privateNestedFields = new Set([
+  "target_checkout_dirty_preserved",
   "target_worktree_dirty_preserved",
 ]);
 

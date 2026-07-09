@@ -1,0 +1,1328 @@
+{
+  "title": "MyCR comment-only full sweep 2026-07-09 16:53",
+  "repo": "trpc-group/trpc-agent-go",
+  "generated_at": "2026-07-09T09:19:30.256Z",
+  "repo_info": {
+    "owner": "trpc-group",
+    "name": "trpc-agent-go",
+    "skipped": 52
+  },
+  "overview": "本轮从 mycr 仓库执行 git pull 后刷新 trpc-group/trpc-agent-go 的完整 open PR 列表。当前 open PR 为 59 个，其中 28 个 checks 全绿、31 个非绿或仍在 pending。本轮严格执行只发 comments：没有 LGTM、没有 approval、没有 merge，也没有对自己的 PR 做自审或合入。实际提交 COMMENT review 的 PR 为 #2121、#2128、#2136、#2141、#2151、#2152、#2157，共 14 条 inline comments；#2158 与 #2159 经深度复核未发现新阻塞，但按只评论策略不提交 LGTM。#2028 自上次报告后已关闭；新增 open PR 为 #2157、#2158、#2159、#2160。",
+  "approved": [],
+  "commented": [
+    {
+      "number": 2141,
+      "title": "internal/telemetry:Reduce streaming TraceChat request attribute allocations",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/2141",
+      "author": "cuboya",
+      "status": "commented",
+      "head_sha": "f844a0748ceeab1f2b89df9d576bdd3e12721090",
+      "ci_state": "green (162 checks)",
+      "inline_comments": [
+        {
+          "path": "internal/telemetry/trace.go",
+          "line": 185,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2141#discussion_r3550332243",
+          "body": "The stateless path now builds a throwaway `chatRequestAttributes` when `requestAttrs` is nil, so ordinary `TraceChat` / `buildRequestAttributes` calls still populate `slot.attrs` and allocate cloned message attributes that are immediately discarded. Please keep the uncached request-attribute builder for the nil-state path, and reserve cache-slot population for a persistent `ChatTraceState`.\n\n<details><summary>中文</summary>\n无状态路径现在会在 `requestAttrs` 为 nil 时创建一个一次性的 `chatRequestAttributes`，导致普通 `TraceChat` / `buildRequestAttributes` 调用也会填充 `slot.attrs`，并分配马上被丢弃的 message 属性副本。建议 nil-state 路径保留未缓存的 request attribute 构造逻辑，只在持久的 `ChatTraceState` 中写入缓存槽。\n</details>"
+        }
+      ],
+      "review_action": "Submitted COMMENT review only; no approval, no LGTM, no merge. Review URL: https://github.com/trpc-group/trpc-agent-go/pull/2141#pullrequestreview-4661543244",
+      "technical_background": "Telemetry trace code turns chat requests and responses into OpenTelemetry span attributes. Streaming model calls may emit many chunks for the same request, so request-side attributes are a hot path where repeated JSON marshaling and attribute allocation can add avoidable latency and heap pressure.",
+      "problem": "The PR tries to reduce allocation churn while tracing streaming chat requests, especially in `llmflow`, where the request portion stays stable while response chunks change over time.",
+      "necessity_assessment": "confirmed: the touched path rebuilds request attributes repeatedly during streaming, and the PR adds reusable per-span request attribute state to reduce that cost.",
+      "evidence_checked": "PR body, changed telemetry code, checks, benchmark notes from the reviewer, and targeted telemetry/llmflow tests were inspected.",
+      "problem_framing": "The immediate problem is allocation pressure, but the underlying contract is whether `TraceChat` remains a cheap stateless helper while `ChatTraceState` owns reusable per-span cache state.",
+      "approach": "The PR adds `ChatTraceState`, moves reusable request fields into `chatRequestAttributes`, and lets streaming processors call the stateful tracing path so repeated request attributes can be reused across chunks.",
+      "implementation_derivation": "Putting reusable request attribute state next to the streaming chat span is the right locality for chunked responses; the issue is that the nil-state fallback also uses the cache-filling path.",
+      "solution_fit_assessment": "The stateful API fits streaming reuse, but the stateless fallback should stay uncached so ordinary one-shot calls do not pay cache bookkeeping or clone allocation costs.",
+      "alternative_designs": "Alternatives include keeping the old stateless builder for all callers, caching only serialized message bytes, or making the processor own a precomputed request attribute slice.",
+      "tradeoffs": "A reusable trace state reduces repeated work in streaming paths, but it adds cache invalidation and message-identity comparison complexity that should be limited to callers with persistent state.",
+      "design_assessment": "The design is directionally sound for streaming trace spans, with one localized regression in the nil-state path that should be fixed before the allocation claim is fully true.",
+      "modules": "internal/telemetry trace builders and internal/flow/llmflow streaming instrumentation.",
+      "api_surface": "Adds `ChatTraceState` as a reusable tracing helper; existing `TraceChat` remains the stateless public helper.",
+      "change_inventory": "Introduces reusable request attribute slots, message identity checks, stateful trace calls from llmflow, and benchmark/test coverage for cache behavior.",
+      "semantic_changes": "Streaming trace emission can reuse request attributes across chunks; stateless `TraceChat` behavior should remain equivalent but currently takes the cache population path.",
+      "module_impact": "Direct impact is telemetry allocation behavior; indirect impact is any caller relying on `TraceChat` as a cheap one-shot helper.",
+      "cross_module_impact": "llmflow benefits from lower repeated attribute work; OpenTelemetry export content should stay compatible.",
+      "behavior_impact": "Expected before/after: streaming spans carry the same request attributes, but repeated chunks allocate less when a persistent trace state is used.",
+      "tests_docs": "`go test ./internal/telemetry ./internal/flow/llmflow` and targeted telemetry tests were reported passing by the reviewer; benchmark inspection showed the cache reduces streaming allocations.",
+      "outcome": "Commented on the nil-state fallback because it still populates cache slots and clones attributes that are immediately discarded.",
+      "risk": "If unfixed, the non-stateful path can regress allocation behavior even while the streaming stateful path improves."
+    },
+    {
+      "number": 2157,
+      "title": "evaluation/promptiter: add eval+optimization regression loop with aud…",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/2157",
+      "author": "d2bz",
+      "status": "commented",
+      "head_sha": "b15379b1e3d165de6a4d9f4c2e1bfed15eabcd99",
+      "ci_state": "green (164 checks)",
+      "inline_comments": [
+        {
+          "path": "examples/evaluation/promptiter/regressionloop/main.go",
+          "line": 27,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2157#discussion_r3550332251",
+          "body": "The CLI help still omits `attribution`, even though it is a supported scenario and part of the sample reports. Please add it to the `--scenario` flag text so `--help` matches the README and users can discover the attribution run.\n\n<details><summary>中文</summary>\nCLI 帮助文本仍然漏掉了 `attribution`，但它已经是受支持场景，也是示例报告的一部分。请把它加入 `--scenario` 的说明里，让 `--help` 与 README 保持一致，并方便用户发现 attribution 运行模式。\n</details>"
+        }
+      ],
+      "review_action": "Submitted COMMENT review only; no approval, no LGTM, no merge. Review URL: https://github.com/trpc-group/trpc-agent-go/pull/2157#pullrequestreview-4661543248",
+      "technical_background": "PromptIter examples demonstrate evaluation and optimization flows with deterministic fake runners, sample eval sets, metrics, and generated reports. The command-line flags are part of the example contract because users discover scenarios through `--help` before reading all fixtures.",
+      "problem": "The PR adds a reproducible evaluation to failure-attribution to PromptIter optimization loop, including multiple deterministic scenarios and committed sample reports.",
+      "necessity_assessment": "confirmed as a feature need: the linked maintainer task asks for auditability, failure attribution, validation regression, and release gating around prompt optimization.",
+      "evidence_checked": "Issue #2003, PR body, scenario code, README, generated sample reports, checks, and reviewer-run tests were inspected.",
+      "problem_framing": "The immediate goal is a runnable example, but the deeper goal is a regression contract that keeps prompt optimization from accepting hidden validation failures.",
+      "approach": "The PR builds a fake-mode example under `examples/evaluation/promptiter/regressionloop`, adds attribution data, scenario selection, reports, and reusable regression-loop helpers.",
+      "implementation_derivation": "A deterministic fake runner is appropriate because it lets CI and reviewers reproduce accepted, ineffective, overfit, and attribution scenarios without model credentials.",
+      "solution_fit_assessment": "The CLI scenario surface is the right user control, but its help text must match the implemented scenario list so users can discover all modes.",
+      "alternative_designs": "The example could be smaller with one scenario, or could rely on live models, but that would reduce audit coverage or reproducibility.",
+      "tradeoffs": "More committed fixtures and reports increase maintenance cost, but make the optimization behavior easy to verify in CI and review.",
+      "design_assessment": "The example structure is useful; the missing `attribution` help text is a small but real usability gap because it hides one supported scenario.",
+      "modules": "examples/evaluation/promptiter/regressionloop, evaluation/workflow/promptiter/regloop, sample eval sets and reports.",
+      "api_surface": "Adds example CLI flags such as `--mode`, `--scenario`, `--data-dir`, and `--output-dir`; no core runtime API is changed.",
+      "change_inventory": "Adds attribution datasets, scenario definitions, fake runner wiring, sample optimization reports, and tests for the regression loop.",
+      "semantic_changes": "Users can run deterministic scenario-specific PromptIter regression demos and inspect JSON/Markdown output.",
+      "module_impact": "Direct impact is example and evaluation workflow code; indirect impact is documentation expectations for PromptIter regression checks.",
+      "cross_module_impact": "PromptIter evaluation artifacts and example docs now depend on the scenario list being complete and consistent.",
+      "behavior_impact": "Expected before/after: users can run `--scenario=all` or individual scenarios; `--help` should expose every individual scenario.",
+      "tests_docs": "Reviewer reported package tests, coverage checks, fake-mode runs, and committed report diff checks passing.",
+      "outcome": "Commented that `--scenario` help omits the supported `attribution` scenario.",
+      "risk": "If unfixed, the attribution demo exists but is less discoverable from the command-line entry point."
+    },
+    {
+      "number": 2128,
+      "title": "memory/gorm: GORM-backed memory.Service with shared DB injection",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/2128",
+      "author": "sks",
+      "status": "commented",
+      "head_sha": "55897e8f2a0714c945ea92673b2dddfc2da83c29",
+      "ci_state": "green (166 checks)",
+      "inline_comments": [
+        {
+          "path": "examples/memory/util.go",
+          "line": 213,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2128#discussion_r3550332240",
+          "body": "`newGormMemoryService` opens the GORM handle here, but passes it as `WithDB`, so `memory/gorm.Close()` intentionally will not close it. Use a dialector so the service owns the client, or wrap the returned service to close the opened `sql.DB`.\n\n<details><summary>中文</summary>\n`newGormMemoryService` 在这里打开 GORM 连接后通过 `WithDB` 传入，因此 `memory/gorm.Close()` 按设计不会关闭它。请改用 dialector 让 service 持有连接，或包装返回的 service 来关闭这里打开的 `sql.DB`。\n</details>"
+        },
+        {
+          "path": "examples/memory/util.go",
+          "line": 135,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2128#discussion_r3550332248",
+          "body": "`-memory=gorm` now creates a GORM service, but `PrintMemoryInfo` still falls through to `In-memory`. Add a `MemoryGORM` case that prints GORM-specific, non-secret settings so the startup output matches the selected backend.\n\n<details><summary>中文</summary>\n`-memory=gorm` 现在会创建 GORM service，但 `PrintMemoryInfo` 仍会落到 `In-memory`。请增加 `MemoryGORM` 分支，输出 GORM 相关且不含敏感信息的配置，让启动信息和实际后端一致。\n</details>"
+        },
+        {
+          "path": "examples/memory/README.md",
+          "line": 79,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2128#discussion_r3550332258",
+          "body": "This README points users to `simple` / `auto` with `-memory=gorm`, but those actual discovery surfaces still omit GORM and its environment variables. Please update the flag help and the `simple` / `auto` READMEs so users can discover and configure the new backend from the real entrypoints.\n\n<details><summary>中文</summary>\n这里引导用户通过 `simple` / `auto` 使用 `-memory=gorm`，但真实入口的帮助信息和 README 仍缺少 GORM 及其环境变量。请同步更新 flag help 以及 `simple` / `auto` README，让用户能从真实入口发现并配置新后端。\n</details>"
+        },
+        {
+          "path": "examples/memory/gorm/README.md",
+          "line": 89,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2128#discussion_r3550332262",
+          "body": "After the standalone GORM app was removed, this README still describes removed flags, stale default tool behavior, and a `go test ./...` command for a README-only directory. Please merge the remaining reference material into the real example docs, or rewrite this file so it no longer reads like a runnable example.\n\n<details><summary>中文</summary>\n独立 GORM app 删除后，这个 README 仍在描述已移除的 flag、过期的默认工具行为，以及 README-only 目录下的 `go test ./...`。请把剩余参考内容合并到真实示例文档，或重写此文件，避免它继续表现成可运行示例。\n</details>"
+        }
+      ],
+      "review_action": "Submitted COMMENT review only; no approval, no LGTM, no merge. Review URL: https://github.com/trpc-group/trpc-agent-go/pull/2128#pullrequestreview-4661543241",
+      "technical_background": "The memory service abstraction stores long-term user memories behind a common `memory.Service` interface. GORM-backed services can either own a database connection they open themselves or receive a caller-owned `*gorm.DB`; that ownership choice determines whether `Close()` should release the underlying pool.",
+      "problem": "The PR adds a first-party `memory/gorm` backend and wires it into shared memory examples so users can use GORM-managed databases instead of exporting internal helper logic.",
+      "necessity_assessment": "confirmed as a design need: prior maintainer discussion asked for a contributed backend rather than exporting framework-internal memory helpers.",
+      "evidence_checked": "PR body, related #2109 discussion, GORM service options, service close behavior, example util code, README files, checks, and review comments were inspected.",
+      "problem_framing": "The user pain is integration with existing GORM-backed applications; the root contract is clear ownership of database lifecycle and clear discovery from the actual example entry points.",
+      "approach": "The PR introduces `memory/gorm`, service options for `WithDB`, `WithDialector`, table/init/soft-delete configuration, tests, and shared example selection via `-memory=gorm`.",
+      "implementation_derivation": "A new backend package is the right abstraction because it keeps storage-specific code behind the existing memory interface while preserving the public contract.",
+      "solution_fit_assessment": "The backend direction fits, but the examples currently open a DB and pass it as caller-owned, and the docs/help surfaces do not fully describe the new backend.",
+      "alternative_designs": "Alternatives include only documenting host-owned `WithDB`, only supporting `WithDialector`, or adding a small wrapper type in examples that owns the opened DB.",
+      "tradeoffs": "Supporting shared `*gorm.DB` is important for applications, but examples that open their own connection should either use owned dialectors or close the injected pool explicitly.",
+      "design_assessment": "The package design is broadly useful; the lifecycle and documentation gaps need fixing before the examples are safe and discoverable.",
+      "modules": "memory/gorm backend, examples/memory shared util, examples/memory README files, simple and auto memory examples.",
+      "api_surface": "Adds exported GORM memory service constructors/options such as `NewService`, `WithDB`, `WithDialector`, `WithSkipDBInit`, `WithSoftDelete`, tool options, and the `gorm` memory type in examples.",
+      "change_inventory": "Adds a GORM memory submodule, tests, shared example factory support, GORM reference docs, and example dependency updates.",
+      "semantic_changes": "Users can select `-memory=gorm`; GORM service may auto-migrate unless skip init is configured; injected DB handles are intentionally caller-owned.",
+      "module_impact": "Direct impact is memory backend storage and example setup; indirect impact is memory tool behavior and shutdown semantics in examples.",
+      "cross_module_impact": "Example runners, memory tools, GORM storage configuration, docs, and tests all need consistent lifecycle and option semantics.",
+      "behavior_impact": "Expected before/after: users can run simple/auto memory examples with a GORM backend and get matching startup info, configuration docs, and closed resources.",
+      "tests_docs": "CI checks were green. Review focused on service option semantics and docs because the issues are not caught by existing tests.",
+      "outcome": "Commented on DB lifecycle leakage, wrong startup backend label, missing simple/auto discovery docs, and stale GORM reference README content.",
+      "risk": "If unfixed, examples can leak database pools and users can receive misleading backend information or stale commands."
+    },
+    {
+      "number": 2121,
+      "title": "examples/code_review_agent: add sandboxed code review agent example",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/2121",
+      "author": "XnLemon",
+      "status": "commented",
+      "head_sha": "a49fa7ff05a80fe92c90967c20a755c245f1af10",
+      "ci_state": "green (164 checks)",
+      "inline_comments": [
+        {
+          "path": "examples/code_review_agent/internal/diffparse/parser.go",
+          "line": 52,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2121#discussion_r3550375352",
+          "body": "Inside an active hunk, a real changed line can start with `--- ` or `+++ `, but these cases run before hunk-line parsing and reclassify that content as a file header/path. Handle hunk lines before file headers, or only accept headers outside active hunks, so valid diff content does not create phantom files or shift later findings.\n\n<details><summary>中文</summary>\n在已经进入 hunk 后，真实变更内容也可能以 `--- ` 或 `+++ ` 开头，但这里会先按文件头处理，导致这些内容被误判成文件路径。建议先处理 active hunk 内的 diff 行，或只在 hunk 外接受文件头，避免合法 diff 内容制造假文件或影响后续 finding 的行号归属。\n</details>"
+        }
+      ],
+      "review_action": "Submitted COMMENT review only; no approval, no LGTM, no merge. Review URL: https://github.com/trpc-group/trpc-agent-go/pull/2121#pullrequestreview-4661593247",
+      "technical_background": "A code-review example that parses unified diffs depends on precise file and hunk parsing. In unified diff format, `---` and `+++` mark file headers only outside hunks; inside a hunk, changed content can also begin with those characters.",
+      "problem": "The PR adds a sandboxed code review agent example with skill files, diff parsing, fake runtime, persistence, reports, and safety controls.",
+      "necessity_assessment": "confirmed as a feature need: issue #2004 asks for a sandboxed code-review agent example and the base tree has no such example.",
+      "evidence_checked": "Issue #2004, PR body, diff parser, fixtures, generated reports, checks, and reviewer-run example commands/tests were inspected.",
+      "problem_framing": "The core product need is an auditable example; the parser must preserve exact changed file and line mapping or later review findings become unreliable.",
+      "approach": "The PR introduces an isolated example with internal packages for diff parsing, rules, redaction, sandbox execution, report generation, and durable storage.",
+      "implementation_derivation": "Keeping this as an example package is reasonable because it demonstrates composition of existing framework tools without changing core runtime APIs.",
+      "solution_fit_assessment": "The architecture fits an example, but the diff parser needs a format-correct hunk/file-header boundary to avoid wrong file attribution.",
+      "alternative_designs": "Alternatives include using an existing diff parser library, parsing hunk lines before headers only when inside a hunk, or keeping a stricter state machine.",
+      "tradeoffs": "A small custom parser is easy to read but must cover ambiguous-looking hunk content; a library would reduce edge cases but add dependency weight.",
+      "design_assessment": "The example is useful, with a concrete parser correctness bug that can misplace later findings.",
+      "modules": "examples/code_review_agent/internal/diffparse plus downstream rules/reporting that consume parsed file and line metadata.",
+      "api_surface": "Adds example CLI and internal example packages; no exported core framework API changes.",
+      "change_inventory": "Adds README/design docs, fixtures, parser/rules/redaction/report/sandbox/store packages, fake runtime, and tests.",
+      "semantic_changes": "Users can run a local code-review example on fixtures, diff files, file lists, or repositories and receive findings/reports.",
+      "module_impact": "Direct impact is the example parser; indirect impact is any rule or report that relies on parsed hunk line numbers.",
+      "cross_module_impact": "Rules, redaction, sandbox, and report packages depend on the parser preserving correct file/hunk identity.",
+      "behavior_impact": "Expected before/after: legal hunk content starting with `--- ` or `+++ ` should remain a changed line, not become a new file header.",
+      "tests_docs": "Reviewer reported `go test -count=1 ./...` and several fake-mode example runs passing; the parser edge case still needs a regression test.",
+      "outcome": "Commented on the active-hunk parser ordering bug.",
+      "risk": "If unfixed, valid diffs can create phantom files or shift finding locations."
+    },
+    {
+      "number": 2151,
+      "title": "实现自动代码评审Agent全套能力",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/2151",
+      "author": "xiaoyulox",
+      "status": "commented",
+      "head_sha": "b97c606dee26a48edb314bd73e61d093b39b9de7",
+      "ci_state": "green (164 checks)",
+      "inline_comments": [
+        {
+          "path": "examples/code_review_agent/sandbox/sandbox.go",
+          "line": 224,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2151#discussion_r3550375350",
+          "body": "This advertises E2B/container sandbox selection, but both selected backends still return `not implemented`, so a production configuration with those env vars cannot run sandbox checks. Wire these paths to the existing `codeexecutor/e2b` or `codeexecutor/container` workspace runtimes, or narrow the contract to an explicit unsafe-local prototype until isolated backends are implemented.\n\n<details><summary>中文</summary>\n这里声明会选择 E2B/container 沙箱，但两个被选中的后端仍然只返回 `not implemented`，所以配置了这些环境变量的生产运行无法执行沙箱检查。请把这些路径接到现有的 `codeexecutor/e2b` 或 `codeexecutor/container` workspace runtime，或者在真正实现隔离后端前，把契约收窄为显式 unsafe-local 原型。\n</details>"
+        },
+        {
+          "path": "examples/code_review_agent/main.go",
+          "line": 112,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2151#discussion_r3550375354",
+          "body": "The default `--repo-path` flow only diffs `merge-base..HEAD`, so staged or uncommitted local changes are omitted. Since the issue requires reviewing a local changed directory, include the working-tree/index diff or split this into an explicit committed-PR mode and local-workspace mode with tests.\n\n<details><summary>中文</summary>\n默认 `--repo-path` 流程只比较 `merge-base..HEAD`，因此会漏掉 staged 或未提交的本地变更。由于 issue 要求支持本地变更目录，请把 working tree/index 的 diff 也纳入，或者明确拆成“已提交 PR 模式”和“本地工作区模式”并补测试。\n</details>"
+        },
+        {
+          "path": "examples/code_review_agent/main.go",
+          "line": 232,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2151#discussion_r3550375359",
+          "body": "Dry-run currently skips the entire static-analysis/sandbox block, even though the docs promise dry-run still runs static analysis and rule matching without LLM calls. Keep deterministic sandbox/static checks enabled in dry-run, or split this into a separate no-sandbox mode and update the docs/tests.\n\n<details><summary>中文</summary>\n当前 dry-run 会跳过整个静态分析/沙箱块，但文档承诺 dry-run 仍会在不调用 LLM 的情况下运行静态分析和规则匹配。请在 dry-run 中保留确定性的沙箱/静态检查，或者拆出单独的 no-sandbox 模式并同步更新文档和测试。\n</details>"
+        },
+        {
+          "path": "examples/code_review_agent/output/report.go",
+          "line": 124,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2151#discussion_r3550375364",
+          "body": "`GenerateReport` only writes `report.md`, but the PR/docs contract requires `review_report.json` and `review_report.md`. Emit both documented artifacts with the structured findings, metrics, sandbox, and permission data, and add a test that verifies the expected filenames and contents.\n\n<details><summary>中文</summary>\n`GenerateReport` 目前只写 `report.md`，但 PR/文档契约要求输出 `review_report.json` 和 `review_report.md`。请输出这两个文档化产物，并包含结构化 findings、metrics、sandbox、permission 数据，同时补测试校验文件名和内容。\n</details>"
+        }
+      ],
+      "review_action": "Submitted COMMENT review only; no approval, no LGTM, no merge. Review URL: https://github.com/trpc-group/trpc-agent-go/pull/2151#pullrequestreview-4661593245. Contributor-program/manual-selection context still requires explicit maintainer decision; these comments do not imply merge readiness.",
+      "technical_background": "A code-review agent example combines repository diff collection, deterministic static checks, sandbox execution, permissions, and report artifacts. The command-line contract matters because users rely on documented flags and output filenames to validate the whole review chain.",
+      "problem": "The PR adds a full code review agent prototype with skill, sandbox selection, database persistence, reports, and fake/no-key operation.",
+      "necessity_assessment": "confirmed as a feature need from issue #2004; the base tree has no complete code-review-agent example with skill, sandbox, database persistence, reports, fake mode, and safety controls.",
+      "evidence_checked": "Issue #2004, PR body, latest patch, sandbox constructors, repo diff collection, dry-run flow, report generation, checks, and review comments were inspected.",
+      "problem_framing": "The stated goal is a complete runnable review chain; the deeper requirement is that each advertised mode actually exercises the chain it claims to validate.",
+      "approach": "The PR builds an example CLI with diff/repo inputs, sandbox abstraction, dry-run mode, permission and storage layers, and Markdown reporting.",
+      "implementation_derivation": "An isolated example is a reasonable place to prototype the workflow, but advertised production sandbox and artifact contracts need to be real or explicitly out of scope.",
+      "solution_fit_assessment": "The selected control surfaces are understandable, but several flags and outputs currently do less than the docs promise.",
+      "alternative_designs": "Alternatives include narrowing the PR to an unsafe-local prototype, wiring existing `codeexecutor` backends now, or splitting local-workspace and committed-PR modes.",
+      "tradeoffs": "A broad example demonstrates integration value, but broad scope raises the bar for accurate docs, real sandbox backends, and end-to-end artifact tests.",
+      "design_assessment": "The prototype has useful structure but is not yet aligned with its documented contract; the comments identify concrete contract gaps.",
+      "modules": "examples/code_review_agent main CLI, sandbox package, output reporting package, skill docs, storage and static-analysis flow.",
+      "api_surface": "Adds example flags such as `--repo-path`, `--dry-run`, sandbox env selection, report outputs, and internal example package APIs.",
+      "change_inventory": "Adds a large example tree with skill files, fixtures, parser/rules/sandbox/storage/output code, and generated report paths.",
+      "semantic_changes": "Users can run the example in several modes, but E2B/container selection, local dirty-diff review, dry-run semantics, and report output names currently diverge from the contract.",
+      "module_impact": "Direct impact is the example; indirect impact is contributor expectations for sandboxed review-agent patterns.",
+      "cross_module_impact": "The example references existing codeexecutor concepts, permission policy, storage, and report consumers even though it is isolated from core packages.",
+      "behavior_impact": "Expected before/after: documented sandbox modes should run, local workspace changes should be included, dry-run should still exercise static checks, and documented JSON/Markdown reports should exist.",
+      "tests_docs": "CI was green. Review relied on source inspection because the contract gaps are around mode behavior and artifact names.",
+      "outcome": "Commented on unimplemented E2B/container backends, missing working-tree diff, dry-run skipping static/sandbox checks, and report filenames/artifacts not matching docs.",
+      "risk": "If unfixed, users can run a green example that does not exercise the advertised safety, local review, or reporting behavior."
+    },
+    {
+      "number": 2152,
+      "title": "构建 Evaluation + Optimization 自动回归闭环",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/2152",
+      "author": "GodBlf",
+      "status": "commented",
+      "head_sha": "ccbe5800be5e19a0e8e4097006e2a8a2f1ae4da6",
+      "ci_state": "green (164 checks)",
+      "inline_comments": [
+        {
+          "path": "evaluation/workflow/promptiter/regressionloop/gate.go",
+          "line": 69,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2152#discussion_r3550375342",
+          "body": "Missing validation cases never fail the gate: `ComputeDeltas` emits `TransitionMissing`, but `EvaluateGate` only checks score, hard fails, critical regressions, and budgets, so a candidate can be accepted after skipping baseline validation cases. Add a gate rule that rejects missing validation cases before `Accepted` is set, and cover baseline-only/candidate-only deltas in tests.\n\n<details><summary>中文</summary>\n缺失的验证用例不会让 gate 失败：`ComputeDeltas` 会产生 `TransitionMissing`，但 `EvaluateGate` 只检查分数、hard fail、关键回归和预算，所以候选 prompt 即使跳过了 baseline 验证用例也可能被接受。请在设置 `Accepted` 前增加缺失验证用例的拒绝规则，并补充 baseline-only / candidate-only delta 测试。\n</details>"
+        },
+        {
+          "path": "evaluation/workflow/promptiter/regressionloop/report.go",
+          "line": 93,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2152#discussion_r3550375348",
+          "body": "`MarkdownReport` inserts candidate prompts into a single inline code span without escaping, so prompts containing backticks, pipes, or newlines can corrupt `optimization_report.md` and make the required audit report hard to read. Render prompts and other dynamic report text through Markdown escaping or fenced blocks, and add a report test with those characters.\n\n<details><summary>中文</summary>\n`MarkdownReport` 会把候选 prompt 原样写进单行内联代码块，包含反引号、管道符或换行的真实 prompt 会破坏 `optimization_report.md`，导致必须交付的人类可读审计报告难以阅读。请对 prompt 和其他动态报告文本做 Markdown 转义，或改用代码块渲染，并补充覆盖这些字符的报告测试。\n</details>"
+        }
+      ],
+      "review_action": "Submitted COMMENT review only; no approval, no LGTM, no merge. Review URL: https://github.com/trpc-group/trpc-agent-go/pull/2152#pullrequestreview-4661593240",
+      "technical_background": "Evaluation regression gates compare baseline and candidate results case by case. A gate must treat missing validation cases as a failure because a candidate can otherwise appear safer by not evaluating a difficult case.",
+      "problem": "The PR builds an evaluation and optimization regression loop with failure attribution, baseline/candidate deltas, release gates, and audit reports.",
+      "necessity_assessment": "confirmed as a feature need from issue #2003; the base tree lacks this regression-loop package and example.",
+      "evidence_checked": "Issue #2003, latest diff, gate logic, report renderer, checks, and reviewer-run package/example tests were inspected.",
+      "problem_framing": "The immediate need is a reproducible loop; the root correctness issue is making the gate reject hidden regressions and making reports robust for arbitrary prompt text.",
+      "approach": "The PR adds a reusable regression-loop package, delta computation, gate policies, JSON/Markdown reporting, and an example with fake runner data.",
+      "implementation_derivation": "A package-level regression loop is a reasonable implementation point because it can be reused by examples and future prompt surfaces.",
+      "solution_fit_assessment": "The structure fits the need, but the gate omits missing-case failure handling and the Markdown report does not escape dynamic prompt text.",
+      "alternative_designs": "Alternatives include failing missing cases during delta computation, validating eval-set identity before scoring, or rendering all prompt text in fenced blocks.",
+      "tradeoffs": "Strict missing-case rejection may fail more runs early, but it prevents false acceptance; fenced report text is less compact but safer for real prompts.",
+      "design_assessment": "The package is directionally useful, with two correctness/reporting gaps that should be fixed before relying on its acceptance result.",
+      "modules": "evaluation/workflow/promptiter/regressionloop gate, delta, report, pipeline, and examples/evaluation promptiter regression loop.",
+      "api_surface": "Adds regression-loop package types, config JSON fields, output report paths, and example CLI configuration; no existing core API is removed.",
+      "change_inventory": "Adds gate policy evaluation, attribution, delta computation, pipeline orchestration, JSON/Markdown report generation, tests, and example fixtures.",
+      "semantic_changes": "Users can run a deterministic optimization loop and inspect accepted/rejected candidates, deltas, and reports.",
+      "module_impact": "Direct impact is evaluation/promptiter workflow code; indirect impact is any future automation that trusts the gate decision.",
+      "cross_module_impact": "PromptIter engine adapters, examples, report consumers, and release gating all depend on complete validation case coverage.",
+      "behavior_impact": "Expected before/after: missing validation cases should fail the gate, and real prompt text should not break Markdown reports.",
+      "tests_docs": "Reviewer reported workflow and example tests passing; additional gate/report edge tests are needed.",
+      "outcome": "Commented on missing-case acceptance and unescaped Markdown prompt rendering.",
+      "risk": "If unfixed, the regression loop can accept incomplete validation results or produce broken audit reports."
+    },
+    {
+      "number": 2136,
+      "title": "tool/safety: add pre-execution safety scanner",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/2136",
+      "author": "XnLemon",
+      "status": "commented",
+      "head_sha": "61fea51207537f16f7ad8b82cfdec3b94088651f",
+      "ci_state": "green (164 checks)",
+      "inline_comments": [
+        {
+          "path": "tool/safety/permission.go",
+          "line": 45,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2136#discussion_r3550375339",
+          "body": "`audit_failure_mode` is accepted in the policy file, but the documented `NewPermissionPolicy(scanner)` path always resets the adapter to best-effort auditing. Initialize the permission policy from `*DefaultScanner`'s policy audit mode, while keeping `WithAuditFailureMode` as an override, and cover the strict-mode audit failure path without passing the option explicitly.\n\n<details><summary>中文</summary>\n策略文件会接受 `audit_failure_mode`，但文档里的 `NewPermissionPolicy(scanner)` 接入路径总是把适配器重置成 best-effort 审计。请从 `*DefaultScanner` 的 policy 中初始化 permission policy 的 audit mode，同时保留 `WithAuditFailureMode` 作为显式覆盖，并补一个不传该 option 时 strict 审计失败会生效的回归测试。\n</details>"
+        }
+      ],
+      "review_action": "Submitted COMMENT review only; no approval, no LGTM, no merge. Review URL: https://github.com/trpc-group/trpc-agent-go/pull/2136#pullrequestreview-4661593234",
+      "technical_background": "Tool permission policies sit between a tool call and execution. A scanner policy may allow or deny commands, and audit mode decides whether failure to record an audit event should fail closed or remain best-effort.",
+      "problem": "The PR adds a tool execution safety guard with policy loading, scanner decisions, permission-policy integration, audit records, telemetry, examples, and docs.",
+      "necessity_assessment": "confirmed as a feature need from issue #2002; the base tree has no `tool/safety` package.",
+      "evidence_checked": "Issue #2002, policy loader, permission adapter, docs/example integration path, checks, and reviewer-run tests/example were inspected.",
+      "problem_framing": "The user pain is safer tool execution; the root contract is that a policy file must actually control the adapter used at execution time.",
+      "approach": "The PR introduces `tool/safety` scanner policy, default rules, audit failure modes, permission adapter, examples, and tests.",
+      "implementation_derivation": "A scanner plus permission adapter is the right layer because it can inspect tool requests before execution and centralize audit behavior.",
+      "solution_fit_assessment": "The design fits, but the adapter currently ignores `audit_failure_mode` from the loaded scanner policy unless the caller separately passes an option.",
+      "alternative_designs": "Alternatives include making `NewPermissionPolicy` accept a full `Policy`, exposing scanner policy accessors, or requiring explicit adapter options and removing the file-field promise.",
+      "tradeoffs": "Propagating policy audit mode keeps YAML/JSON behavior intuitive; explicit options still need to override for callers that intentionally differ.",
+      "design_assessment": "The package direction is sound; this one wiring gap weakens strict audit guarantees and should be fixed with a regression test.",
+      "modules": "tool/safety policy, scanner, permission adapter, audit writer, docs and example module.",
+      "api_surface": "Adds `Policy`, `AuditFailureMode`, scanner constructors, `NewPermissionPolicy`, `WithAuditFailureMode`, policy file fields, and example integration APIs.",
+      "change_inventory": "Adds policy parsing/validation, scanner rules, permission adapter, audit failure handling, telemetry/docs/examples, and tests.",
+      "semantic_changes": "Users can configure command safety and audit handling before tool execution; strict audit mode should fail closed when audit writes fail.",
+      "module_impact": "Direct impact is tool safety checks; indirect impact is codeexec or hostexec tool calls that adopt the permission adapter.",
+      "cross_module_impact": "Policy files, scanner state, permission policy, audit writer, and tool execution wrappers must agree on audit semantics.",
+      "behavior_impact": "Expected before/after: `audit_failure_mode: strict` in policy should make the documented adapter path fail closed on audit write failure.",
+      "tests_docs": "Reviewer reported `go test ./tool/safety ./tool/codeexec ./internal/shellsafe`, example tests, example run, and redaction grep passing.",
+      "outcome": "Commented that `NewPermissionPolicy(scanner)` resets audit mode to best-effort instead of inheriting scanner policy strict mode.",
+      "risk": "If unfixed, users can configure strict audit in YAML/JSON and still get fail-open behavior through the documented path."
+    }
+  ],
+  "maintained": [],
+  "blocked": [],
+  "skipped_groups": [
+    {
+      "reason": "reviewed_clean_comment_only_deferred",
+      "title": "已复核但只评论模式不 LGTM",
+      "count": 2,
+      "prs": [
+        2158,
+        2159
+      ],
+      "items": [
+        {
+          "number": 2158,
+          "title": "evolution: protect managed skill deletion",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2158",
+          "author": "Rememorio",
+          "status": "skipped",
+          "skip_reason": "Deep check found no blocking issue, but this run was restricted to comments only and did not submit LGTM.",
+          "readiness_audit": "Reviewed managed-skill deletion isolation in evolution worker and tests; no new issue was found.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "No LGTM, approval, or merge was allowed in this comment-only run."
+            }
+          ],
+          "review_summary": {
+            "modules": "evolution worker deletion path and tests",
+            "evidence_checked": "PR body, diff, checks, and reviewer validation were checked.",
+            "tests_docs": "`go test ./evolution` passed in reviewer validation.",
+            "design_assessment": "No blocking issue found; deferred only by comment-only policy."
+          }
+        },
+        {
+          "number": 2159,
+          "title": "tool/hostexec: split linux sysproc tests",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2159",
+          "author": "Rememorio",
+          "status": "skipped",
+          "skip_reason": "Deep check found no blocking issue, but this run was restricted to comments only and did not submit LGTM.",
+          "readiness_audit": "Reviewed Linux-only hostexec SysProcAttr test split and cross-platform premise; no new issue was found.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "No LGTM, approval, or merge was allowed in this comment-only run."
+            }
+          ],
+          "review_summary": {
+            "modules": "tool/hostexec Unix and Linux tests",
+            "evidence_checked": "PR body, diff, checks, and reviewer validation were checked.",
+            "tests_docs": "`go test ./tool/hostexec` passed after the PR on Darwin; Linux compile test also passed.",
+            "design_assessment": "No blocking issue found; deferred only by comment-only policy."
+          }
+        }
+      ]
+    },
+    {
+      "reason": "ci_not_green",
+      "title": "CI 未全绿或仍在 pending",
+      "count": 24,
+      "prs": [
+        1183,
+        1400,
+        1446,
+        1736,
+        1801,
+        1956,
+        1957,
+        1967,
+        2050,
+        2055,
+        2071,
+        2084,
+        2088,
+        2089,
+        2090,
+        2118,
+        2124,
+        2135,
+        2137,
+        2142,
+        2146,
+        2149,
+        2153,
+        2160
+      ],
+      "items": [
+        {
+          "number": 1183,
+          "title": "internal/util: add util for streaming parsing of JSON returned by LLM",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1183",
+          "author": "hongxiuzhe",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 53b1a26538f2; CI state: non-green (79 checks): codecov/patch=FAILURE; lint=FAILURE; CLAAssistant=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (79 checks): codecov/patch=FAILURE; lint=FAILURE; CLAAssistant=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "codecov/patch=FAILURE; lint=FAILURE; CLAAssistant=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 1400,
+          "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 2e5bf368ac08; CI state: non-green (78 checks): codecov/patch=FAILURE; go-apidiff=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (78 checks): codecov/patch=FAILURE; go-apidiff=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "codecov/patch=FAILURE; go-apidiff=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 1446,
+          "title": "feat(a2a): add StructuredOutput → DataPart converter for custom event…",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1446",
+          "author": "SummerLv",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 79557d7bf2c6; CI state: non-green (80 checks): codecov/patch=FAILURE; GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE; CLAAssistant=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=DIRTY.",
+          "ci_state": "non-green (80 checks): codecov/patch=FAILURE; GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE; CLAAssistant=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "codecov/patch=FAILURE; GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE; CLAAssistant=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 1736,
+          "title": "all: add deferred tool set",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1736",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 384aa5d638c4; CI state: non-green (4 checks): test@PULL_REQUEST=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=DIRTY.",
+          "ci_state": "non-green (4 checks): test@PULL_REQUEST=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "test@PULL_REQUEST=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 1801,
+          "title": "docs/mkdocs/zh/fix/agent.md: fix typo",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1801",
+          "author": "GongNanyue",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head ef95fa2eee09; CI state: non-green (149 checks): go test (openclaw/go.mod)=FAILURE; CLAAssistant=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (149 checks): go test (openclaw/go.mod)=FAILURE; CLAAssistant=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "go test (openclaw/go.mod)=FAILURE; CLAAssistant=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 1956,
+          "title": "langfuse: add environment config option and pass to OTEL resource attributes",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1956",
+          "author": "Ocyss",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 604d75d058af; CI state: non-green (159 checks): go test (go.mod)=FAILURE; lint=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (159 checks): go test (go.mod)=FAILURE; lint=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "go test (go.mod)=FAILURE; lint=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 1957,
+          "title": "fix(session/postgres): cast JSON bytes to string for DB params",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1957",
+          "author": "Ocyss",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 53153210b0c6; CI state: non-green (159 checks): go test (session/postgres/go.mod)=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (159 checks): go test (session/postgres/go.mod)=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "go test (session/postgres/go.mod)=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 1967,
+          "title": "fix(sqlite): allow WithAsyncSummaryNum(0) to disable async workers",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1967",
+          "author": "YellowDusk04",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 49bac0ed9e90; CI state: non-green (160 checks): codecov/patch=FAILURE; reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.",
+          "ci_state": "non-green (160 checks): codecov/patch=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "codecov/patch=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2050,
+          "title": "feat(tool/safety): add tool execution safety guard",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2050",
+          "author": "d2bz",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 9336d31484d6; CI state: non-green (162 checks): go test (model/tiktoken/go.mod)=IN_PROGRESS; go test (agent/weknora/go.mod)=IN_PROGRESS; go test (agent/extension/toolpipe/go.mod)=IN_PROGRESS; go test (knowledge/vectorstore/qdrant/go.mod)=IN_PROGRESS; go test (codeexecutor/container/go.mod)=IN_PROGRESS; check go.mod version=FAILURE; ...; reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.",
+          "ci_state": "non-green (162 checks): go test (model/tiktoken/go.mod)=IN_PROGRESS; go test (agent/weknora/go.mod)=IN_PROGRESS; go test (agent/extension/toolpipe/go.mod)=IN_PROGRESS; go test (knowledge/vectorstore/qdrant/go.mod)=IN_PROGRESS; go test (codeexecutor/container/go.mod)=IN_PROGRESS; check go.mod version=FAILURE; ...",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "go test (model/tiktoken/go.mod)=IN_PROGRESS; go test (agent/weknora/go.mod)=IN_PROGRESS; go test (agent/extension/toolpipe/go.mod)=IN_PROGRESS; go test (knowledge/vectorstore/qdrant/go.mod)=IN_PROGRESS; go test (codeexecutor/container/go.mod)=IN_PROGRESS; check go.mod version=FAILURE; ..."
+            }
+          ]
+        },
+        {
+          "number": 2055,
+          "title": "feat: 新增会话回放一致性测试工具链",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2055",
+          "author": "mingri31164",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 322fba1998e2; CI state: non-green (166 checks): codecov/patch=FAILURE; check go.mod version=FAILURE; CLAAssistant=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (166 checks): codecov/patch=FAILURE; check go.mod version=FAILURE; CLAAssistant=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "codecov/patch=FAILURE; check go.mod version=FAILURE; CLAAssistant=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2071,
+          "title": "model/internal/model: add MiniMax-M3 context window",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2071",
+          "author": "octo-patch",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head a00992d13f88; CI state: non-green (162 checks): CLAAssistant=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (162 checks): CLAAssistant=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "CLAAssistant=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2084,
+          "title": "feat(model/anthropic): retry streaming requests on transient transport failures",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2084",
+          "author": "sks",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 664c8ed93f02; CI state: non-green (162 checks): codecov/patch=FAILURE; reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.",
+          "ci_state": "non-green (162 checks): codecov/patch=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "codecov/patch=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2088,
+          "title": "feat(session): add multi-backend replay consistency test framework",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2088",
+          "author": "coder-mtj",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 914e015d63c5; CI state: non-green (162 checks): lint=FAILURE; typos=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (162 checks): lint=FAILURE; typos=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "lint=FAILURE; typos=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2089,
+          "title": "feat(tool): add pre-execution safety scanner with OTel integration",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2089",
+          "author": "coder-mtj",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 54862a063d37; CI state: non-green (162 checks): lint=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (162 checks): lint=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "lint=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2090,
+          "title": "feat(examples): add code review agent with skill, sandbox, and database storage",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2090",
+          "author": "coder-mtj",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 87f0a57d1827; CI state: non-green (162 checks): check examples (2/4)=FAILURE; lint=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (162 checks): check examples (2/4)=FAILURE; lint=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "check examples (2/4)=FAILURE; lint=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2118,
+          "title": "feat: add Tool Execution Safety Guard for pre-execution command scanning #2002",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2118",
+          "author": "xiaobaicai66695",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head fc357b9bcb1e; CI state: non-green (162 checks): lint=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (162 checks): lint=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "lint=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2124,
+          "title": "tool/file: handle nil list and search requests",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2124",
+          "author": "ahfoysal",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 1f6731c5e26a; CI state: non-green (161 checks): go test (evaluation/go.mod)=FAILURE; CLAAssistant=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (161 checks): go test (evaluation/go.mod)=FAILURE; CLAAssistant=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "go test (evaluation/go.mod)=FAILURE; CLAAssistant=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2135,
+          "title": "feat(examples/skills_code_review_agent): add static Go code review agent",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2135",
+          "author": "Lfan-ke",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 7eec376219fa; CI state: non-green (162 checks): lint=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (162 checks): lint=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "lint=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2137,
+          "title": "feat(toolsearch): refactor into namespaced toolbox with embedding search, MCP support and two-tool mode",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2137",
+          "author": "qiefengying",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head d6c90d2af825; CI state: non-green (162 checks): go-apidiff=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (162 checks): go-apidiff=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "go-apidiff=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2142,
+          "title": "session/redis: add WithDisableScriptCache to run Lua scripts via EVAL",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2142",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head c30cfd484d65; CI state: non-green (160 checks): lint=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (160 checks): lint=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "lint=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2146,
+          "title": "[codex] add replay consistency harness",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2146",
+          "author": "GodBlf",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 549d411d4e3c; CI state: non-green (163 checks): go test (tool/claudecode/go.mod)=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (163 checks): go test (tool/claudecode/go.mod)=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "go test (tool/claudecode/go.mod)=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2149,
+          "title": "docs: add sanitized Code Executor blog",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2149",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head a383d0c759ba; CI state: non-green (163 checks): coverage=QUEUED; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (163 checks): coverage=QUEUED",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "coverage=QUEUED"
+            }
+          ]
+        },
+        {
+          "number": 2153,
+          "title": "[codex] add tool execution safety guard",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2153",
+          "author": "GodBlf",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head dc0e0809c6fb; CI state: non-green (164 checks): codecov/patch=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (164 checks): codecov/patch=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "codecov/patch=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2160,
+          "title": "test: add session memory replay consistency harness",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2160",
+          "author": "xyxhhhhh",
+          "status": "skipped",
+          "skip_reason": "Current head has pending, queued, or failing checks, so code review was not started in this run.",
+          "readiness_audit": "Current head has pending, queued, or failing checks, so code review was not started in this run. Current head 5335974d22e8; CI state: non-green (162 checks): check external consumer (tool/email/go.mod)=IN_PROGRESS; go test (storage/postgres/go.mod)=IN_PROGRESS; go test (tool/claudecode/go.mod)=IN_PROGRESS; go test (tool/google/go.mod)=IN_PROGRESS; go test (server/evaluation/go.mod)=IN_PROGRESS; go test (session/mysql/go.mod)=IN_PROGRESS; ...; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (162 checks): check external consumer (tool/email/go.mod)=IN_PROGRESS; go test (storage/postgres/go.mod)=IN_PROGRESS; go test (tool/claudecode/go.mod)=IN_PROGRESS; go test (tool/google/go.mod)=IN_PROGRESS; go test (server/evaluation/go.mod)=IN_PROGRESS; go test (session/mysql/go.mod)=IN_PROGRESS; ...",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "check external consumer (tool/email/go.mod)=IN_PROGRESS; go test (storage/postgres/go.mod)=IN_PROGRESS; go test (tool/claudecode/go.mod)=IN_PROGRESS; go test (tool/google/go.mod)=IN_PROGRESS; go test (server/evaluation/go.mod)=IN_PROGRESS; go test (session/mysql/go.mod)=IN_PROGRESS; ..."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "reason": "merge_conflict",
+      "title": "存在 merge conflict / dirty 状态",
+      "count": 2,
+      "prs": [
+        1923,
+        1930
+      ],
+      "items": [
+        {
+          "number": 1923,
+          "title": "fix(codeexecutor): honor CleanEnv in e2b runtime",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1923",
+          "author": "yu-xin-c",
+          "status": "skipped",
+          "skip_reason": "Current head has a merge conflict or dirty mergeability state, so review was deferred.",
+          "readiness_audit": "Current head has a merge conflict or dirty mergeability state, so review was deferred. Current head c424527fe8c6; CI state: green (156 checks); reviewDecision=REVIEW_REQUIRED; mergeState=DIRTY.",
+          "ci_state": "green (156 checks)",
+          "blockers": [
+            {
+              "kind": "merge_conflict",
+              "summary": "GitHub mergeStateStatus is DIRTY."
+            }
+          ]
+        },
+        {
+          "number": 1930,
+          "title": "fix: set default HTTP client timeout to prevent goroutine leaks",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1930",
+          "author": "123456wda",
+          "status": "skipped",
+          "skip_reason": "Current head has a merge conflict or dirty mergeability state, so review was deferred.",
+          "readiness_audit": "Current head has a merge conflict or dirty mergeability state, so review was deferred. Current head 576b11d6d1f4; CI state: green (156 checks); reviewDecision=CHANGES_REQUESTED; mergeState=DIRTY.",
+          "ci_state": "green (156 checks)",
+          "blockers": [
+            {
+              "kind": "merge_conflict",
+              "summary": "GitHub mergeStateStatus is DIRTY."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "reason": "draft_or_wip",
+      "title": "Draft 或 WIP",
+      "count": 13,
+      "prs": [
+        1678,
+        1710,
+        1778,
+        1901,
+        2010,
+        2037,
+        2047,
+        2058,
+        2076,
+        2086,
+        2133,
+        2143,
+        2144
+      ],
+      "items": [
+        {
+          "number": 1678,
+          "title": "agent: centralize invoke_agent telemetry in RunWithPlugins",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1678",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Draft or WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft or WIP gate blocked review before code audit. Current head 657cf9c04385; CI state: non-green (85 checks): go test (memory/sqlitevec/go.mod)=FAILURE; go test (memory/sqlite/go.mod)=FAILURE; go test (memory/redis/go.mod)=FAILURE; go test (memory/mysqlvec/go.mod)=FAILURE; go test (memory/mysql/go.mod)=FAILURE; go test (agent/n8n/go.mod)=FAILURE; ...; reviewDecision=REVIEW_REQUIRED; mergeState=DIRTY.",
+          "ci_state": "non-green (85 checks): go test (memory/sqlitevec/go.mod)=FAILURE; go test (memory/sqlite/go.mod)=FAILURE; go test (memory/redis/go.mod)=FAILURE; go test (memory/mysqlvec/go.mod)=FAILURE; go test (memory/mysql/go.mod)=FAILURE; go test (agent/n8n/go.mod)=FAILURE; ...",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 1710,
+          "title": "a2a: add input schema",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1710",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Draft or WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft or WIP gate blocked review before code audit. Current head 1a4057120129; CI state: green (87 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (87 checks)",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 1778,
+          "title": "examples: add RLM (Recursive Language Model) demo",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1778",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Draft or WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft or WIP gate blocked review before code audit. Current head 403338f0c461; CI state: non-green (305 checks): check examples (1/4)=FAILURE; check examples build script (1/4)=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (305 checks): check examples (1/4)=FAILURE; check examples build script (1/4)=FAILURE",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 1901,
+          "title": "WIP: knowledge: deprecate legacy OCR path",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1901",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Draft or WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft or WIP gate blocked review before code audit. Current head 5c5f62838568; CI state: green (156 checks); reviewDecision=REVIEW_REQUIRED; mergeState=DIRTY.",
+          "ci_state": "green (156 checks)",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 2010,
+          "title": "memory/deepsearch: add progressive DeepSearch",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2010",
+          "author": "print-happy",
+          "status": "skipped",
+          "skip_reason": "Draft or WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft or WIP gate blocked review before code audit. Current head e587e79d75d2; CI state: non-green (162 checks): codecov/patch=FAILURE; typos=FAILURE; lint=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (162 checks): codecov/patch=FAILURE; typos=FAILURE; lint=FAILURE",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 2037,
+          "title": "feat(telemetry): add invoke skill observability",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2037",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Draft or WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft or WIP gate blocked review before code audit. Current head e21156d28a93; CI state: non-green (162 checks): codecov/patch=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (162 checks): codecov/patch=FAILURE",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 2047,
+          "title": "agent: add durable session context sources",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2047",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Draft or WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft or WIP gate blocked review before code audit. Current head 2d9deb64810f; CI state: green (162 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 2058,
+          "title": "a2a: add v2 packages backed by trpc-a2a-go/v2 (A2A protocol v1.0)",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2058",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Draft or WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft or WIP gate blocked review before code audit. Current head 3655c93792ff; CI state: non-green (161 checks): go test (tool/webfetch/httpfetch/go.mod)=FAILURE; check external consumer (tool/webfetch/httpfetch/go.mod)=FAILURE; go test (memory/postgres/go.mod)=FAILURE; go test (knowledge/vectorstore/pgvector/go.mod)=FAILURE; go test (storage/elasticsearch/go.mod)=FAILURE; go test (session/redis/go.mod)=FAILURE; ...; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (161 checks): go test (tool/webfetch/httpfetch/go.mod)=FAILURE; check external consumer (tool/webfetch/httpfetch/go.mod)=FAILURE; go test (memory/postgres/go.mod)=FAILURE; go test (knowledge/vectorstore/pgvector/go.mod)=FAILURE; go test (storage/elasticsearch/go.mod)=FAILURE; go test (session/redis/go.mod)=FAILURE; ...",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 2076,
+          "title": "feat(sandbox): add macOS denial diagnostics",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2076",
+          "author": "cuboya",
+          "status": "skipped",
+          "skip_reason": "Draft or WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft or WIP gate blocked review before code audit. Current head 9b9d81e8a6ac; CI state: green (162 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 2086,
+          "title": "fix(model/anthropic): repair truncated tool_use input before stream finalize",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2086",
+          "author": "sks",
+          "status": "skipped",
+          "skip_reason": "Draft or WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft or WIP gate blocked review before code audit. Current head 4ab44893e9af; CI state: non-green (162 checks): codecov/patch=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (162 checks): codecov/patch=FAILURE",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 2133,
+          "title": "agent/llmagent: continue after image URL failures",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2133",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Draft or WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft or WIP gate blocked review before code audit. Current head 891b37f767a2; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 2143,
+          "title": "[WIP] tool/okf: Open Knowledge Format (OKF) support",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2143",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Draft or WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft or WIP gate blocked review before code audit. Current head 7283f9ca03e9; CI state: non-green (162 checks): codecov/patch=FAILURE; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "non-green (162 checks): codecov/patch=FAILURE",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 2144,
+          "title": "openclaw: add durable request context prompts",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2144",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Draft or WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft or WIP gate blocked review before code audit. Current head 4b6d1768fdb8; CI state: green (162 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "reason": "own_pr_comment_only_status",
+      "title": "自己的 PR 仅做状态归档",
+      "count": 2,
+      "prs": [
+        2155,
+        2156
+      ],
+      "items": [
+        {
+          "number": 2155,
+          "title": "openclaw,tool: guard blocked web research routes",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2155",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own PR was audited only at status level in this comment-only run; no self-review, branch fix, approval, or merge was performed.",
+          "readiness_audit": "Own PR was audited only at status level in this comment-only run; no self-review, branch fix, approval, or merge was performed. Current head 4d70aedf1bb6; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "own_pr",
+              "summary": "Own PR is reserved for external maintainer review in this run."
+            }
+          ]
+        },
+        {
+          "number": 2156,
+          "title": "agent,openclaw: repair text-form tool calls",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2156",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own PR was audited only at status level in this comment-only run; no self-review, branch fix, approval, or merge was performed.",
+          "readiness_audit": "Own PR was audited only at status level in this comment-only run; no self-review, branch fix, approval, or merge was performed. Current head d8976001ebd3; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "own_pr",
+              "summary": "Own PR is reserved for external maintainer review in this run."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "reason": "not_reached_comment_only",
+      "title": "绿色但本轮未触达深审",
+      "count": 9,
+      "prs": [
+        1988,
+        2044,
+        2045,
+        2051,
+        2087,
+        2097,
+        2109,
+        2125,
+        2134
+      ],
+      "items": [
+        {
+          "number": 1988,
+          "title": "memory: guard auto extraction after external context",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1988",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review.",
+          "readiness_audit": "PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review. Current head cac7e22bdbe7; CI state: green (323 checks); reviewDecision=APPROVED; mergeState=CLEAN.",
+          "ci_state": "green (323 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached after priority went to newly changed unreviewed PRs; this PR already had a pre-existing APPROVED decision, but this run was comment-only and submitted no MyCR approval or merge."
+            }
+          ]
+        },
+        {
+          "number": 2044,
+          "title": "feat: Tool Safety Scanner with 8 rules and structured audit",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2044",
+          "author": "Nerdlet369",
+          "status": "skipped",
+          "skip_reason": "PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review.",
+          "readiness_audit": "PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review. Current head 2e7bf1ec19ad; CI state: green (161 checks); reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.",
+          "ci_state": "green (161 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached after priority went to newly changed candidates; the prior CHANGES_REQUESTED aggregate needs a fresh thread-level audit before any new review action."
+            }
+          ]
+        },
+        {
+          "number": 2045,
+          "title": "feat: add tool execution safety guard for secure command scanning and…",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2045",
+          "author": "everfid-ever",
+          "status": "skipped",
+          "skip_reason": "PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review.",
+          "readiness_audit": "PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review. Current head 0e3bfbf1aa01; CI state: green (161 checks); reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.",
+          "ci_state": "green (161 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached after priority went to newly changed candidates; the prior safety-rule discussion remains important but was not re-audited in this run."
+            }
+          ]
+        },
+        {
+          "number": 2051,
+          "title": "session/replaytest: add multi-backend replay consistency test framework",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2051",
+          "author": "xiaosansh",
+          "status": "skipped",
+          "skip_reason": "PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review.",
+          "readiness_audit": "PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review. Current head a9c7ea990c12; CI state: green (166 checks); reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.",
+          "ci_state": "green (166 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached after priority went to newly changed candidates; the replaytest framework still needs a fresh thread and diff audit before any review action."
+            }
+          ]
+        },
+        {
+          "number": 2087,
+          "title": "codeexecutor/opensandbox: add OpenSandbox remote executor",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2087",
+          "author": "Violet2314",
+          "status": "skipped",
+          "skip_reason": "PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review.",
+          "readiness_audit": "PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review. Current head fb13ad7a1485; CI state: green (163 checks); reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.",
+          "ci_state": "green (163 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached after priority went to newly changed candidates; the OpenSandbox executor follow-up needs a fresh thread and diff audit before any review action."
+            }
+          ]
+        },
+        {
+          "number": 2097,
+          "title": "feat(session,tool/context): Pensieve context self-pruning with example",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2097",
+          "author": "sks",
+          "status": "skipped",
+          "skip_reason": "PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review.",
+          "readiness_audit": "PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review. Current head e2bb4bc8fe32; CI state: green (162 checks); reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached after priority went to newly changed candidates; the Pensieve context masking discussion needs a fresh thread and diff audit before any review action."
+            }
+          ]
+        },
+        {
+          "number": 2109,
+          "title": "memoryutils: export helpers and adopt in built-in backends",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2109",
+          "author": "sks",
+          "status": "skipped",
+          "skip_reason": "PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review.",
+          "readiness_audit": "PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review. Current head 597e87acb103; CI state: green (162 checks); reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached after priority went to newly changed candidates; the memoryutils design discussion needs a fresh thread and diff audit before any review action."
+            }
+          ]
+        },
+        {
+          "number": 2125,
+          "title": "codeexecutor, agent/llmagent: make workspace registry pluggable via WorkspaceAcquirer",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2125",
+          "author": "grignolalouis",
+          "status": "skipped",
+          "skip_reason": "PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review.",
+          "readiness_audit": "PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review. Current head 4fa403fd31dd; CI state: green (162 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached after priority went to newly changed candidates; this unchanged green WorkspaceAcquirer PR remains in backlog for a future comment-only or approval-enabled pass."
+            }
+          ]
+        },
+        {
+          "number": 2134,
+          "title": "test: add replay consistency harness",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2134",
+          "author": "Spock12138",
+          "status": "skipped",
+          "skip_reason": "PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review.",
+          "readiness_audit": "PR was green or near-ready, but this comment-only sweep prioritized changed/new candidates and did not reach this PR for a fresh deep review. Current head 816df087f11b; CI state: green (163 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (163 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached after priority went to newly changed candidates; the replay consistency harness remains green but was behind higher-priority changed PRs."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "follow_up": [
+    {
+      "title": "复核已评论 PR 的后续修复",
+      "reason": "本轮对 7 个 PR 发出 14 条 inline comments，后续应优先检查作者是否修复并重新跑对应 tests。",
+      "next": "下一轮优先拉取 #2128、#2136、#2141、#2151、#2152、#2157、#2121 的最新 head 和 review threads。"
+    },
+    {
+      "title": "只评论模式下的绿色 PR 积压",
+      "reason": "部分绿色 PR 未能在本轮完成深审或被 LGTM，因为本轮禁止 approval 和 merge。",
+      "next": "若下一轮允许 LGTM，可优先从本轮 clean 的 #2158/#2159 和未触达绿色 PR 中挑选。"
+    },
+    {
+      "title": "CI pending 的新 PR",
+      "reason": "#2160 和 #2050 等 PR 在抓取时仍有 pending/failed checks。",
+      "next": "下一轮先刷新 effective checks，避免使用旧 rollup 状态。"
+    }
+  ],
+  "timeline": [
+    {
+      "event": "Repository refresh",
+      "detail": "Ran git pull --ff-only in the MyCR workspace; it was already up to date."
+    },
+    {
+      "event": "Open PR snapshot",
+      "detail": "Collected 59 open PRs and per-PR effective checks with gh/REST."
+    },
+    {
+      "event": "Comment-only reviews",
+      "detail": "Submitted COMMENT reviews on #2141, #2157, #2128, #2121, #2151, #2152, and #2136; submitted no approval and no merge."
+    },
+    {
+      "event": "Clean deferred reviews",
+      "detail": "#2158 and #2159 were checked deeply and had no new blocking finding, but no LGTM was submitted."
+    }
+  ],
+  "skill_evolution": [
+    {
+      "area": "Report outcomes",
+      "note": "Comment-only runs need first-class reviewed-clean deferred cards so clean reviews do not look like missing coverage."
+    },
+    {
+      "area": "CI refresh",
+      "note": "gh pr checks snapshots should be refreshed near report time for PRs that were pending during the initial sweep."
+    }
+  ]
+}
