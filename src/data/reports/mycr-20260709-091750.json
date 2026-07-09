@@ -1,0 +1,3858 @@
+{
+  "title": "MyCR 全量执行报告 - 2026-07-09 comment-only sweep",
+  "generated_at": "2026-07-09T01:17:50.072Z",
+  "repo": "trpc-group/trpc-agent-go",
+  "repo_info": {
+    "owner": "trpc-group",
+    "name": "trpc-agent-go",
+    "branch": "main",
+    "initial_open_prs": 56,
+    "final_open_prs": 56,
+    "processed": 2,
+    "approved": 0,
+    "merged": 0,
+    "commented": 2,
+    "skipped": 54,
+    "policy": "comment_only_no_lgtm_no_merge",
+    "final_checks_green": 27,
+    "final_checks_non_green": 29
+  },
+  "overview": "本次先在 mycr 仓库执行 `git pull --ff-only`，结果 already up to date；随后对 trpc-group/trpc-agent-go 做全量 PR 盘点。最终 open PR 为 56 个，checks 快照为 27 个全绿、29 个非绿。本轮严格执行“只发 comments，不做 LGTM、不 approve、不显式合入”的要求，因此没有任何 approval 或 merge 动作。实际新增 COMMENT review 的是 #2149 和 #2047：#2149 是 Code Executor 双语文档，评论聚焦自动执行条件和安全后端示例；#2047 是 durable session context source，评论聚焦可见性判断、multi-message anchor 和持久状态失败处理。#2076 与 #2133 已做深度检查但本轮没有新增阻塞意见，报告在对应 deferred 条目里补充了模块、证据和测试信息。对已有 CHANGES_REQUESTED 的 PR，本次只把最终线程快照中仍有可定位未解决维护者线程的条目放进 changes_requested 分组；没有 unresolved human thread 的 #2044/#2028 改为人工复核待继续处理，避免用 aggregate 状态当作不可审计阻塞。其余 PR 按 own PR、Draft/WIP、CI 非绿、merge conflict、以及 comment-only 下未继续处理的绿色 PR 分组归档，确保每个 open PR 都在报告中出现一次。",
+  "commented": [
+    {
+      "number": 2149,
+      "title": "docs: add sanitized Code Executor blog",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/2149",
+      "author": "liuzengh",
+      "status": "commented",
+      "head_sha": "fd635e9041b7abaa3cf912935dd7c10e2fd82869",
+      "modules": [
+        "docs/mkdocs/en/blog/codeexecutor.md",
+        "docs/mkdocs/zh/blog/codeexecutor.md",
+        "docs/mkdocs.yml"
+      ],
+      "technical_background": "Code Executor lets agents execute model-produced code through configured backends, so its documentation must be precise about automatic execution conditions and safe backend choices.",
+      "problem": "The project needs a sanitized, bilingual Code Executor article that explains how to configure code execution and response-triggered execution without exposing private endpoints or unsafe defaults.",
+      "necessity_assessment": "Documentation here is a user-facing execution-safety contract. If readers expect mixed prose plus code to execute, or copy a local backend into a production security path, they can build unsafe or surprising integrations.",
+      "evidence_checked": "Reviewed the English and Chinese blog additions, MkDocs navigation, the code-execution response processor, current review comments, and final checks.",
+      "problem_framing": "The PR is documentation-only, but the documented feature can run code. The review therefore treats documentation accuracy and safe backend guidance as part of the user-facing contract.",
+      "approach": "The article adds a bilingual walkthrough and navigation entries for Code Executor, including setup, automatic response execution, backend selection, and security guidance.",
+      "implementation_derivation": "The processor accepts exactly one runnable fenced code block after trimming the assistant response, while the blog listed only language and flag conditions. The production/security snippet wires `llmagent.WithCodeExecutor(local.New())`, which conflicts with the later local-backend warning.",
+      "solution_fit_assessment": "The article is useful once the auto-execution contract and backend guidance are aligned with the implementation.",
+      "alternative_designs": "Either document the exact one-block condition and mark local backend as trusted-only, or switch the security example to a bounded backend such as sandbox/container.",
+      "tradeoffs": "More precise wording is slightly longer, but prevents readers from treating illustrative local execution as recommended production guidance.",
+      "design_assessment": "Needs documentation changes before approval; the issues are narrow but touch code execution safety.",
+      "api_surface": "No exported API changes; user-facing documentation and MkDocs navigation change.",
+      "change_inventory": "Adds English and Chinese Code Executor blog pages and two navigation entries.",
+      "semantic_changes": "Documents how to enable Code Executor and response-triggered code execution.",
+      "module_impact": "Documentation-only change in the mkdocs site.",
+      "cross_module_impact": "The documented API spans `llmagent`, code executor backends, and the response processor.",
+      "behavior_impact": "No runtime behavior changes, but inaccurate docs can cause unsafe runtime configurations downstream.",
+      "reproduction_on_base": "The mismatch is visible by comparing the blog snippets with `internal/flow/processor/codeexecution.go` and its tests for mixed prose, multiple code blocks, and unsupported fences.",
+      "issue_evidence_gaps": "No product issue context is required; the code path and tests define the behavior.",
+      "tests_docs": "Ran a URL/internal-text scan on the new blog files; no private endpoint or token pattern was found. CI was green in the collected snapshot.",
+      "outcome": "Submitted a COMMENT review with two inline documentation comments; no approval, LGTM, or merge action was taken.",
+      "ci_state": "green (161 checks)",
+      "risk": "The remaining review findings are documentation risks: readers may misconfigure Code Executor or expect automatic execution in cases the processor intentionally skips.",
+      "review_action": "Posted GitHub review comment https://github.com/trpc-group/trpc-agent-go/pull/2149#pullrequestreview-4658956628.",
+      "merge_policy": "Comment-only run; no LGTM or merge action was allowed.",
+      "inline_comments": [
+        {
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2149#discussion_r3548174518",
+          "path": "docs/mkdocs/en/blog/codeexecutor.md",
+          "line": 77,
+          "summary": "Document that automatic execution requires the trimmed assistant response to be exactly one runnable fenced code block."
+        },
+        {
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2149#discussion_r3548174521",
+          "path": "docs/mkdocs/en/blog/codeexecutor.md",
+          "line": 91,
+          "summary": "Use a bounded backend or mark `local.New()` as trusted-only in the production/security example, and mirror the Chinese post."
+        }
+      ]
+    },
+    {
+      "number": 2047,
+      "title": "agent: add durable session context sources",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/2047",
+      "author": "bytethm",
+      "status": "commented",
+      "head_sha": "2d9deb64810f5ba9429623170b8bf19697d9f3b4",
+      "modules": [
+        "agent/invocation.go",
+        "runner/runner.go",
+        "runner/session_context.go",
+        "runner/session_context_test.go",
+        "docs/mkdocs/*/runner.md",
+        "examples/prompt/append_only_diff"
+      ],
+      "technical_background": "Durable session context sources let callers persist source-derived context before the current user turn and later decide whether a full snapshot or a diff is needed.",
+      "problem": "Applications need a durable way to inject source-derived session context before the current user turn and then send only diffs when the prior source context is still visible.",
+      "necessity_assessment": "This feature controls what context the model sees across turns. A false “snapshot not required” decision can leave the model with stale or partial context while the source callback believes a diff is sufficient.",
+      "evidence_checked": "Reviewed `runner/session_context.go`, `runner/runner.go`, session filtering behavior, content request filtering, existing CodeRabbit threads, final checks, and local tests for `./agent` and `./runner` plus the append-only diff example.",
+      "problem_framing": "The PR adds a durable context contract rather than a transient prompt helper, so correctness depends on visibility under the same event filter used for model history and on successful state advancement after context messages are persisted.",
+      "approach": "The implementation adds `WithSessionContextSource`, records previous state/version and a materialized event anchor, persists context messages before the current turn, and exposes `NeedsSnapshot()` to source callbacks.",
+      "implementation_derivation": "`SnapshotRequired` is computed from `sessionContextSourceMaterialized(sess, previous)` over the full session, while request construction later applies `ContentRequestProcessor` branch filtering. The commit path anchors each source to `sourceEvents[eventOffset-1]` and logs `UpdateSessionState` failure without returning it.",
+      "solution_fit_assessment": "The feature shape is valuable, but the durable visibility contract needs tighter anchoring, filter-aware checks, and non-silent state persistence failures.",
+      "alternative_designs": "Track a source event range or first/last anchors, evaluate visibility against the active event-filter scope, and return or atomically handle state persistence errors.",
+      "tradeoffs": "Range tracking and error propagation add bookkeeping, but avoid silent context loss in long-running or branched sessions.",
+      "design_assessment": "Needs changes before approval. The comments target durable-state correctness rather than API naming or documentation polish.",
+      "api_surface": "Adds new runner/agent options for session context sources and documents their use.",
+      "change_inventory": "Adds source callback types, context message resolution, source state storage, tests, and an append-only diff example.",
+      "semantic_changes": "A run can now materialize source-provided context into the session transcript and reuse previous source state on later turns.",
+      "module_impact": "Touches runner session persistence, agent invocation options, content restoration assumptions, docs, and examples.",
+      "cross_module_impact": "Interacts with session services, summary/trim behavior, content request filtering, and model prompt construction.",
+      "behavior_impact": "Incorrect source visibility can cause missing snapshots, repeated snapshots, or diffs computed from stale durable state.",
+      "reproduction_on_base": "The issues are visible from current code: the materialized check scans `sess.GetEvents()` without active filter scope, the anchor is the last source event only, and `UpdateSessionState` errors only log before returning.",
+      "issue_evidence_gaps": "No external issue context is required; remaining design choice is whether to track first/last anchors or a full range.",
+      "tests_docs": "Ran `go test ./agent ./runner`, `go test -count=1 ./agent ./runner`, `cd examples && go test -count=1 ./prompt/append_only_diff`, and `cd examples && go run ./prompt/append_only_diff` in the isolated worktree.",
+      "outcome": "Submitted a COMMENT review with three inline comments; no approval, LGTM, or merge action was taken.",
+      "ci_state": "green (162 checks)",
+      "risk": "The remaining review findings are durable-context risks: long sessions and branch-filtered histories may silently lose required source context while the callback receives stale assumptions.",
+      "review_action": "Posted GitHub review comment https://github.com/trpc-group/trpc-agent-go/pull/2047#pullrequestreview-4658975716.",
+      "merge_policy": "Comment-only run and PR currently draft; no LGTM or merge action was allowed.",
+      "inline_comments": [
+        {
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2047#discussion_r3548193556",
+          "path": "runner/session_context.go",
+          "line": 119,
+          "summary": "`SnapshotRequired` should use the same event-filter scope that later builds the model request."
+        },
+        {
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2047#discussion_r3548193560",
+          "path": "runner/session_context.go",
+          "line": 344,
+          "summary": "Track a source event range or first source event so multi-message snapshots are not treated as visible when only the last message remains."
+        },
+        {
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2047#discussion_r3548193563",
+          "path": "runner/session_context.go",
+          "line": 367,
+          "summary": "Do not silently swallow durable source state persistence failures after context events have been written."
+        }
+      ]
+    }
+  ],
+  "approved": [],
+  "maintained": [],
+  "blocked": [],
+  "skipped_groups": [
+    {
+      "reason": "reviewed_clean_comment_only_deferred",
+      "title": "已深审但本轮不做 LGTM/合入动作",
+      "count": 2,
+      "prs": [
+        2076,
+        2133
+      ],
+      "items": [
+        {
+          "number": 2076,
+          "title": "feat(sandbox): add macOS denial diagnostics",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2076",
+          "author": "cuboya",
+          "status": "skipped",
+          "skip_reason": "Deep check found no new blocking issue, but the PR is draft and this run was restricted to comments only.",
+          "readiness_audit": "Reviewed macOS sandbox denial diagnostics across backend wiring, parser/filter logic, tests, and docs. Local `go test ./codeexecutor/sandbox` passed. Existing review history still includes prior comments, and draft state prevents approval or merge.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "draft",
+              "summary": "GitHub draft flag is set."
+            },
+            {
+              "kind": "manual_review",
+              "summary": "No LGTM or merge was allowed in this comment-only run."
+            }
+          ],
+          "review_summary": {
+            "modules": "codeexecutor/sandbox backend, denial diagnostics, macOS Seatbelt docs and tests",
+            "evidence_checked": "Diff, existing review comments, and local package tests were checked in an isolated worktree.",
+            "tests_docs": "`go test ./codeexecutor/sandbox` passed.",
+            "design_assessment": "No additional blocker was found in this pass; PR remains non-actionable because it is draft and comment-only policy forbids approval."
+          }
+        },
+        {
+          "number": 2133,
+          "title": "agent/llmagent: continue after image URL failures",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2133",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Deep check found no new blocking issue, but this run was restricted to comments only and did not emit LGTM.",
+          "readiness_audit": "Reviewed image URL failure continuation across `agent/llmagent`, `internal/flow/*`, `internal/imageinput`, docs, and example coverage. Local targeted tests passed. Existing review discussion remains part of normal maintainer follow-up, but no new blocking comment was added by this run.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Requires explicit maintainer LGTM in a run where approval is allowed."
+            }
+          ],
+          "review_summary": {
+            "modules": "agent/llmagent, internal/flow/llmflow, internal/flow/processor, internal/imageinput, docs and example",
+            "evidence_checked": "Diff, review history, and targeted package tests were checked in an isolated worktree.",
+            "tests_docs": "`go test ./agent/llmagent ./internal/flow/llmflow ./internal/flow/processor ./internal/imageinput` passed.",
+            "design_assessment": "No additional blocker was found in this pass; PR remains deferred by comment-only policy."
+          }
+        }
+      ]
+    },
+    {
+      "reason": "own_pr_no_self_review",
+      "title": "WineChord 自己的 PR：只审计不自评不合入",
+      "count": 2,
+      "prs": [
+        2156,
+        2155
+      ],
+      "items": [
+        {
+          "number": 2156,
+          "title": "agent,openclaw: repair text-form tool calls",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2156",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own PR audit only under the comment-only instruction.",
+          "readiness_audit": "CI is non-green, and own PR maintenance was not performed in this comment-only run.",
+          "ci_state": "non-green: go test (session/pgvector/go.mod)=FAILURE",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Author is WineChord; no self-review, self-approval, or self-merge was allowed."
+            },
+            {
+              "kind": "ci",
+              "summary": "go test (session/pgvector/go.mod)=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2155,
+          "title": "openclaw,tool: guard blocked web research routes",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2155",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own PR audit only under the comment-only instruction.",
+          "readiness_audit": "Checks were green, but self-review policy and comment-only instruction prevented approval or merge.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Author is WineChord; no self-review, self-approval, or self-merge was allowed."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "reason": "draft_or_wip",
+      "title": "Draft / WIP PR 暂不进入可合入路径",
+      "count": 12,
+      "prs": [
+        2153,
+        2152,
+        2144,
+        2143,
+        2086,
+        2058,
+        2037,
+        2010,
+        1901,
+        1778,
+        1710,
+        1678
+      ],
+      "items": [
+        {
+          "number": 2153,
+          "title": "[codex] add tool execution safety guard",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2153",
+          "author": "GodBlf",
+          "status": "skipped",
+          "skip_reason": "PR is marked draft.",
+          "readiness_audit": "Draft/WIP state means the author has not declared the change ready for maintainer LGTM or merge.",
+          "ci_state": "non-green: codecov/patch=FAILURE; lint=FAILURE",
+          "blockers": [
+            {
+              "kind": "draft",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 2152,
+          "title": "构建 Evaluation + Optimization 自动回归闭环",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2152",
+          "author": "GodBlf",
+          "status": "skipped",
+          "skip_reason": "PR is marked draft.",
+          "readiness_audit": "Draft/WIP state means the author has not declared the change ready for maintainer LGTM or merge.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "draft",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 2144,
+          "title": "openclaw: add durable request context prompts",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2144",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "PR is marked draft.",
+          "readiness_audit": "Draft/WIP state means the author has not declared the change ready for maintainer LGTM or merge.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "draft",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 2143,
+          "title": "[WIP] tool/okf: Open Knowledge Format (OKF) support",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2143",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "PR is marked draft.",
+          "readiness_audit": "Draft/WIP state means the author has not declared the change ready for maintainer LGTM or merge.",
+          "ci_state": "non-green: codecov/patch=FAILURE",
+          "blockers": [
+            {
+              "kind": "draft",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 2086,
+          "title": "fix(model/anthropic): repair truncated tool_use input before stream finalize",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2086",
+          "author": "sks",
+          "status": "skipped",
+          "skip_reason": "PR is marked draft.",
+          "readiness_audit": "Draft/WIP state means the author has not declared the change ready for maintainer LGTM or merge.",
+          "ci_state": "non-green: codecov/patch=FAILURE",
+          "blockers": [
+            {
+              "kind": "draft",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 2058,
+          "title": "a2a: add v2 packages backed by trpc-a2a-go/v2 (A2A protocol v1.0)",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2058",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "PR is marked draft.",
+          "readiness_audit": "Draft/WIP state means the author has not declared the change ready for maintainer LGTM or merge.",
+          "ci_state": "non-green: go test (tool/webfetch/httpfetch/go.mod)=FAILURE; check external consumer (tool/webfetch/httpfetch/go.mod)=FAILURE; go test (memory/postgres/go.mod)=FAILURE; go test (knowledge/vectorstore/pgvector/go.mod)=FAILURE; go test (storage/elasticsearch/go.mod)=FAILURE; go test (session/redis/go.mod)=FAILURE; go test (knowledge/vectorstore/sqlitevec/go.mod)=FAILURE; go test (session/clickhouse/go.mod)=FAILURE; go test (knowledge/vectorstore/elasticsearch/go.mod)=FAILURE; go test (session/sqlite/go.mod)=FAILURE; go test (memory/pgvector/go.mod)=FAILURE; go test (knowledge/vectorstore/tcvector/go.mod)=FAILURE; go test (session/postgres/go.mod)=FAILURE; go test (model/ollama/go.mod)=FAILURE; go test (memory/sqlite/go.mod)=FAILURE; go test (session/mysql/go.mod)=FAILURE; go test (model/anthropic/go.mod)=FAILURE; go test (graph/checkpoint/redis/go.mod)=FAILURE; check external consumer (memory/pgvector/go.mod)=FAILURE; check external consumer (model/anthropic/go.mod)=FAILURE; check external consumer (storage/elasticsearch/go.mod)=FAILURE; check external consumer (model/ollama/go.mod)=FAILURE; check external consumer (memory/sqlite/go.mod)=FAILURE; check external consumer (knowledge/vectorstore/tcvector/go.mod)=FAILURE; check external consumer (openclaw/go.mod)=FAILURE; check external consumer (knowledge/vectorstore/sqlitevec/go.mod)=FAILURE; check external consumer (model/bedrock/go.mod)=FAILURE; check external consumer (session/sqlite/go.mod)=FAILURE; check external consumer (session/redis/go.mod)=FAILURE; check external consumer (knowledge/embedder/huggingface/go.mod)=FAILURE",
+          "blockers": [
+            {
+              "kind": "draft",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 2037,
+          "title": "feat(telemetry): add invoke skill observability",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2037",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "PR is marked draft.",
+          "readiness_audit": "Draft/WIP state means the author has not declared the change ready for maintainer LGTM or merge.",
+          "ci_state": "non-green: codecov/patch=FAILURE",
+          "blockers": [
+            {
+              "kind": "draft",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 2010,
+          "title": "memory/deepsearch: add progressive DeepSearch",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2010",
+          "author": "print-happy",
+          "status": "skipped",
+          "skip_reason": "PR is marked draft.",
+          "readiness_audit": "Draft/WIP state means the author has not declared the change ready for maintainer LGTM or merge.",
+          "ci_state": "non-green: codecov/patch=FAILURE; typos=FAILURE; lint=FAILURE",
+          "blockers": [
+            {
+              "kind": "draft",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 1901,
+          "title": "WIP: knowledge: deprecate legacy OCR path",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1901",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "PR is marked draft.",
+          "readiness_audit": "Draft/WIP state means the author has not declared the change ready for maintainer LGTM or merge.",
+          "ci_state": "green (156 checks)",
+          "blockers": [
+            {
+              "kind": "draft",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 1778,
+          "title": "examples: add RLM (Recursive Language Model) demo",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1778",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "PR is marked draft.",
+          "readiness_audit": "Draft/WIP state means the author has not declared the change ready for maintainer LGTM or merge.",
+          "ci_state": "non-green: check examples (1/4)=FAILURE; check examples build script (1/4)=FAILURE",
+          "blockers": [
+            {
+              "kind": "draft",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 1710,
+          "title": "a2a: add input schema",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1710",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "PR is marked draft.",
+          "readiness_audit": "Draft/WIP state means the author has not declared the change ready for maintainer LGTM or merge.",
+          "ci_state": "green (87 checks)",
+          "blockers": [
+            {
+              "kind": "draft",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        },
+        {
+          "number": 1678,
+          "title": "agent: centralize invoke_agent telemetry in RunWithPlugins",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1678",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "PR is marked draft.",
+          "readiness_audit": "Draft/WIP state means the author has not declared the change ready for maintainer LGTM or merge.",
+          "ci_state": "non-green: go test (memory/sqlitevec/go.mod)=FAILURE; go test (memory/sqlite/go.mod)=FAILURE; go test (memory/redis/go.mod)=FAILURE; go test (memory/mysqlvec/go.mod)=FAILURE; go test (memory/mysql/go.mod)=FAILURE; go test (agent/n8n/go.mod)=FAILURE; go test (memory/pgvector/go.mod)=FAILURE; go test (agent/dify/go.mod)=FAILURE; go test (memory/postgres/go.mod)=FAILURE; check go mod tidy=FAILURE",
+          "blockers": [
+            {
+              "kind": "draft",
+              "summary": "GitHub draft flag is set."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "reason": "changes_requested",
+      "title": "已有 changes requested，等待作者处理",
+      "count": 9,
+      "prs": [
+        2109,
+        2097,
+        2087,
+        2084,
+        2051,
+        2050,
+        2045,
+        1967,
+        1930
+      ],
+      "items": [
+        {
+          "number": 2109,
+          "title": "memoryutils: export helpers and adopt in built-in backends",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2109",
+          "author": "sks",
+          "status": "skipped",
+          "skip_reason": "Unresolved maintainer review thread remains open.",
+          "readiness_audit": "Final thread audit found a concrete unresolved maintainer review thread at examples/memory/customservice/map_store.go:40.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "summary": "Unresolved Rememorio thread at examples/memory/customservice/map_store.go:40: extra closing parenthesis breaks NewMapService compilation.",
+              "reviewer": "Rememorio",
+              "url": "https://github.com/trpc-group/trpc-agent-go/pull/2109#discussion_r3536088809",
+              "path": "examples/memory/customservice/map_store.go",
+              "line": 40,
+              "latest_response": "Unresolved Rememorio thread at examples/memory/customservice/map_store.go:40: extra closing parenthesis breaks NewMapService compilation.",
+              "verification": "GraphQL reviewThreads snapshot reported this thread as unresolved during final report QA."
+            }
+          ]
+        },
+        {
+          "number": 2097,
+          "title": "feat(session,tool/context): Pensieve context self-pruning with example",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2097",
+          "author": "sks",
+          "status": "skipped",
+          "skip_reason": "Unresolved maintainer review thread remains open.",
+          "readiness_audit": "Final thread audit found a concrete unresolved maintainer review thread at session/context.go:49.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "summary": "Unresolved Rememorio thread at session/context.go:49: masking must preserve complete tool-call/result rounds.",
+              "reviewer": "Rememorio",
+              "url": "https://github.com/trpc-group/trpc-agent-go/pull/2097#discussion_r3542452809",
+              "path": "session/context.go",
+              "line": 49,
+              "latest_response": "Unresolved Rememorio thread at session/context.go:49: masking must preserve complete tool-call/result rounds.",
+              "verification": "GraphQL reviewThreads snapshot reported this thread as unresolved during final report QA."
+            }
+          ]
+        },
+        {
+          "number": 2087,
+          "title": "codeexecutor/opensandbox: add OpenSandbox remote executor",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2087",
+          "author": "Violet2314",
+          "status": "skipped",
+          "skip_reason": "Unresolved maintainer review thread remains open.",
+          "readiness_audit": "Final thread audit found a concrete unresolved maintainer review thread at codeexecutor/opensandbox/opensandbox.go:270.",
+          "ci_state": "green (163 checks)",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "summary": "Unresolved Flash-LHR thread at codeexecutor/opensandbox/opensandbox.go:270: requestTimeout still caps streaming commands at 30s.",
+              "reviewer": "Flash-LHR",
+              "url": "https://github.com/trpc-group/trpc-agent-go/pull/2087#discussion_r3522504000",
+              "path": "codeexecutor/opensandbox/opensandbox.go",
+              "line": 270,
+              "latest_response": "Unresolved Flash-LHR thread at codeexecutor/opensandbox/opensandbox.go:270: requestTimeout still caps streaming commands at 30s.",
+              "verification": "GraphQL reviewThreads snapshot reported this thread as unresolved during final report QA."
+            }
+          ]
+        },
+        {
+          "number": 2084,
+          "title": "feat(model/anthropic): retry streaming requests on transient transport failures",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2084",
+          "author": "sks",
+          "status": "skipped",
+          "skip_reason": "Unresolved maintainer review thread remains open.",
+          "readiness_audit": "Final thread audit found a concrete unresolved maintainer review thread at model/anthropic/options.go:34.",
+          "ci_state": "non-green: codecov/patch=FAILURE",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "summary": "Unresolved Rememorio thread at model/anthropic/options.go:34: default retry changes zero-option streaming behavior.",
+              "reviewer": "Rememorio",
+              "url": "https://github.com/trpc-group/trpc-agent-go/pull/2084#discussion_r3542434413",
+              "path": "model/anthropic/options.go",
+              "line": 34,
+              "latest_response": "Unresolved Rememorio thread at model/anthropic/options.go:34: default retry changes zero-option streaming behavior.",
+              "verification": "GraphQL reviewThreads snapshot reported this thread as unresolved during final report QA."
+            }
+          ]
+        },
+        {
+          "number": 2051,
+          "title": "session/replaytest: add multi-backend replay consistency test framework",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2051",
+          "author": "xiaosansh",
+          "status": "skipped",
+          "skip_reason": "Unresolved maintainer review thread remains open.",
+          "readiness_audit": "Final thread audit found a concrete unresolved maintainer review thread at session/replaytest/comparator.go:88.",
+          "ci_state": "green (166 checks)",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "summary": "Unresolved WineChord thread at session/replaytest/comparator.go:88: allowed diffs must remain visible in the JSON report.",
+              "reviewer": "WineChord",
+              "url": "https://github.com/trpc-group/trpc-agent-go/pull/2051#discussion_r3510477612",
+              "path": "session/replaytest/comparator.go",
+              "line": 88,
+              "latest_response": "Unresolved WineChord thread at session/replaytest/comparator.go:88: allowed diffs must remain visible in the JSON report.",
+              "verification": "GraphQL reviewThreads snapshot reported this thread as unresolved during final report QA."
+            }
+          ]
+        },
+        {
+          "number": 2050,
+          "title": "feat(tool/safety): add tool execution safety guard",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2050",
+          "author": "d2bz",
+          "status": "skipped",
+          "skip_reason": "Unresolved maintainer review thread remains open.",
+          "readiness_audit": "Final thread audit found a concrete unresolved maintainer review thread at tool/safety/permission.go:96.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "summary": "Unresolved Flash-LHR thread at tool/safety/permission.go:96: permission parsing must handle string/object code_blocks forms.",
+              "reviewer": "Flash-LHR",
+              "url": "https://github.com/trpc-group/trpc-agent-go/pull/2050#discussion_r3505426022",
+              "path": "tool/safety/permission.go",
+              "line": 96,
+              "latest_response": "Unresolved Flash-LHR thread at tool/safety/permission.go:96: permission parsing must handle string/object code_blocks forms.",
+              "verification": "GraphQL reviewThreads snapshot reported this thread as unresolved during final report QA."
+            }
+          ]
+        },
+        {
+          "number": 2045,
+          "title": "feat: add tool execution safety guard for secure command scanning and…",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2045",
+          "author": "everfid-ever",
+          "status": "skipped",
+          "skip_reason": "Unresolved maintainer review thread remains open.",
+          "readiness_audit": "Final thread audit found a concrete unresolved maintainer review thread at tool/safety/rules.go:636.",
+          "ci_state": "green (161 checks)",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "summary": "Unresolved Rememorio thread at tool/safety/rules.go:636: non-curl download options can bypass the domain whitelist.",
+              "reviewer": "Rememorio",
+              "url": "https://github.com/trpc-group/trpc-agent-go/pull/2045#discussion_r3542545432",
+              "path": "tool/safety/rules.go",
+              "line": 636,
+              "latest_response": "Unresolved Rememorio thread at tool/safety/rules.go:636: non-curl download options can bypass the domain whitelist.",
+              "verification": "GraphQL reviewThreads snapshot reported this thread as unresolved during final report QA."
+            }
+          ]
+        },
+        {
+          "number": 1967,
+          "title": "fix(sqlite): allow WithAsyncSummaryNum(0) to disable async workers",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1967",
+          "author": "YellowDusk04",
+          "status": "skipped",
+          "skip_reason": "Unresolved maintainer review thread remains open.",
+          "readiness_audit": "Final thread audit found a concrete unresolved maintainer review thread at session/sqlite/options.go:159.",
+          "ci_state": "non-green: codecov/patch=FAILURE",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "summary": "Unresolved Flash-LHR thread at session/sqlite/options.go:159: WithAsyncSummaryNum(0) breaks session/sqlite test expectations.",
+              "reviewer": "Flash-LHR",
+              "url": "https://github.com/trpc-group/trpc-agent-go/pull/1967#discussion_r3411312973",
+              "path": "session/sqlite/options.go",
+              "line": 159,
+              "latest_response": "Unresolved Flash-LHR thread at session/sqlite/options.go:159: WithAsyncSummaryNum(0) breaks session/sqlite test expectations.",
+              "verification": "GraphQL reviewThreads snapshot reported this thread as unresolved during final report QA."
+            }
+          ]
+        },
+        {
+          "number": 1930,
+          "title": "fix: set default HTTP client timeout to prevent goroutine leaks",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1930",
+          "author": "123456wda",
+          "status": "skipped",
+          "skip_reason": "Unresolved maintainer review thread remains open.",
+          "readiness_audit": "Final thread audit found a concrete unresolved maintainer review thread at model/http_client.go:45.",
+          "ci_state": "green (156 checks)",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "summary": "Unresolved WineChord thread at model/http_client.go:45: http.Client.Timeout also limits long streaming Response.Body reads.",
+              "reviewer": "WineChord",
+              "url": "https://github.com/trpc-group/trpc-agent-go/pull/1930#discussion_r3380844076",
+              "path": "model/http_client.go",
+              "line": 45,
+              "latest_response": "Unresolved WineChord thread at model/http_client.go:45: http.Client.Timeout also limits long streaming Response.Body reads.",
+              "verification": "GraphQL reviewThreads snapshot reported this thread as unresolved during final report QA."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "reason": "ci_non_green",
+      "title": "CI 非绿或合规检查未过",
+      "count": 18,
+      "prs": [
+        2142,
+        2137,
+        2136,
+        2135,
+        2124,
+        2118,
+        2090,
+        2089,
+        2088,
+        2071,
+        2055,
+        1957,
+        1956,
+        1801,
+        1736,
+        1446,
+        1400,
+        1183
+      ],
+      "items": [
+        {
+          "number": 2142,
+          "title": "session/redis: add WithDisableScriptCache to run Lua scripts via EVAL",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2142",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Checks are not green.",
+          "readiness_audit": "Automated checks still have failures, so the PR was not eligible for approval or merge consideration.",
+          "ci_state": "non-green: lint=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "lint=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2137,
+          "title": "feat(toolsearch): refactor into namespaced toolbox with embedding search, MCP support and two-tool mode",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2137",
+          "author": "qiefengying",
+          "status": "skipped",
+          "skip_reason": "Checks are not green.",
+          "readiness_audit": "Automated checks still have failures, so the PR was not eligible for approval or merge consideration.",
+          "ci_state": "non-green: go-apidiff=FAILURE; CLAAssistant=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "go-apidiff=FAILURE; CLAAssistant=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2136,
+          "title": "tool/safety: add pre-execution safety scanner",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2136",
+          "author": "XnLemon",
+          "status": "skipped",
+          "skip_reason": "Checks are not green.",
+          "readiness_audit": "Automated checks still have failures, so the PR was not eligible for approval or merge consideration.",
+          "ci_state": "non-green: lint=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "lint=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2135,
+          "title": "feat(examples/skills_code_review_agent): add static Go code review agent",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2135",
+          "author": "Lfan-ke",
+          "status": "skipped",
+          "skip_reason": "Checks are not green.",
+          "readiness_audit": "Automated checks still have failures, so the PR was not eligible for approval or merge consideration.",
+          "ci_state": "non-green: lint=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "lint=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2124,
+          "title": "tool/file: handle nil list and search requests",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2124",
+          "author": "ahfoysal",
+          "status": "skipped",
+          "skip_reason": "Checks are not green.",
+          "readiness_audit": "Automated checks still have failures, so the PR was not eligible for approval or merge consideration.",
+          "ci_state": "non-green: go test (evaluation/go.mod)=FAILURE; CLAAssistant=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "go test (evaluation/go.mod)=FAILURE; CLAAssistant=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2118,
+          "title": "feat: add Tool Execution Safety Guard for pre-execution command scanning #2002",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2118",
+          "author": "xiaobaicai66695",
+          "status": "skipped",
+          "skip_reason": "Checks are not green.",
+          "readiness_audit": "Automated checks still have failures, so the PR was not eligible for approval or merge consideration.",
+          "ci_state": "non-green: lint=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "lint=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2090,
+          "title": "feat(examples): add code review agent with skill, sandbox, and database storage",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2090",
+          "author": "coder-mtj",
+          "status": "skipped",
+          "skip_reason": "Checks are not green.",
+          "readiness_audit": "Automated checks still have failures, so the PR was not eligible for approval or merge consideration.",
+          "ci_state": "non-green: check examples (2/4)=FAILURE; lint=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "check examples (2/4)=FAILURE; lint=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2089,
+          "title": "feat(tool): add pre-execution safety scanner with OTel integration",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2089",
+          "author": "coder-mtj",
+          "status": "skipped",
+          "skip_reason": "Checks are not green.",
+          "readiness_audit": "Automated checks still have failures, so the PR was not eligible for approval or merge consideration.",
+          "ci_state": "non-green: lint=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "lint=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2088,
+          "title": "feat(session): add multi-backend replay consistency test framework",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2088",
+          "author": "coder-mtj",
+          "status": "skipped",
+          "skip_reason": "Checks are not green.",
+          "readiness_audit": "Automated checks still have failures, so the PR was not eligible for approval or merge consideration.",
+          "ci_state": "non-green: lint=FAILURE; typos=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "lint=FAILURE; typos=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2071,
+          "title": "model/internal/model: add MiniMax-M3 context window",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2071",
+          "author": "octo-patch",
+          "status": "skipped",
+          "skip_reason": "Checks are not green.",
+          "readiness_audit": "Automated checks still have failures, so the PR was not eligible for approval or merge consideration.",
+          "ci_state": "non-green: CLAAssistant=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "CLAAssistant=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 2055,
+          "title": "feat: 新增会话回放一致性测试工具链",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2055",
+          "author": "mingri31164",
+          "status": "skipped",
+          "skip_reason": "Checks are not green.",
+          "readiness_audit": "Automated checks still have failures, so the PR was not eligible for approval or merge consideration.",
+          "ci_state": "non-green: codecov/patch=FAILURE; check go.mod version=FAILURE; CLAAssistant=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "codecov/patch=FAILURE; check go.mod version=FAILURE; CLAAssistant=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 1957,
+          "title": "fix(session/postgres): cast JSON bytes to string for DB params",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1957",
+          "author": "Ocyss",
+          "status": "skipped",
+          "skip_reason": "Checks are not green.",
+          "readiness_audit": "Automated checks still have failures, so the PR was not eligible for approval or merge consideration.",
+          "ci_state": "non-green: go test (session/postgres/go.mod)=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "go test (session/postgres/go.mod)=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 1956,
+          "title": "langfuse: add environment config option and pass to OTEL resource attributes",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1956",
+          "author": "Ocyss",
+          "status": "skipped",
+          "skip_reason": "Checks are not green.",
+          "readiness_audit": "Automated checks still have failures, so the PR was not eligible for approval or merge consideration.",
+          "ci_state": "non-green: go test (go.mod)=FAILURE; lint=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "go test (go.mod)=FAILURE; lint=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 1801,
+          "title": "docs/mkdocs/zh/fix/agent.md: fix typo",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1801",
+          "author": "GongNanyue",
+          "status": "skipped",
+          "skip_reason": "Checks are not green.",
+          "readiness_audit": "Automated checks still have failures, so the PR was not eligible for approval or merge consideration.",
+          "ci_state": "non-green: go test (openclaw/go.mod)=FAILURE; CLAAssistant=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "go test (openclaw/go.mod)=FAILURE; CLAAssistant=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 1736,
+          "title": "all: add deferred tool set",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1736",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Checks are not green.",
+          "readiness_audit": "Automated checks still have failures, so the PR was not eligible for approval or merge consideration.",
+          "ci_state": "non-green: test@PULL_REQUEST=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "test@PULL_REQUEST=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 1446,
+          "title": "feat(a2a): add StructuredOutput → DataPart converter for custom event…",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1446",
+          "author": "SummerLv",
+          "status": "skipped",
+          "skip_reason": "Checks are not green.",
+          "readiness_audit": "Automated checks still have failures, so the PR was not eligible for approval or merge consideration.",
+          "ci_state": "non-green: codecov/patch=FAILURE; GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE; CLAAssistant=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "codecov/patch=FAILURE; GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE; CLAAssistant=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 1400,
+          "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Checks are not green.",
+          "readiness_audit": "Automated checks still have failures, so the PR was not eligible for approval or merge consideration.",
+          "ci_state": "non-green: codecov/patch=FAILURE; go-apidiff=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "codecov/patch=FAILURE; go-apidiff=FAILURE"
+            }
+          ]
+        },
+        {
+          "number": 1183,
+          "title": "internal/util: add util for streaming parsing of JSON returned by LLM",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1183",
+          "author": "hongxiuzhe",
+          "status": "skipped",
+          "skip_reason": "Checks are not green.",
+          "readiness_audit": "Automated checks still have failures, so the PR was not eligible for approval or merge consideration.",
+          "ci_state": "non-green: codecov/patch=FAILURE; lint=FAILURE; CLAAssistant=FAILURE",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "codecov/patch=FAILURE; lint=FAILURE; CLAAssistant=FAILURE"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "reason": "merge_conflict",
+      "title": "GitHub 标记 merge conflict / dirty",
+      "count": 2,
+      "prs": [
+        1988,
+        1923
+      ],
+      "items": [
+        {
+          "number": 1988,
+          "title": "memory: guard auto extraction after external context",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1988",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "GitHub reports mergeStateStatus=DIRTY.",
+          "readiness_audit": "The PR needs a rebase or conflict resolution before a clean merge path exists.",
+          "ci_state": "green (160 checks)",
+          "blockers": [
+            {
+              "kind": "merge_conflict",
+              "summary": "GitHub mergeStateStatus=DIRTY."
+            }
+          ]
+        },
+        {
+          "number": 1923,
+          "title": "fix(codeexecutor): honor CleanEnv in e2b runtime",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1923",
+          "author": "yu-xin-c",
+          "status": "skipped",
+          "skip_reason": "GitHub reports mergeStateStatus=DIRTY.",
+          "readiness_audit": "The PR needs a rebase or conflict resolution before a clean merge path exists.",
+          "ci_state": "green (156 checks)",
+          "blockers": [
+            {
+              "kind": "merge_conflict",
+              "summary": "GitHub mergeStateStatus=DIRTY."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "reason": "comment_only_not_reached",
+      "title": "绿色或需人工复核但本轮仅评论、不继续 LGTM/合入",
+      "count": 9,
+      "prs": [
+        2044,
+        2028,
+        2151,
+        2146,
+        2141,
+        2134,
+        2128,
+        2125,
+        2121
+      ],
+      "items": [
+        {
+          "number": 2044,
+          "title": "feat: Tool Safety Scanner with 8 rules and structured audit",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2044",
+          "author": "Nerdlet369",
+          "status": "skipped",
+          "skip_reason": "Aggregate CHANGES_REQUESTED exists, but final thread audit found no unresolved human review thread; deferred for manual re-audit under comment-only policy.",
+          "readiness_audit": "This PR was not treated as blocked solely by the aggregate GitHub reviewDecision. A human should re-check the latest diff and prior review history before any LGTM.",
+          "ci_state": "green (161 checks)",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Aggregate reviewDecision=CHANGES_REQUESTED needs manual re-audit; no unresolved human review thread was found in the final thread snapshot."
+            }
+          ]
+        },
+        {
+          "number": 2028,
+          "title": "dynamicworkflow: add dynamic workflow orchestration",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2028",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Aggregate CHANGES_REQUESTED exists, but final thread audit found no unresolved human review thread; deferred for manual re-audit under comment-only policy.",
+          "readiness_audit": "This PR was not treated as blocked solely by the aggregate GitHub reviewDecision. A human should re-check the latest diff and prior review history before any LGTM.",
+          "ci_state": "green (161 checks)",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Aggregate reviewDecision=CHANGES_REQUESTED needs manual re-audit; no unresolved human review thread was found in the final thread snapshot."
+            }
+          ]
+        },
+        {
+          "number": 2151,
+          "title": "实现自动代码评审Agent全套能力",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2151",
+          "author": "xiaoyulox",
+          "status": "skipped",
+          "skip_reason": "Ready-looking PR deferred by the comment-only instruction and review capacity.",
+          "readiness_audit": "Checks are green and no hard skip was detected in the inventory, but this run was explicitly limited to comments only and did not issue LGTM or merge actions.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Needs explicit maintainer review/LGTM in a run where approval is allowed."
+            }
+          ]
+        },
+        {
+          "number": 2146,
+          "title": "[codex] add replay consistency harness",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2146",
+          "author": "GodBlf",
+          "status": "skipped",
+          "skip_reason": "Ready-looking PR deferred by the comment-only instruction and review capacity.",
+          "readiness_audit": "Checks are green and no hard skip was detected in the inventory, but this run was explicitly limited to comments only and did not issue LGTM or merge actions.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Needs explicit maintainer review/LGTM in a run where approval is allowed."
+            }
+          ]
+        },
+        {
+          "number": 2141,
+          "title": "internal/telemetry:Reduce streaming TraceChat request attribute allocations",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2141",
+          "author": "cuboya",
+          "status": "skipped",
+          "skip_reason": "Ready-looking PR deferred by the comment-only instruction and review capacity.",
+          "readiness_audit": "Checks are green and no hard skip was detected in the inventory, but this run was explicitly limited to comments only and did not issue LGTM or merge actions.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Needs explicit maintainer review/LGTM in a run where approval is allowed."
+            }
+          ]
+        },
+        {
+          "number": 2134,
+          "title": "test: add replay consistency harness",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2134",
+          "author": "Spock12138",
+          "status": "skipped",
+          "skip_reason": "Ready-looking PR deferred by the comment-only instruction and review capacity.",
+          "readiness_audit": "Checks are green and no hard skip was detected in the inventory, but this run was explicitly limited to comments only and did not issue LGTM or merge actions.",
+          "ci_state": "green (163 checks)",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Needs explicit maintainer review/LGTM in a run where approval is allowed."
+            }
+          ]
+        },
+        {
+          "number": 2128,
+          "title": "memory/gorm: GORM-backed memory.Service with shared DB injection",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2128",
+          "author": "sks",
+          "status": "skipped",
+          "skip_reason": "Ready-looking PR deferred by the comment-only instruction and review capacity.",
+          "readiness_audit": "Checks are green and no hard skip was detected in the inventory, but this run was explicitly limited to comments only and did not issue LGTM or merge actions.",
+          "ci_state": "green (165 checks)",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Needs explicit maintainer review/LGTM in a run where approval is allowed."
+            }
+          ]
+        },
+        {
+          "number": 2125,
+          "title": "codeexecutor, agent/llmagent: make workspace registry pluggable via WorkspaceAcquirer",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2125",
+          "author": "grignolalouis",
+          "status": "skipped",
+          "skip_reason": "Ready-looking PR deferred by the comment-only instruction and review capacity.",
+          "readiness_audit": "Checks are green and no hard skip was detected in the inventory, but this run was explicitly limited to comments only and did not issue LGTM or merge actions.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Needs explicit maintainer review/LGTM in a run where approval is allowed."
+            }
+          ]
+        },
+        {
+          "number": 2121,
+          "title": "examples/code_review_agent: add sandboxed code review agent example",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2121",
+          "author": "XnLemon",
+          "status": "skipped",
+          "skip_reason": "Ready-looking PR deferred by the comment-only instruction and review capacity.",
+          "readiness_audit": "Checks are green and no hard skip was detected in the inventory, but this run was explicitly limited to comments only and did not issue LGTM or merge actions.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Needs explicit maintainer review/LGTM in a run where approval is allowed."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "timeline": [
+    {
+      "event": "Refreshed mycr repository",
+      "detail": "`git pull --ff-only` reported already up to date."
+    },
+    {
+      "event": "Collected PR inventory",
+      "detail": "Open PR count: 56; delta from previous report: new 0, closed 0, changed 0."
+    },
+    {
+      "event": "Collected checks",
+      "detail": "Checks snapshot: green=27, non_green=29."
+    },
+    {
+      "event": "Reviewed selected candidates",
+      "detail": "Reviewed #2149 and #2047 with posted comments; checked #2076 and #2133 with local validation and no new comments; audited WineChord-owned #2155 and #2156 without self-review action."
+    },
+    {
+      "event": "Submitted comments only",
+      "detail": "Posted COMMENT reviews on #2149 and #2047; no LGTM, approval, or merge action was taken."
+    },
+    {
+      "event": "Prepared archive report",
+      "detail": "Generated a standalone JSON report for archive normalization, HTML rendering, quality checks, and website publication."
+    },
+    {
+      "event": "Report quality repair",
+      "detail": "A report quality pass found weak changes-requested evidence and thin reviewed-clean entries; the report now includes concrete thread blockers and richer deferred-review details."
+    }
+  ],
+  "follow_up": [
+    {
+      "title": "Resolve #2149 documentation blockers",
+      "reason": "The blog should document the exact auto-execution condition and align the security example with a bounded backend.",
+      "next": "Wait for author update, then re-check English and Chinese posts together."
+    },
+    {
+      "title": "Resolve #2047 durable context blockers",
+      "reason": "Filter-aware visibility, multi-message anchor tracking, and state persistence failure handling affect model context correctness.",
+      "next": "Ask author to update tests around branch filtering, partial snapshot trimming, and state write failure."
+    },
+    {
+      "title": "Own PR maintenance remains separate",
+      "reason": "#2156 has a failing session/pgvector test; this run intentionally did not push to own PR branches.",
+      "next": "Handle CI repair in a dedicated maintenance run where branch writes are explicitly allowed."
+    }
+  ],
+  "skill_evolution": [
+    {
+      "area": "comment-only-reporting",
+      "note": "Reports should explicitly separate clean-but-deferred PRs from skipped PRs so a comment-only run does not look incomplete."
+    },
+    {
+      "area": "own-pr-conflict-handling",
+      "note": "Design a guarded own-PR maintenance path: isolated worktree, rebase or conflict repair only when writes are allowed, focused tests, and no self-review action."
+    },
+    {
+      "area": "report-quality",
+      "note": "Generated public report text must avoid internal execution terms and should keep every open PR covered exactly once across processed and skipped sections."
+    },
+    {
+      "area": "review-comment-verification",
+      "note": "Use explicit GET requests when querying PR comments with gh api pagination so verification cannot accidentally call the review-comment creation endpoint."
+    },
+    {
+      "area": "changes-requested-evidence",
+      "note": "Final reports should not use aggregate GitHub CHANGES_REQUESTED as a standalone blocker; include unresolved human thread evidence or classify the PR as needing manual re-audit."
+    },
+    {
+      "area": "reviewed-clean-deferred",
+      "note": "Clean-but-deferred PRs need visible module, evidence, test, and design-summary fields when a run claims they were deeply checked."
+    }
+  ],
+  "run_state": {
+    "generated_at": "2026-07-09T01:17:50.072Z",
+    "repo": "trpc-group/trpc-agent-go",
+    "delta": {
+      "generated_at": "2026-07-09T00:57:03.608Z",
+      "prev_generated_at": "2026-07-08T17:21:42.166Z",
+      "open": 56,
+      "green": 27,
+      "bad": 29,
+      "newPrs": [
+        2156
+      ],
+      "closed": [],
+      "changed": [
+        {
+          "number": 2155,
+          "title": "openclaw,tool: guard blocked web research routes",
+          "author": "WineChord",
+          "assoc": "MEMBER",
+          "head": "8a87cfbec515",
+          "prev_head": "a70006216bf4",
+          "green": true,
+          "bad": [],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-08T21:42:14Z",
+          "reasons": [
+            "head_changed",
+            "checks_green_changed",
+            "updated_after_prev_report"
+          ]
+        },
+        {
+          "number": 2137,
+          "title": "feat(toolsearch): refactor into namespaced toolbox with embedding search, MCP support and two-tool mode",
+          "author": "qiefengying",
+          "assoc": "FIRST_TIME_CONTRIBUTOR",
+          "head": "d6c90d2af825",
+          "prev_head": "d6c90d2af825",
+          "green": false,
+          "bad": [
+            "go-apidiff=FAILURE",
+            "CLAAssistant=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-08T09:28:23Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 2124,
+          "title": "tool/file: handle nil list and search requests",
+          "author": "ahfoysal",
+          "assoc": "FIRST_TIME_CONTRIBUTOR",
+          "head": "1f6731c5e26a",
+          "prev_head": "1f6731c5e26a",
+          "green": false,
+          "bad": [
+            "go test (evaluation/go.mod)=FAILURE",
+            "CLAAssistant=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-06T10:58:28Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 2118,
+          "title": "feat: add Tool Execution Safety Guard for pre-execution command scanning #2002",
+          "author": "xiaobaicai66695",
+          "assoc": "FIRST_TIME_CONTRIBUTOR",
+          "head": "fc357b9bcb1e",
+          "prev_head": "fc357b9bcb1e",
+          "green": false,
+          "bad": [
+            "lint=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-08T08:16:07Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 2109,
+          "title": "memoryutils: export helpers and adopt in built-in backends",
+          "author": "sks",
+          "assoc": "CONTRIBUTOR",
+          "head": "597e87acb103",
+          "prev_head": "597e87acb103",
+          "green": true,
+          "bad": [],
+          "reviewDecision": "CHANGES_REQUESTED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-07T11:40:59Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 2097,
+          "title": "feat(session,tool/context): Pensieve context self-pruning with example",
+          "author": "sks",
+          "assoc": "CONTRIBUTOR",
+          "head": "e2bb4bc8fe32",
+          "prev_head": "e2bb4bc8fe32",
+          "green": true,
+          "bad": [],
+          "reviewDecision": "CHANGES_REQUESTED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-08T08:37:12Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 2090,
+          "title": "feat(examples): add code review agent with skill, sandbox, and database storage",
+          "author": "coder-mtj",
+          "assoc": "FIRST_TIME_CONTRIBUTOR",
+          "head": "87f0a57d1827",
+          "prev_head": "87f0a57d1827",
+          "green": false,
+          "bad": [
+            "check examples (2/4)=FAILURE",
+            "lint=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-08T08:39:41Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 2089,
+          "title": "feat(tool): add pre-execution safety scanner with OTel integration",
+          "author": "coder-mtj",
+          "assoc": "FIRST_TIME_CONTRIBUTOR",
+          "head": "54862a063d37",
+          "prev_head": "54862a063d37",
+          "green": false,
+          "bad": [
+            "lint=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-08T08:45:18Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 2088,
+          "title": "feat(session): add multi-backend replay consistency test framework",
+          "author": "coder-mtj",
+          "assoc": "FIRST_TIME_CONTRIBUTOR",
+          "head": "914e015d63c5",
+          "prev_head": "914e015d63c5",
+          "green": false,
+          "bad": [
+            "lint=FAILURE",
+            "typos=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-08T08:42:24Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 2086,
+          "title": "fix(model/anthropic): repair truncated tool_use input before stream finalize",
+          "author": "sks",
+          "assoc": "CONTRIBUTOR",
+          "head": "4ab44893e9af",
+          "prev_head": "4ab44893e9af",
+          "green": false,
+          "bad": [
+            "codecov/patch=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-05T01:22:34Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 2084,
+          "title": "feat(model/anthropic): retry streaming requests on transient transport failures",
+          "author": "sks",
+          "assoc": "CONTRIBUTOR",
+          "head": "664c8ed93f02",
+          "prev_head": "664c8ed93f02",
+          "green": false,
+          "bad": [
+            "codecov/patch=FAILURE"
+          ],
+          "reviewDecision": "CHANGES_REQUESTED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-08T08:34:02Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 2076,
+          "title": "feat(sandbox): add macOS denial diagnostics",
+          "author": "cuboya",
+          "assoc": "CONTRIBUTOR",
+          "head": "9b9d81e8a6ac",
+          "prev_head": "9b9d81e8a6ac",
+          "green": true,
+          "bad": [],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-08T06:28:14Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 2071,
+          "title": "model/internal/model: add MiniMax-M3 context window",
+          "author": "octo-patch",
+          "assoc": "FIRST_TIME_CONTRIBUTOR",
+          "head": "a00992d13f88",
+          "prev_head": "a00992d13f88",
+          "green": false,
+          "bad": [
+            "CLAAssistant=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-06T07:37:11Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 2058,
+          "title": "a2a: add v2 packages backed by trpc-a2a-go/v2 (A2A protocol v1.0)",
+          "author": "hyprh",
+          "assoc": "MEMBER",
+          "head": "3655c93792ff",
+          "prev_head": "3655c93792ff",
+          "green": false,
+          "bad": [
+            "go test (tool/webfetch/httpfetch/go.mod)=FAILURE",
+            "check external consumer (tool/webfetch/httpfetch/go.mod)=FAILURE",
+            "go test (memory/postgres/go.mod)=FAILURE",
+            "go test (knowledge/vectorstore/pgvector/go.mod)=FAILURE",
+            "go test (storage/elasticsearch/go.mod)=FAILURE",
+            "go test (session/redis/go.mod)=FAILURE",
+            "go test (knowledge/vectorstore/sqlitevec/go.mod)=FAILURE",
+            "go test (session/clickhouse/go.mod)=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-07T10:03:28Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 2055,
+          "title": "feat: 新增会话回放一致性测试工具链",
+          "author": "mingri31164",
+          "assoc": "FIRST_TIME_CONTRIBUTOR",
+          "head": "322fba1998e2",
+          "prev_head": "53e15e1d2949",
+          "green": false,
+          "bad": [
+            "codecov/patch=FAILURE",
+            "check go.mod version=FAILURE",
+            "CLAAssistant=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-08T20:12:28Z",
+          "reasons": [
+            "head_changed",
+            "updated_after_prev_report"
+          ]
+        },
+        {
+          "number": 2051,
+          "title": "session/replaytest: add multi-backend replay consistency test framework",
+          "author": "xiaosansh",
+          "assoc": "FIRST_TIME_CONTRIBUTOR",
+          "head": "a9c7ea990c12",
+          "prev_head": "a9c7ea990c12",
+          "green": true,
+          "bad": [],
+          "reviewDecision": "CHANGES_REQUESTED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-08T08:20:37Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 2050,
+          "title": "feat(tool/safety): add tool execution safety guard",
+          "author": "d2bz",
+          "assoc": "FIRST_TIME_CONTRIBUTOR",
+          "head": "e5234b25d846",
+          "prev_head": "e5234b25d846",
+          "green": true,
+          "bad": [],
+          "reviewDecision": "CHANGES_REQUESTED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-08T08:28:44Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 2047,
+          "title": "agent: add durable session context sources",
+          "author": "bytethm",
+          "assoc": "MEMBER",
+          "head": "2d9deb64810f",
+          "prev_head": "2d9deb64810f",
+          "green": true,
+          "bad": [],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-08T03:51:07Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 2037,
+          "title": "feat(telemetry): add invoke skill observability",
+          "author": "liuzengh",
+          "assoc": "MEMBER",
+          "head": "e21156d28a93",
+          "prev_head": "e21156d28a93",
+          "green": false,
+          "bad": [
+            "codecov/patch=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-06-30T06:43:50Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 2010,
+          "title": "memory/deepsearch: add progressive DeepSearch",
+          "author": "print-happy",
+          "assoc": "CONTRIBUTOR",
+          "head": "e587e79d75d2",
+          "prev_head": "e587e79d75d2",
+          "green": false,
+          "bad": [
+            "codecov/patch=FAILURE",
+            "typos=FAILURE",
+            "lint=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-08T04:00:09Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 1988,
+          "title": "memory: guard auto extraction after external context",
+          "author": "liuzengh",
+          "assoc": "MEMBER",
+          "head": "1ca4625fb71d",
+          "prev_head": "1ca4625fb71d",
+          "green": true,
+          "bad": [],
+          "reviewDecision": "APPROVED",
+          "mergeStateStatus": "DIRTY",
+          "updatedAt": "2026-07-08T09:01:42Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 1967,
+          "title": "fix(sqlite): allow WithAsyncSummaryNum(0) to disable async workers",
+          "author": "YellowDusk04",
+          "assoc": "CONTRIBUTOR",
+          "head": "49bac0ed9e90",
+          "prev_head": "49bac0ed9e90",
+          "green": false,
+          "bad": [
+            "codecov/patch=FAILURE"
+          ],
+          "reviewDecision": "CHANGES_REQUESTED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-08T08:57:33Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 1957,
+          "title": "fix(session/postgres): cast JSON bytes to string for DB params",
+          "author": "Ocyss",
+          "assoc": "FIRST_TIME_CONTRIBUTOR",
+          "head": "53153210b0c6",
+          "prev_head": "53153210b0c6",
+          "green": false,
+          "bad": [
+            "go test (session/postgres/go.mod)=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-08T09:05:25Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 1956,
+          "title": "langfuse: add environment config option and pass to OTEL resource attributes",
+          "author": "Ocyss",
+          "assoc": "FIRST_TIME_CONTRIBUTOR",
+          "head": "604d75d058af",
+          "prev_head": "604d75d058af",
+          "green": false,
+          "bad": [
+            "go test (go.mod)=FAILURE",
+            "lint=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-07-08T09:03:40Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 1930,
+          "title": "fix: set default HTTP client timeout to prevent goroutine leaks",
+          "author": "123456wda",
+          "assoc": "FIRST_TIME_CONTRIBUTOR",
+          "head": "576b11d6d1f4",
+          "prev_head": "576b11d6d1f4",
+          "green": true,
+          "bad": [],
+          "reviewDecision": "CHANGES_REQUESTED",
+          "mergeStateStatus": "DIRTY",
+          "updatedAt": "2026-07-08T09:07:33Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 1923,
+          "title": "fix(codeexecutor): honor CleanEnv in e2b runtime",
+          "author": "yu-xin-c",
+          "assoc": "CONTRIBUTOR",
+          "head": "c424527fe8c6",
+          "prev_head": "c424527fe8c6",
+          "green": true,
+          "bad": [],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "DIRTY",
+          "updatedAt": "2026-06-08T16:30:35Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 1901,
+          "title": "WIP: knowledge: deprecate legacy OCR path",
+          "author": "hyprh",
+          "assoc": "MEMBER",
+          "head": "5c5f62838568",
+          "prev_head": "5c5f62838568",
+          "green": true,
+          "bad": [],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "DIRTY",
+          "updatedAt": "2026-06-02T08:02:50Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 1801,
+          "title": "docs/mkdocs/zh/fix/agent.md: fix typo",
+          "author": "GongNanyue",
+          "assoc": "FIRST_TIME_CONTRIBUTOR",
+          "head": "ef95fa2eee09",
+          "prev_head": "ef95fa2eee09",
+          "green": false,
+          "bad": [
+            "go test (openclaw/go.mod)=FAILURE",
+            "CLAAssistant=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-06-25T04:54:09Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 1778,
+          "title": "examples: add RLM (Recursive Language Model) demo",
+          "author": "hyprh",
+          "assoc": "MEMBER",
+          "head": "403338f0c461",
+          "prev_head": "403338f0c461",
+          "green": false,
+          "bad": [
+            "check examples (1/4)=FAILURE",
+            "check examples build script (1/4)=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-06-15T06:59:22Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 1736,
+          "title": "all: add deferred tool set",
+          "author": "liuzengh",
+          "assoc": "MEMBER",
+          "head": "384aa5d638c4",
+          "prev_head": "384aa5d638c4",
+          "green": false,
+          "bad": [
+            "test@PULL_REQUEST=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "DIRTY",
+          "updatedAt": "2026-07-08T09:13:55Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 1710,
+          "title": "a2a: add input schema",
+          "author": "liuzengh",
+          "assoc": "MEMBER",
+          "head": "1a4057120129",
+          "prev_head": "1a4057120129",
+          "green": true,
+          "bad": [],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-04-28T12:08:51Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 1678,
+          "title": "agent: centralize invoke_agent telemetry in RunWithPlugins",
+          "author": "liuzengh",
+          "assoc": "MEMBER",
+          "head": "657cf9c04385",
+          "prev_head": "657cf9c04385",
+          "green": false,
+          "bad": [
+            "go test (memory/sqlitevec/go.mod)=FAILURE",
+            "go test (memory/sqlite/go.mod)=FAILURE",
+            "go test (memory/redis/go.mod)=FAILURE",
+            "go test (memory/mysqlvec/go.mod)=FAILURE",
+            "go test (memory/mysql/go.mod)=FAILURE",
+            "go test (agent/n8n/go.mod)=FAILURE",
+            "go test (memory/pgvector/go.mod)=FAILURE",
+            "go test (agent/dify/go.mod)=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "DIRTY",
+          "updatedAt": "2026-04-23T10:04:39Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 1446,
+          "title": "feat(a2a): add StructuredOutput → DataPart converter for custom event…",
+          "author": "SummerLv",
+          "assoc": "FIRST_TIME_CONTRIBUTOR",
+          "head": "79557d7bf2c6",
+          "prev_head": "79557d7bf2c6",
+          "green": false,
+          "bad": [
+            "codecov/patch=FAILURE",
+            "GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE",
+            "CLAAssistant=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "DIRTY",
+          "updatedAt": "2026-07-08T09:15:40Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 1400,
+          "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+          "author": "liuzengh",
+          "assoc": "MEMBER",
+          "head": "2e5bf368ac08",
+          "prev_head": "2e5bf368ac08",
+          "green": false,
+          "bad": [
+            "codecov/patch=FAILURE",
+            "go-apidiff=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-03-12T16:24:18Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        },
+        {
+          "number": 1183,
+          "title": "internal/util: add util for streaming parsing of JSON returned by LLM",
+          "author": "hongxiuzhe",
+          "assoc": "FIRST_TIME_CONTRIBUTOR",
+          "head": "53b1a26538f2",
+          "prev_head": "53b1a26538f2",
+          "green": false,
+          "bad": [
+            "codecov/patch=FAILURE",
+            "lint=FAILURE",
+            "CLAAssistant=FAILURE"
+          ],
+          "reviewDecision": "REVIEW_REQUIRED",
+          "mergeStateStatus": "BLOCKED",
+          "updatedAt": "2026-03-12T16:36:49Z",
+          "reasons": [
+            "merge_state_changed"
+          ]
+        }
+      ],
+      "greenChanged": [
+        2155
+      ],
+      "updatedSincePrev": [
+        2155,
+        2055
+      ]
+    },
+    "pull_requests": {
+      "1183": {
+        "number": 1183,
+        "title": "internal/util: add util for streaming parsing of JSON returned by LLM",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1183",
+        "author": "hongxiuzhe",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "json-stream-parse",
+        "head_sha": "53b1a26538f27b3fa570fc1768ac2b92ad8815ba",
+        "head_sha_short": "53b1a26538f2",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 79,
+          "bad": [
+            "codecov/patch=FAILURE",
+            "lint=FAILURE",
+            "CLAAssistant=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "codecov/patch=FAILURE",
+          "lint=FAILURE",
+          "CLAAssistant=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": true,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "codecov/patch=FAILURE; lint=FAILURE; CLAAssistant=FAILURE"
+          }
+        ],
+        "updated_at": "2026-03-12T16:36:49Z"
+      },
+      "1400": {
+        "number": 1400,
+        "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+        "author": "liuzengh",
+        "author_association": "MEMBER",
+        "base_ref": "main",
+        "head_ref": "artfict-interface",
+        "head_sha": "2e5bf368ac088be0a8c83a9858a5352e2ab80418",
+        "head_sha_short": "2e5bf368ac08",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 78,
+          "bad": [
+            "codecov/patch=FAILURE",
+            "go-apidiff=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "codecov/patch=FAILURE",
+          "go-apidiff=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": true,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "codecov/patch=FAILURE; go-apidiff=FAILURE"
+          }
+        ],
+        "updated_at": "2026-03-12T16:24:18Z"
+      },
+      "1446": {
+        "number": 1446,
+        "title": "feat(a2a): add StructuredOutput → DataPart converter for custom event…",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1446",
+        "author": "SummerLv",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feature/datapart_custom_message",
+        "head_sha": "79557d7bf2c6e666e4488d28cae3024d390fe941",
+        "head_sha_short": "79557d7bf2c6",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "DIRTY",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 80,
+          "bad": [
+            "codecov/patch=FAILURE",
+            "GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE",
+            "CLAAssistant=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "codecov/patch=FAILURE",
+          "GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE",
+          "CLAAssistant=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "codecov/patch=FAILURE; GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=FAILURE; CLAAssistant=FAILURE"
+          },
+          {
+            "kind": "merge_conflict",
+            "summary": "GitHub reports mergeStateStatus=DIRTY."
+          }
+        ],
+        "updated_at": "2026-07-08T09:15:40Z"
+      },
+      "1678": {
+        "number": 1678,
+        "title": "agent: centralize invoke_agent telemetry in RunWithPlugins",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1678",
+        "author": "liuzengh",
+        "author_association": "MEMBER",
+        "base_ref": "main",
+        "head_ref": "feat/invoke-agent-recorder-and-callback-docs",
+        "head_sha": "657cf9c0438565fe410933dac8306f9da1f57fc8",
+        "head_sha_short": "657cf9c04385",
+        "is_draft": true,
+        "is_wip": false,
+        "merge_state_status": "DIRTY",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 85,
+          "bad": [
+            "go test (memory/sqlitevec/go.mod)=FAILURE",
+            "go test (memory/sqlite/go.mod)=FAILURE",
+            "go test (memory/redis/go.mod)=FAILURE",
+            "go test (memory/mysqlvec/go.mod)=FAILURE",
+            "go test (memory/mysql/go.mod)=FAILURE",
+            "go test (agent/n8n/go.mod)=FAILURE",
+            "go test (memory/pgvector/go.mod)=FAILURE",
+            "go test (agent/dify/go.mod)=FAILURE",
+            "go test (memory/postgres/go.mod)=FAILURE",
+            "check go mod tidy=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "go test (memory/sqlitevec/go.mod)=FAILURE",
+          "go test (memory/sqlite/go.mod)=FAILURE",
+          "go test (memory/redis/go.mod)=FAILURE",
+          "go test (memory/mysqlvec/go.mod)=FAILURE",
+          "go test (memory/mysql/go.mod)=FAILURE",
+          "go test (agent/n8n/go.mod)=FAILURE",
+          "go test (memory/pgvector/go.mod)=FAILURE",
+          "go test (agent/dify/go.mod)=FAILURE",
+          "go test (memory/postgres/go.mod)=FAILURE",
+          "check go mod tidy=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "draft",
+            "summary": "PR is marked draft."
+          },
+          {
+            "kind": "ci",
+            "summary": "go test (memory/sqlitevec/go.mod)=FAILURE; go test (memory/sqlite/go.mod)=FAILURE; go test (memory/redis/go.mod)=FAILURE; go test (memory/mysqlvec/go.mod)=FAILURE; go test (memory/mysql/go.mod)=FAILURE; go test (agent/n8n/go.mod)=FAILURE; go test (memory/pgvector/go.mod)=FAILURE; go test (agent/dify/go.mod)=FAILURE; go test (memory/postgres/go.mod)=FAILURE; check go mod tidy=FAILURE"
+          },
+          {
+            "kind": "merge_conflict",
+            "summary": "GitHub reports mergeStateStatus=DIRTY."
+          }
+        ],
+        "updated_at": "2026-04-23T10:04:39Z"
+      },
+      "1710": {
+        "number": 1710,
+        "title": "a2a: add input schema",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1710",
+        "author": "liuzengh",
+        "author_association": "MEMBER",
+        "base_ref": "main",
+        "head_ref": "qa-main",
+        "head_sha": "1a40571201299e8ff92216494fac4a0a30dc0d03",
+        "head_sha_short": "1a4057120129",
+        "is_draft": true,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": true,
+        "checks": {
+          "count": 87,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "draft",
+            "summary": "PR is marked draft."
+          }
+        ],
+        "updated_at": "2026-04-28T12:08:51Z"
+      },
+      "1736": {
+        "number": 1736,
+        "title": "all: add deferred tool set",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1736",
+        "author": "liuzengh",
+        "author_association": "MEMBER",
+        "base_ref": "main",
+        "head_ref": "deferred-tool-set",
+        "head_sha": "384aa5d638c4d54114adeac6718abc281ae18228",
+        "head_sha_short": "384aa5d638c4",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "DIRTY",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 4,
+          "bad": [
+            "test@PULL_REQUEST=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "test@PULL_REQUEST=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "test@PULL_REQUEST=FAILURE"
+          },
+          {
+            "kind": "merge_conflict",
+            "summary": "GitHub reports mergeStateStatus=DIRTY."
+          }
+        ],
+        "updated_at": "2026-07-08T09:13:55Z"
+      },
+      "1778": {
+        "number": 1778,
+        "title": "examples: add RLM (Recursive Language Model) demo",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1778",
+        "author": "hyprh",
+        "author_association": "MEMBER",
+        "base_ref": "main",
+        "head_ref": "hyprh/examples-rlm-recursive-language-model",
+        "head_sha": "403338f0c461566372023a47b7f29a4dc70c49aa",
+        "head_sha_short": "403338f0c461",
+        "is_draft": true,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 305,
+          "bad": [
+            "check examples (1/4)=FAILURE",
+            "check examples build script (1/4)=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "check examples (1/4)=FAILURE",
+          "check examples build script (1/4)=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "draft",
+            "summary": "PR is marked draft."
+          },
+          {
+            "kind": "ci",
+            "summary": "check examples (1/4)=FAILURE; check examples build script (1/4)=FAILURE"
+          }
+        ],
+        "updated_at": "2026-06-15T06:59:22Z"
+      },
+      "1801": {
+        "number": 1801,
+        "title": "docs/mkdocs/zh/fix/agent.md: fix typo",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1801",
+        "author": "GongNanyue",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "patch-1",
+        "head_sha": "ef95fa2eee093cb689d1223a37d9ba32b4693dc4",
+        "head_sha_short": "ef95fa2eee09",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 149,
+          "bad": [
+            "go test (openclaw/go.mod)=FAILURE",
+            "CLAAssistant=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "go test (openclaw/go.mod)=FAILURE",
+          "CLAAssistant=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "go test (openclaw/go.mod)=FAILURE; CLAAssistant=FAILURE"
+          }
+        ],
+        "updated_at": "2026-06-25T04:54:09Z"
+      },
+      "1901": {
+        "number": 1901,
+        "title": "WIP: knowledge: deprecate legacy OCR path",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1901",
+        "author": "hyprh",
+        "author_association": "MEMBER",
+        "base_ref": "main",
+        "head_ref": "work_ocr-extractor-deprecation",
+        "head_sha": "5c5f628385687935eddc2ecb5fecb11ac2bfcb6c",
+        "head_sha_short": "5c5f62838568",
+        "is_draft": true,
+        "is_wip": true,
+        "merge_state_status": "DIRTY",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": true,
+        "checks": {
+          "count": 156,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "draft",
+            "summary": "PR is marked draft."
+          },
+          {
+            "kind": "draft",
+            "summary": "PR title is marked WIP."
+          },
+          {
+            "kind": "merge_conflict",
+            "summary": "GitHub reports mergeStateStatus=DIRTY."
+          }
+        ],
+        "updated_at": "2026-06-02T08:02:50Z"
+      },
+      "1923": {
+        "number": 1923,
+        "title": "fix(codeexecutor): honor CleanEnv in e2b runtime",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1923",
+        "author": "yu-xin-c",
+        "author_association": "CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "codex/e2b-cleanenv",
+        "head_sha": "c424527fe8c693456692ca379deaada9ef3ff2d8",
+        "head_sha_short": "c424527fe8c6",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "DIRTY",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": true,
+        "checks": {
+          "count": 156,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "merge_conflict",
+            "summary": "GitHub reports mergeStateStatus=DIRTY."
+          }
+        ],
+        "updated_at": "2026-06-08T16:30:35Z"
+      },
+      "1930": {
+        "number": 1930,
+        "title": "fix: set default HTTP client timeout to prevent goroutine leaks",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1930",
+        "author": "123456wda",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "fix/http-client-default-timeout",
+        "head_sha": "576b11d6d1f4d19f85c04bbc1c27220251cc4d89",
+        "head_sha_short": "576b11d6d1f4",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "DIRTY",
+        "review_decision": "CHANGES_REQUESTED",
+        "checks_green": true,
+        "checks": {
+          "count": 156,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "merge_conflict",
+            "summary": "GitHub reports mergeStateStatus=DIRTY."
+          },
+          {
+            "kind": "human_review",
+            "summary": "Existing maintainer review decision is CHANGES_REQUESTED."
+          }
+        ],
+        "updated_at": "2026-07-08T09:07:33Z"
+      },
+      "1956": {
+        "number": 1956,
+        "title": "langfuse: add environment config option and pass to OTEL resource attributes",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1956",
+        "author": "Ocyss",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feature/langfuse-env-config",
+        "head_sha": "604d75d058aff6d4188832436925d7ed6344996a",
+        "head_sha_short": "604d75d058af",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 159,
+          "bad": [
+            "go test (go.mod)=FAILURE",
+            "lint=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "go test (go.mod)=FAILURE",
+          "lint=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "go test (go.mod)=FAILURE; lint=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-08T09:03:40Z"
+      },
+      "1957": {
+        "number": 1957,
+        "title": "fix(session/postgres): cast JSON bytes to string for DB params",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1957",
+        "author": "Ocyss",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "fix/postgres-json-cast",
+        "head_sha": "53153210b0c6a0e48b125ad9abcfdd92e30ac370",
+        "head_sha_short": "53153210b0c6",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 159,
+          "bad": [
+            "go test (session/postgres/go.mod)=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "go test (session/postgres/go.mod)=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "go test (session/postgres/go.mod)=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-08T09:05:25Z"
+      },
+      "1967": {
+        "number": 1967,
+        "title": "fix(sqlite): allow WithAsyncSummaryNum(0) to disable async workers",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1967",
+        "author": "YellowDusk04",
+        "author_association": "CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "fix/sqlite-async-summary-num-validation",
+        "head_sha": "49bac0ed9e90d8583df491bb50c66606d6447d08",
+        "head_sha_short": "49bac0ed9e90",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "CHANGES_REQUESTED",
+        "checks_green": false,
+        "checks": {
+          "count": 160,
+          "bad": [
+            "codecov/patch=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "codecov/patch=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "codecov/patch=FAILURE"
+          },
+          {
+            "kind": "human_review",
+            "summary": "Existing maintainer review decision is CHANGES_REQUESTED."
+          }
+        ],
+        "updated_at": "2026-07-08T08:57:33Z"
+      },
+      "1988": {
+        "number": 1988,
+        "title": "memory: guard auto extraction after external context",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/1988",
+        "author": "liuzengh",
+        "author_association": "MEMBER",
+        "base_ref": "main",
+        "head_ref": "external-context-auto-memory-guard",
+        "head_sha": "1ca4625fb71d6564f391bc18b7c2140e1308ef7d",
+        "head_sha_short": "1ca4625fb71d",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "DIRTY",
+        "review_decision": "APPROVED",
+        "checks_green": true,
+        "checks": {
+          "count": 160,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "merge_conflict",
+            "summary": "GitHub reports mergeStateStatus=DIRTY."
+          }
+        ],
+        "updated_at": "2026-07-08T09:01:42Z"
+      },
+      "2010": {
+        "number": 2010,
+        "title": "memory/deepsearch: add progressive DeepSearch",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2010",
+        "author": "print-happy",
+        "author_association": "CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feat/memory-deepsearch",
+        "head_sha": "e587e79d75d2aed1ecff608bc2489d2a75c8b676",
+        "head_sha_short": "e587e79d75d2",
+        "is_draft": true,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 162,
+          "bad": [
+            "codecov/patch=FAILURE",
+            "typos=FAILURE",
+            "lint=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "codecov/patch=FAILURE",
+          "typos=FAILURE",
+          "lint=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "draft",
+            "summary": "PR is marked draft."
+          },
+          {
+            "kind": "ci",
+            "summary": "codecov/patch=FAILURE; typos=FAILURE; lint=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-08T04:00:09Z"
+      },
+      "2028": {
+        "number": 2028,
+        "title": "dynamicworkflow: add dynamic workflow orchestration",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2028",
+        "author": "bytethm",
+        "author_association": "MEMBER",
+        "base_ref": "main",
+        "head_ref": "dynamic-workflow-orchestration",
+        "head_sha": "7a7526bbf51e7581626dc4e106536a551a8868ea",
+        "head_sha_short": "7a7526bbf51e",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "CHANGES_REQUESTED",
+        "checks_green": true,
+        "checks": {
+          "count": 161,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "human_review",
+            "summary": "Existing maintainer review decision is CHANGES_REQUESTED."
+          }
+        ],
+        "updated_at": "2026-07-08T12:18:46Z"
+      },
+      "2037": {
+        "number": 2037,
+        "title": "feat(telemetry): add invoke skill observability",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2037",
+        "author": "liuzengh",
+        "author_association": "MEMBER",
+        "base_ref": "main",
+        "head_ref": "feat/invoke-skill-observability",
+        "head_sha": "e21156d28a9379799d25870c2594df938c6d619b",
+        "head_sha_short": "e21156d28a93",
+        "is_draft": true,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 162,
+          "bad": [
+            "codecov/patch=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "codecov/patch=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "draft",
+            "summary": "PR is marked draft."
+          },
+          {
+            "kind": "ci",
+            "summary": "codecov/patch=FAILURE"
+          }
+        ],
+        "updated_at": "2026-06-30T06:43:50Z"
+      },
+      "2044": {
+        "number": 2044,
+        "title": "feat: Tool Safety Scanner with 8 rules and structured audit",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2044",
+        "author": "Nerdlet369",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feat/tool-safety-scanner-2002",
+        "head_sha": "2e7bf1ec19add1dc0e35edef8936f506f757659c",
+        "head_sha_short": "2e7bf1ec19ad",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "CHANGES_REQUESTED",
+        "checks_green": true,
+        "checks": {
+          "count": 161,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "human_review",
+            "summary": "Existing maintainer review decision is CHANGES_REQUESTED."
+          }
+        ],
+        "updated_at": "2026-07-08T11:39:11Z"
+      },
+      "2045": {
+        "number": 2045,
+        "title": "feat: add tool execution safety guard for secure command scanning and…",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2045",
+        "author": "everfid-ever",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feat/tool_safety",
+        "head_sha": "0e3bfbf1aa01222ef9720c1b440ad995c3e72176",
+        "head_sha_short": "0e3bfbf1aa01",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "CHANGES_REQUESTED",
+        "checks_green": true,
+        "checks": {
+          "count": 161,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "human_review",
+            "summary": "Existing maintainer review decision is CHANGES_REQUESTED."
+          }
+        ],
+        "updated_at": "2026-07-08T08:51:53Z"
+      },
+      "2047": {
+        "number": 2047,
+        "title": "agent: add durable session context sources",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2047",
+        "author": "bytethm",
+        "author_association": "MEMBER",
+        "base_ref": "main",
+        "head_ref": "session-context-messages",
+        "head_sha": "2d9deb64810f5ba9429623170b8bf19697d9f3b4",
+        "head_sha_short": "2d9deb64810f",
+        "is_draft": true,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": true,
+        "checks": {
+          "count": 162,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "commented",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "draft",
+            "summary": "PR is marked draft."
+          }
+        ],
+        "updated_at": "2026-07-08T03:51:07Z"
+      },
+      "2050": {
+        "number": 2050,
+        "title": "feat(tool/safety): add tool execution safety guard",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2050",
+        "author": "d2bz",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feat/tool-safety-guard-issue-2002",
+        "head_sha": "e5234b25d8467988f6727a16a0a2e0a7f0edbc56",
+        "head_sha_short": "e5234b25d846",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "CHANGES_REQUESTED",
+        "checks_green": true,
+        "checks": {
+          "count": 162,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "human_review",
+            "summary": "Existing maintainer review decision is CHANGES_REQUESTED."
+          }
+        ],
+        "updated_at": "2026-07-08T08:28:44Z"
+      },
+      "2051": {
+        "number": 2051,
+        "title": "session/replaytest: add multi-backend replay consistency test framework",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2051",
+        "author": "xiaosansh",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "issue-2001-impl",
+        "head_sha": "a9c7ea990c122277b62ebe12296d54ff695cceb3",
+        "head_sha_short": "a9c7ea990c12",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "CHANGES_REQUESTED",
+        "checks_green": true,
+        "checks": {
+          "count": 166,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "human_review",
+            "summary": "Existing maintainer review decision is CHANGES_REQUESTED."
+          }
+        ],
+        "updated_at": "2026-07-08T08:20:37Z"
+      },
+      "2055": {
+        "number": 2055,
+        "title": "feat: 新增会话回放一致性测试工具链",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2055",
+        "author": "mingri31164",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feat/session-replay-consistency-harness",
+        "head_sha": "322fba1998e221ec75b0efe13f58888e79bc6432",
+        "head_sha_short": "322fba1998e2",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 166,
+          "bad": [
+            "codecov/patch=FAILURE",
+            "check go.mod version=FAILURE",
+            "CLAAssistant=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "codecov/patch=FAILURE",
+          "check go.mod version=FAILURE",
+          "CLAAssistant=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "codecov/patch=FAILURE; check go.mod version=FAILURE; CLAAssistant=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-08T20:12:28Z"
+      },
+      "2058": {
+        "number": 2058,
+        "title": "a2a: add v2 packages backed by trpc-a2a-go/v2 (A2A protocol v1.0)",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2058",
+        "author": "hyprh",
+        "author_association": "MEMBER",
+        "base_ref": "main",
+        "head_ref": "work_a2a_v2",
+        "head_sha": "3655c93792ff03b6f6d5cc7f01b9500072a33894",
+        "head_sha_short": "3655c93792ff",
+        "is_draft": true,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 161,
+          "bad": [
+            "go test (tool/webfetch/httpfetch/go.mod)=FAILURE",
+            "check external consumer (tool/webfetch/httpfetch/go.mod)=FAILURE",
+            "go test (memory/postgres/go.mod)=FAILURE",
+            "go test (knowledge/vectorstore/pgvector/go.mod)=FAILURE",
+            "go test (storage/elasticsearch/go.mod)=FAILURE",
+            "go test (session/redis/go.mod)=FAILURE",
+            "go test (knowledge/vectorstore/sqlitevec/go.mod)=FAILURE",
+            "go test (session/clickhouse/go.mod)=FAILURE",
+            "go test (knowledge/vectorstore/elasticsearch/go.mod)=FAILURE",
+            "go test (session/sqlite/go.mod)=FAILURE",
+            "go test (memory/pgvector/go.mod)=FAILURE",
+            "go test (knowledge/vectorstore/tcvector/go.mod)=FAILURE",
+            "go test (session/postgres/go.mod)=FAILURE",
+            "go test (model/ollama/go.mod)=FAILURE",
+            "go test (memory/sqlite/go.mod)=FAILURE",
+            "go test (session/mysql/go.mod)=FAILURE",
+            "go test (model/anthropic/go.mod)=FAILURE",
+            "go test (graph/checkpoint/redis/go.mod)=FAILURE",
+            "check external consumer (memory/pgvector/go.mod)=FAILURE",
+            "check external consumer (model/anthropic/go.mod)=FAILURE",
+            "check external consumer (storage/elasticsearch/go.mod)=FAILURE",
+            "check external consumer (model/ollama/go.mod)=FAILURE",
+            "check external consumer (memory/sqlite/go.mod)=FAILURE",
+            "check external consumer (knowledge/vectorstore/tcvector/go.mod)=FAILURE",
+            "check external consumer (openclaw/go.mod)=FAILURE",
+            "check external consumer (knowledge/vectorstore/sqlitevec/go.mod)=FAILURE",
+            "check external consumer (model/bedrock/go.mod)=FAILURE",
+            "check external consumer (session/sqlite/go.mod)=FAILURE",
+            "check external consumer (session/redis/go.mod)=FAILURE",
+            "check external consumer (knowledge/embedder/huggingface/go.mod)=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "go test (tool/webfetch/httpfetch/go.mod)=FAILURE",
+          "check external consumer (tool/webfetch/httpfetch/go.mod)=FAILURE",
+          "go test (memory/postgres/go.mod)=FAILURE",
+          "go test (knowledge/vectorstore/pgvector/go.mod)=FAILURE",
+          "go test (storage/elasticsearch/go.mod)=FAILURE",
+          "go test (session/redis/go.mod)=FAILURE",
+          "go test (knowledge/vectorstore/sqlitevec/go.mod)=FAILURE",
+          "go test (session/clickhouse/go.mod)=FAILURE",
+          "go test (knowledge/vectorstore/elasticsearch/go.mod)=FAILURE",
+          "go test (session/sqlite/go.mod)=FAILURE",
+          "go test (memory/pgvector/go.mod)=FAILURE",
+          "go test (knowledge/vectorstore/tcvector/go.mod)=FAILURE",
+          "go test (session/postgres/go.mod)=FAILURE",
+          "go test (model/ollama/go.mod)=FAILURE",
+          "go test (memory/sqlite/go.mod)=FAILURE",
+          "go test (session/mysql/go.mod)=FAILURE",
+          "go test (model/anthropic/go.mod)=FAILURE",
+          "go test (graph/checkpoint/redis/go.mod)=FAILURE",
+          "check external consumer (memory/pgvector/go.mod)=FAILURE",
+          "check external consumer (model/anthropic/go.mod)=FAILURE",
+          "check external consumer (storage/elasticsearch/go.mod)=FAILURE",
+          "check external consumer (model/ollama/go.mod)=FAILURE",
+          "check external consumer (memory/sqlite/go.mod)=FAILURE",
+          "check external consumer (knowledge/vectorstore/tcvector/go.mod)=FAILURE",
+          "check external consumer (openclaw/go.mod)=FAILURE",
+          "check external consumer (knowledge/vectorstore/sqlitevec/go.mod)=FAILURE",
+          "check external consumer (model/bedrock/go.mod)=FAILURE",
+          "check external consumer (session/sqlite/go.mod)=FAILURE",
+          "check external consumer (session/redis/go.mod)=FAILURE",
+          "check external consumer (knowledge/embedder/huggingface/go.mod)=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "draft",
+            "summary": "PR is marked draft."
+          },
+          {
+            "kind": "ci",
+            "summary": "go test (tool/webfetch/httpfetch/go.mod)=FAILURE; check external consumer (tool/webfetch/httpfetch/go.mod)=FAILURE; go test (memory/postgres/go.mod)=FAILURE; go test (knowledge/vectorstore/pgvector/go.mod)=FAILURE; go test (storage/elasticsearch/go.mod)=FAILURE; go test (session/redis/go.mod)=FAILURE; go test (knowledge/vectorstore/sqlitevec/go.mod)=FAILURE; go test (session/clickhouse/go.mod)=FAILURE; go test (knowledge/vectorstore/elasticsearch/go.mod)=FAILURE; go test (session/sqlite/go.mod)=FAILURE; go test (memory/pgvector/go.mod)=FAILURE; go test (knowledge/vectorstore/tcvector/go.mod)=FAILURE; go test (session/postgres/go.mod)=FAILURE; go test (model/ollama/go.mod)=FAILURE; go test (memory/sqlite/go.mod)=FAILURE; go test (session/mysql/go.mod)=FAILURE; go test (model/anthropic/go.mod)=FAILURE; go test (graph/checkpoint/redis/go.mod)=FAILURE; check external consumer (memory/pgvector/go.mod)=FAILURE; check external consumer (model/anthropic/go.mod)=FAILURE; check external consumer (storage/elasticsearch/go.mod)=FAILURE; check external consumer (model/ollama/go.mod)=FAILURE; check external consumer (memory/sqlite/go.mod)=FAILURE; check external consumer (knowledge/vectorstore/tcvector/go.mod)=FAILURE; check external consumer (openclaw/go.mod)=FAILURE; check external consumer (knowledge/vectorstore/sqlitevec/go.mod)=FAILURE; check external consumer (model/bedrock/go.mod)=FAILURE; check external consumer (session/sqlite/go.mod)=FAILURE; check external consumer (session/redis/go.mod)=FAILURE; check external consumer (knowledge/embedder/huggingface/go.mod)=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-07T10:03:28Z"
+      },
+      "2071": {
+        "number": 2071,
+        "title": "model/internal/model: add MiniMax-M3 context window",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2071",
+        "author": "octo-patch",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "octo/minimax-m3-context-window",
+        "head_sha": "a00992d13f885e9678c96705b23234e0af4835bd",
+        "head_sha_short": "a00992d13f88",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 162,
+          "bad": [
+            "CLAAssistant=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "CLAAssistant=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "CLAAssistant=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-06T07:37:11Z"
+      },
+      "2076": {
+        "number": 2076,
+        "title": "feat(sandbox): add macOS denial diagnostics",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2076",
+        "author": "cuboya",
+        "author_association": "CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "main",
+        "head_sha": "9b9d81e8a6ac1007b36c23beb21fcac786e46618",
+        "head_sha_short": "9b9d81e8a6ac",
+        "is_draft": true,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": true,
+        "checks": {
+          "count": 162,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "draft",
+            "summary": "PR is marked draft."
+          }
+        ],
+        "updated_at": "2026-07-08T06:28:14Z"
+      },
+      "2084": {
+        "number": 2084,
+        "title": "feat(model/anthropic): retry streaming requests on transient transport failures",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2084",
+        "author": "sks",
+        "author_association": "CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "contrib/upstream-anthropic-stream-retry",
+        "head_sha": "664c8ed93f026531ccf06283dd3ad8b9ededba92",
+        "head_sha_short": "664c8ed93f02",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "CHANGES_REQUESTED",
+        "checks_green": false,
+        "checks": {
+          "count": 162,
+          "bad": [
+            "codecov/patch=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "codecov/patch=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "codecov/patch=FAILURE"
+          },
+          {
+            "kind": "human_review",
+            "summary": "Existing maintainer review decision is CHANGES_REQUESTED."
+          }
+        ],
+        "updated_at": "2026-07-08T08:34:02Z"
+      },
+      "2086": {
+        "number": 2086,
+        "title": "fix(model/anthropic): repair truncated tool_use input before stream finalize",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2086",
+        "author": "sks",
+        "author_association": "CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "contrib/upstream-anthropic-tooluse-repair",
+        "head_sha": "4ab44893e9af9f39f543d92ab6fa2b012a645974",
+        "head_sha_short": "4ab44893e9af",
+        "is_draft": true,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 162,
+          "bad": [
+            "codecov/patch=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "codecov/patch=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "draft",
+            "summary": "PR is marked draft."
+          },
+          {
+            "kind": "ci",
+            "summary": "codecov/patch=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-05T01:22:34Z"
+      },
+      "2087": {
+        "number": 2087,
+        "title": "codeexecutor/opensandbox: add OpenSandbox remote executor",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2087",
+        "author": "Violet2314",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feat/add-opensandbox-executor",
+        "head_sha": "fb13ad7a14852239878204bbe8773d30378bfede",
+        "head_sha_short": "fb13ad7a1485",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "CHANGES_REQUESTED",
+        "checks_green": true,
+        "checks": {
+          "count": 163,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "human_review",
+            "summary": "Existing maintainer review decision is CHANGES_REQUESTED."
+          }
+        ],
+        "updated_at": "2026-07-08T16:31:14Z"
+      },
+      "2088": {
+        "number": 2088,
+        "title": "feat(session): add multi-backend replay consistency test framework",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2088",
+        "author": "coder-mtj",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feat/replay-consistency-test",
+        "head_sha": "914e015d63c5e9f16eb3239396721b8c534eca7b",
+        "head_sha_short": "914e015d63c5",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 162,
+          "bad": [
+            "lint=FAILURE",
+            "typos=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "lint=FAILURE",
+          "typos=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "lint=FAILURE; typos=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-08T08:42:24Z"
+      },
+      "2089": {
+        "number": 2089,
+        "title": "feat(tool): add pre-execution safety scanner with OTel integration",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2089",
+        "author": "coder-mtj",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feat/tool-safety-scanner",
+        "head_sha": "54862a063d371c5a1117fcbc501f223c77d229fb",
+        "head_sha_short": "54862a063d37",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 162,
+          "bad": [
+            "lint=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "lint=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "lint=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-08T08:45:18Z"
+      },
+      "2090": {
+        "number": 2090,
+        "title": "feat(examples): add code review agent with skill, sandbox, and database storage",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2090",
+        "author": "coder-mtj",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feat/code-review-agent",
+        "head_sha": "87f0a57d18279b73ed256dc7084a2b0f2de02ef4",
+        "head_sha_short": "87f0a57d1827",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 162,
+          "bad": [
+            "check examples (2/4)=FAILURE",
+            "lint=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "check examples (2/4)=FAILURE",
+          "lint=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "check examples (2/4)=FAILURE; lint=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-08T08:39:41Z"
+      },
+      "2097": {
+        "number": 2097,
+        "title": "feat(session,tool/context): Pensieve context self-pruning with example",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2097",
+        "author": "sks",
+        "author_association": "CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "contrib/upstream-pensieve",
+        "head_sha": "e2bb4bc8fe3207c0b246cc0e4f75788a34e5894a",
+        "head_sha_short": "e2bb4bc8fe32",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "CHANGES_REQUESTED",
+        "checks_green": true,
+        "checks": {
+          "count": 162,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "human_review",
+            "summary": "Existing maintainer review decision is CHANGES_REQUESTED."
+          }
+        ],
+        "updated_at": "2026-07-08T08:37:12Z"
+      },
+      "2109": {
+        "number": 2109,
+        "title": "memoryutils: export helpers and adopt in built-in backends",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2109",
+        "author": "sks",
+        "author_association": "CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "contrib/upstream-memoryutils-export",
+        "head_sha": "597e87acb103303299d034968b135fc92a97dd0c",
+        "head_sha_short": "597e87acb103",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "CHANGES_REQUESTED",
+        "checks_green": true,
+        "checks": {
+          "count": 162,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "human_review",
+            "summary": "Existing maintainer review decision is CHANGES_REQUESTED."
+          }
+        ],
+        "updated_at": "2026-07-07T11:40:59Z"
+      },
+      "2118": {
+        "number": 2118,
+        "title": "feat: add Tool Execution Safety Guard for pre-execution command scanning #2002",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2118",
+        "author": "xiaobaicai66695",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feat/tool-safety-guard",
+        "head_sha": "fc357b9bcb1ea00b77b6dfde6287787bffb7f9fc",
+        "head_sha_short": "fc357b9bcb1e",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 162,
+          "bad": [
+            "lint=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "lint=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "lint=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-08T08:16:07Z"
+      },
+      "2121": {
+        "number": 2121,
+        "title": "examples/code_review_agent: add sandboxed code review agent example",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2121",
+        "author": "XnLemon",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feat/code-review-agent",
+        "head_sha": "3ceb1e3f753fa6ba112820b074f6ddf244b6bf87",
+        "head_sha_short": "3ceb1e3f753f",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": true,
+        "checks": {
+          "count": 162,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [],
+        "updated_at": "2026-07-08T07:54:51Z"
+      },
+      "2124": {
+        "number": 2124,
+        "title": "tool/file: handle nil list and search requests",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2124",
+        "author": "ahfoysal",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "fix/file-tools-nil-request",
+        "head_sha": "1f6731c5e26aa7c18f3393aca74a54f1ba0dfd93",
+        "head_sha_short": "1f6731c5e26a",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 161,
+          "bad": [
+            "go test (evaluation/go.mod)=FAILURE",
+            "CLAAssistant=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "go test (evaluation/go.mod)=FAILURE",
+          "CLAAssistant=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "go test (evaluation/go.mod)=FAILURE; CLAAssistant=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-06T10:58:28Z"
+      },
+      "2125": {
+        "number": 2125,
+        "title": "codeexecutor, agent/llmagent: make workspace registry pluggable via WorkspaceAcquirer",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2125",
+        "author": "grignolalouis",
+        "author_association": "CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feat/pluggable-workspace-registry",
+        "head_sha": "4fa403fd31dd17e8d83abfd7ee7c89b54074e054",
+        "head_sha_short": "4fa403fd31dd",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": true,
+        "checks": {
+          "count": 162,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [],
+        "updated_at": "2026-07-08T11:44:55Z"
+      },
+      "2128": {
+        "number": 2128,
+        "title": "memory/gorm: GORM-backed memory.Service with shared DB injection",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2128",
+        "author": "sks",
+        "author_association": "CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "contrib/upstream-memory-gorm",
+        "head_sha": "30342e419a0ce37c523895e7dd7709c6f106bbc5",
+        "head_sha_short": "30342e419a0c",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": true,
+        "checks": {
+          "count": 165,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [],
+        "updated_at": "2026-07-08T17:10:38Z"
+      },
+      "2133": {
+        "number": 2133,
+        "title": "agent/llmagent: continue after image URL failures",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2133",
+        "author": "bytethm",
+        "author_association": "MEMBER",
+        "base_ref": "main",
+        "head_ref": "image-error-marking",
+        "head_sha": "891b37f767a2f9d563f51f9a463c7f65e82fe266",
+        "head_sha_short": "891b37f767a2",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": true,
+        "checks": {
+          "count": 162,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [],
+        "updated_at": "2026-07-08T10:00:08Z"
+      },
+      "2134": {
+        "number": 2134,
+        "title": "test: add replay consistency harness",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2134",
+        "author": "Spock12138",
+        "author_association": "CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feat/replay-consistency-harness-v2",
+        "head_sha": "816df087f11bf9fad28847efcea9b7842cfa3377",
+        "head_sha_short": "816df087f11b",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": true,
+        "checks": {
+          "count": 163,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [],
+        "updated_at": "2026-07-08T14:17:43Z"
+      },
+      "2135": {
+        "number": 2135,
+        "title": "feat(examples/skills_code_review_agent): add static Go code review agent",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2135",
+        "author": "Lfan-ke",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feat/skills-code-review-agent",
+        "head_sha": "7eec376219fa22ee652dc5d7260e40f91a4625a9",
+        "head_sha_short": "7eec376219fa",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 162,
+          "bad": [
+            "lint=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "lint=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "lint=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-08T09:40:55Z"
+      },
+      "2136": {
+        "number": 2136,
+        "title": "tool/safety: add pre-execution safety scanner",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2136",
+        "author": "XnLemon",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feat/safety-scanner",
+        "head_sha": "4069c32f4daac0a7095c65d38ac54cf38c396147",
+        "head_sha_short": "4069c32f4daa",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 162,
+          "bad": [
+            "lint=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "lint=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "lint=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-08T10:29:05Z"
+      },
+      "2137": {
+        "number": 2137,
+        "title": "feat(toolsearch): refactor into namespaced toolbox with embedding search, MCP support and two-tool mode",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2137",
+        "author": "qiefengying",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feature/tool_search",
+        "head_sha": "d6c90d2af82555fc9205c73b8fbaacea09b7a35a",
+        "head_sha_short": "d6c90d2af825",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 162,
+          "bad": [
+            "go-apidiff=FAILURE",
+            "CLAAssistant=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "go-apidiff=FAILURE",
+          "CLAAssistant=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "go-apidiff=FAILURE; CLAAssistant=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-08T09:28:23Z"
+      },
+      "2141": {
+        "number": 2141,
+        "title": "internal/telemetry:Reduce streaming TraceChat request attribute allocations",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2141",
+        "author": "cuboya",
+        "author_association": "CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "fix/telemetry-request-attr-reuse",
+        "head_sha": "f844a0748ceeab1f2b89df9d576bdd3e12721090",
+        "head_sha_short": "f844a0748cee",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": true,
+        "checks": {
+          "count": 162,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [],
+        "updated_at": "2026-07-08T13:41:02Z"
+      },
+      "2142": {
+        "number": 2142,
+        "title": "session/redis: add WithDisableScriptCache to run Lua scripts via EVAL",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2142",
+        "author": "hyprh",
+        "author_association": "MEMBER",
+        "base_ref": "main",
+        "head_ref": "session-redis-disable-script-cache",
+        "head_sha": "c30cfd484d65dd4c4dd8ec9aaa751d5b5e438416",
+        "head_sha_short": "c30cfd484d65",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 160,
+          "bad": [
+            "lint=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "lint=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "lint=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-08T12:14:12Z"
+      },
+      "2143": {
+        "number": 2143,
+        "title": "[WIP] tool/okf: Open Knowledge Format (OKF) support",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2143",
+        "author": "hyprh",
+        "author_association": "MEMBER",
+        "base_ref": "main",
+        "head_ref": "feat/tool-okf",
+        "head_sha": "7283f9ca03e9c43e0e8489b32a7ec3b28f5303a4",
+        "head_sha_short": "7283f9ca03e9",
+        "is_draft": true,
+        "is_wip": true,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 162,
+          "bad": [
+            "codecov/patch=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "codecov/patch=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "draft",
+            "summary": "PR is marked draft."
+          },
+          {
+            "kind": "draft",
+            "summary": "PR title is marked WIP."
+          },
+          {
+            "kind": "ci",
+            "summary": "codecov/patch=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-08T13:12:06Z"
+      },
+      "2144": {
+        "number": 2144,
+        "title": "openclaw: add durable request context prompts",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2144",
+        "author": "bytethm",
+        "author_association": "MEMBER",
+        "base_ref": "main",
+        "head_ref": "feature/openclaw-session-context-projection",
+        "head_sha": "4b6d1768fdb82558cdeae668c77f64ff5d4ebcda",
+        "head_sha_short": "4b6d1768fdb8",
+        "is_draft": true,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": true,
+        "checks": {
+          "count": 162,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "draft",
+            "summary": "PR is marked draft."
+          }
+        ],
+        "updated_at": "2026-07-08T13:30:08Z"
+      },
+      "2146": {
+        "number": 2146,
+        "title": "[codex] add replay consistency harness",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2146",
+        "author": "GodBlf",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feature/session-memory-summary-track-replay",
+        "head_sha": "602c11504b5dcb335ba75ce31af50d0d317c5015",
+        "head_sha_short": "602c11504b5d",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": true,
+        "checks": {
+          "count": 162,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [],
+        "updated_at": "2026-07-08T16:10:24Z"
+      },
+      "2149": {
+        "number": 2149,
+        "title": "docs: add sanitized Code Executor blog",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2149",
+        "author": "liuzengh",
+        "author_association": "MEMBER",
+        "base_ref": "main",
+        "head_ref": "docs/add-sanitized-codeexecutor-blog",
+        "head_sha": "fd635e9041b7abaa3cf912935dd7c10e2fd82869",
+        "head_sha_short": "fd635e9041b7",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": true,
+        "checks": {
+          "count": 161,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "commented",
+        "locked": false,
+        "blockers": [],
+        "updated_at": "2026-07-08T09:28:30Z"
+      },
+      "2151": {
+        "number": 2151,
+        "title": "实现自动代码评审Agent全套能力",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2151",
+        "author": "xiaoyulox",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feat/code-review-auto-agent",
+        "head_sha": "fa009b42450042b858e34c8666b86096a8b39550",
+        "head_sha_short": "fa009b424500",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": true,
+        "checks": {
+          "count": 164,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [],
+        "updated_at": "2026-07-08T17:10:26Z"
+      },
+      "2152": {
+        "number": 2152,
+        "title": "构建 Evaluation + Optimization 自动回归闭环",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2152",
+        "author": "GodBlf",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "feat/2003-promptiter-regression-loop",
+        "head_sha": "1018f755d79eeea2c9c85a9b3529e19f49765276",
+        "head_sha_short": "1018f755d79e",
+        "is_draft": true,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": true,
+        "checks": {
+          "count": 164,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "draft",
+            "summary": "PR is marked draft."
+          }
+        ],
+        "updated_at": "2026-07-08T13:34:33Z"
+      },
+      "2153": {
+        "number": 2153,
+        "title": "[codex] add tool execution safety guard",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2153",
+        "author": "GodBlf",
+        "author_association": "FIRST_TIME_CONTRIBUTOR",
+        "base_ref": "main",
+        "head_ref": "codex/tool-safety-guard",
+        "head_sha": "64bf3a32ac3696a73449c46ff026e3138e44d302",
+        "head_sha_short": "64bf3a32ac36",
+        "is_draft": true,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 164,
+          "bad": [
+            "codecov/patch=FAILURE",
+            "lint=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "codecov/patch=FAILURE",
+          "lint=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "draft",
+            "summary": "PR is marked draft."
+          },
+          {
+            "kind": "ci",
+            "summary": "codecov/patch=FAILURE; lint=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-08T13:37:12Z"
+      },
+      "2155": {
+        "number": 2155,
+        "title": "openclaw,tool: guard blocked web research routes",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2155",
+        "author": "WineChord",
+        "author_association": "MEMBER",
+        "base_ref": "main",
+        "head_ref": "codex/openclaw-browser-blocked-hint",
+        "head_sha": "8a87cfbec51505174dcfccf6249fee6964ed3f19",
+        "head_sha_short": "8a87cfbec515",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": true,
+        "checks": {
+          "count": 164,
+          "bad": []
+        },
+        "non_green_checks": [],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [],
+        "updated_at": "2026-07-08T21:42:14Z"
+      },
+      "2156": {
+        "number": 2156,
+        "title": "agent,openclaw: repair text-form tool calls",
+        "url": "https://github.com/trpc-group/trpc-agent-go/pull/2156",
+        "author": "WineChord",
+        "author_association": "MEMBER",
+        "base_ref": "main",
+        "head_ref": "codex/openclaw-toolcall-text-repair",
+        "head_sha": "d8976001ebd393266fde2ee899a9bb7d6d452c36",
+        "head_sha_short": "d8976001ebd3",
+        "is_draft": false,
+        "is_wip": false,
+        "merge_state_status": "BLOCKED",
+        "review_decision": "REVIEW_REQUIRED",
+        "checks_green": false,
+        "checks": {
+          "count": 163,
+          "bad": [
+            "go test (session/pgvector/go.mod)=FAILURE"
+          ]
+        },
+        "non_green_checks": [
+          "go test (session/pgvector/go.mod)=FAILURE"
+        ],
+        "ledger_bucket": "skipped",
+        "locked": false,
+        "blockers": [
+          {
+            "kind": "ci",
+            "summary": "go test (session/pgvector/go.mod)=FAILURE"
+          }
+        ],
+        "updated_at": "2026-07-08T22:59:14Z"
+      }
+    }
+  }
+}
