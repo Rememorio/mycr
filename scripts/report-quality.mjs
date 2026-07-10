@@ -799,6 +799,18 @@ function validateSkippedGroups(report, problems, reportName) {
       ) {
         problems.push(`${prefix} is locked but omits concrete CI blockers`);
       }
+      const blockingKinds = new Set(["ci", "manual_review", "merge_conflict"]);
+      const hasHardBlocker = asArray(item?.blockers).some((blocker) =>
+        blockingKinds.has(String(blocker?.kind || "")),
+      );
+      if (
+        hasHardBlocker &&
+        /clean deferred|no new blocker|no blocker|未发现新 blocker/iu.test(
+          text([item?.skip_reason, item?.readiness_audit, item?.review_summary]),
+        )
+      ) {
+        problems.push(`${prefix} has contradictory clean/deferred wording with a hard blocker`);
+      }
     }
   }
 }

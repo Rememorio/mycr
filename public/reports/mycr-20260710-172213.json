@@ -1,0 +1,1452 @@
+{
+  "title": "MyCR comment-only full run 2026-07-10 17:00",
+  "generated_at": "2026-07-10T09:22:13.839Z",
+  "repo": "trpc-group/trpc-agent-go",
+  "repo_info": {
+    "owner": "trpc-group",
+    "name": "trpc-agent-go",
+    "open": 67,
+    "green": 30,
+    "skipped": 64
+  },
+  "overview": "本轮先拉取 mycr 仓库并刷新 trpc-agent-go 的 67 个 open PR。当前快照里 30 个 PR 的有效检查为绿色，37 个 PR 因 CI、draft/WIP、pending 或其它 readiness 条件暂不可直接推进。按照用户本轮要求，本次没有提交 LGTM、approval 或 merge，只对确认存在问题的 PR 发出 inline review comments。重点深审了 6 个新近变化的候选，其中 #2160、#2163、#2174 收到共 8 条 inline comments，#2171 未发现新代码 blocker 但本轮只评论未审批；#2164 未发现新代码 finding，但因 Rhino Bird 贡献者计划仍需要人工选择/maintainer LGTM，单独列为 manual-review deferred，#2157 复核后没有新增 comment，但昨天的 scenario help comment 仍是 live blocker。其余 PR 全部进入可见跳过分组，避免绿色积压或非绿项在报告里消失。",
+  "approved": [],
+  "commented": [
+    {
+      "number": 2174,
+      "title": "tool/safety: add tool execution safety guard",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/2174",
+      "author": "xyxhhhhh",
+      "status": "commented",
+      "head_sha": "d08beb6526be4ae5bc2b02956676c5c4a1bd5dbe",
+      "ci_state": "green (164 checks)",
+      "inline_comments": [
+        {
+          "path": "tool/safety/scanner.go",
+          "line": 370,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2174#discussion_r3557770939",
+          "body": "`args`/`argv` arrays from unknown or Model Context Protocol (MCP)-style command wrappers are flattened into individual strings here, so `{\"args\":[\"rm\",\"-rf\",\"/\"]}` scans `\"rm\"`, `\"-rf\"`, and `\"/\"` separately and never triggers the dangerous-delete rule. Please preserve command-like string arrays and pass them through `scanArgv`, with a regression test for an MCP wrapper.\n\n<details><summary>中文</summary>\n这里会把未知工具或 Model Context Protocol（MCP，模型上下文协议）风格命令包装器里的 `args`/`argv` 数组拆成单个字符串扫描，所以 `{\"args\":[\"rm\",\"-rf\",\"/\"]}` 会分别扫描 `\"rm\"`、`\"-rf\"` 和 `\"/\"`，不会触发危险删除规则。请保留命令类字符串数组并交给 `scanArgv` 处理，同时补一个 MCP wrapper 的回归测试。\n</details>"
+        },
+        {
+          "path": "tool/safety/scanner.go",
+          "line": 918,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2174#discussion_r3557770941",
+          "body": "`longSleep` currently trims only an `s` suffix, so `sleep 2m` or `sleep 1h` bypasses the long-running-command check even though those are valid sleep durations. Please parse common sleep units (`s`, `m`, `h`, `d`) and compare the converted seconds against the policy limit.\n\n<details><summary>中文</summary>\n`longSleep` 现在只去掉 `s` 后缀，因此 `sleep 2m` 或 `sleep 1h` 这类合法 sleep 时长会绕过长时间运行检测。请解析常见单位（`s`、`m`、`h`、`d`），换算成秒后再和策略上限比较。\n</details>"
+        },
+        {
+          "path": "tool/safety/redact.go",
+          "line": 81,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2174#discussion_r3557770945",
+          "body": "`RedactSensitivePaths` only replaces the literal denied path, but `sensitivePathMatch` also treats `/home/<user>/.ssh` and `/root/.ssh` as matches for `~/.ssh`. Please make redaction use the same alias-aware matching, otherwise production reports can still leak absolute credential paths.\n\n<details><summary>中文</summary>\n`RedactSensitivePaths` 只替换字面量禁止路径，但 `sensitivePathMatch` 会把 `/home/<user>/.ssh` 和 `/root/.ssh` 也视为 `~/.ssh` 命中。请让脱敏逻辑复用同等的别名匹配，否则生产报告仍可能泄露绝对凭据路径。\n</details>"
+        }
+      ],
+      "review_action": "Submitted COMMENT review only; no approval, no LGTM, no merge. Review URL: https://github.com/trpc-group/trpc-agent-go/pull/2174#pullrequestreview-4670143303",
+      "technical_background": "Tool execution in trpc-agent-go includes local workspace commands, host commands, code execution, and future tool wrappers. A safety guard has to inspect structured arguments before execution, classify dangerous commands or sensitive paths, and emit audit evidence without leaking credentials. Model Context Protocol (MCP, a protocol for exposing tools to models) matters here because tool calls often arrive as JSON-shaped command wrappers rather than a single shell string.",
+      "problem": "The PR addresses https://github.com/trpc-group/trpc-agent-go/issues/2002, which asks for pre-execution scanning, permission decisions, audit records, telemetry, and documentation for command-like tools. The current base has execution tools but no shared safety scanner that can block dangerous deletes, network egress, long-running commands, sensitive paths, or risky backends before the command runs.",
+      "necessity_assessment": "confirmed as a feature need: the maintainer-authored Rhino Bird issue is still open after the earlier merged solution was reverted, and the current base still lacks a shared opt-in execution safety guard.",
+      "evidence_checked": "Issue #2002 labels/body, current base after #2112 revert, PR body, new tool/safety package, execution-tool integration, documentation, examples, green checks, and targeted tool safety test result from the reviewer were checked.",
+      "problem_framing": "The root problem is not only command parsing; it is a trust boundary. User- or model-supplied execution requests must be normalized into a canonical command shape before policy is applied, and audit evidence must be useful without exposing secrets or host paths.",
+      "approach": "The PR adds a new `tool/safety` package with scanner, policy, permissions, redaction, telemetry, audit output, tests, docs, and example wiring into host/workspace/code execution tools. It keeps the guard opt-in through policy and execution-tool options rather than changing all default behavior at once.",
+      "implementation_derivation": "A shared scanner package is the right place to centralize command, argv, code block, path, network, resource, and secret checks. The reviewed gaps are places where structured input and redaction behavior do not yet use the same canonical view that the policy rules assume.",
+      "solution_fit_assessment": "The opt-in package and execution-tool hooks are a reasonable control surface for a broad safety feature, but merge readiness depends on the scanner catching structured command wrappers and on the audit report not leaking the same sensitive paths it claims to redact.",
+      "alternative_designs": "Alternatives include a narrower guard only inside hostexec, a separate permission middleware above all tools, or delegating parsing to every tool implementation. A shared scanner reduces duplication, but it must handle JSON argv and report redaction consistently.",
+      "tradeoffs": "Broad scanner coverage improves safety and auditability, but it raises correctness requirements for command normalization, duration parsing, and evidence redaction. False negatives are more serious than minor false positives for this guard because users rely on it before execution.",
+      "design_assessment": "The design direction is useful and locally scoped, but the current implementation has three correctness holes that can bypass dangerous-command detection, resource-abuse detection, or path redaction.",
+      "modules": "`tool/safety`, `tool/hostexec`, `tool/workspaceexec`, `tool/codeexec`, docs under `docs/mkdocs`, and `examples/tool_safety_guard`.",
+      "api_surface": "Adds exported safety scanner/policy/report/permission APIs, execution-tool safety options, policy YAML/JSON fields such as denied commands/paths/domains and long sleep limits, docs pages, and example artifacts.",
+      "change_inventory": "Adds scanner rules, policy normalization, permission decisions, telemetry/audit data structures, redaction helpers, integration tests for host/workspace/code execution tools, and English/Chinese documentation.",
+      "semantic_changes": "When enabled, execution tools can deny, ask, warn, or audit based on command content before running. The PR does not force all callers into the guard by default, but introduces a safety contract that must be reliable for structured tool arguments.",
+      "module_impact": "Direct impact is new safety evaluation before command execution; indirect impact is docs, examples, telemetry, audit consumers, and future MCP-style tool adapters that reuse the scanner.",
+      "cross_module_impact": "Execution tools and future wrappers now depend on consistent normalization of command strings, argv arrays, code blocks, and report evidence across package boundaries.",
+      "behavior_impact": "Expected before/after: a tool call such as a dangerous delete, long sleep, network egress, or sensitive-path read should be detected before execution and represented in an audit report with sensitive evidence redacted.",
+      "tests_docs": "CI is green. The PR adds many scanner/policy/redaction/integration tests and docs, but the comments identify missing regression tests for JSON argv wrappers, duration units, and alias-aware redaction.",
+      "outcome": "Commented on structured `args`/`argv` scanning, `sleep` duration units, and sensitive-path redaction alias coverage.",
+      "risk": "If unfixed, users may enable the guard and still let structured command wrappers bypass deletes, let valid long sleep units run, or leak absolute credential paths in production reports."
+    },
+    {
+      "number": 2163,
+      "title": "server/a2a: decouple anonymous principals from A2A context IDs",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/2163",
+      "author": "XnLemon",
+      "status": "commented",
+      "head_sha": "b02f47d15fab4ab50d074c613ce1e085e01d2f37",
+      "ci_state": "green (164 checks)",
+      "inline_comments": [
+        {
+          "path": "agent/a2aagent/a2a_agent.go",
+          "line": 161,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2163#discussion_r3557770711",
+          "body": "The default cookie jar is created once per `A2AAgent`, so anonymous calls from unrelated local invocations can share the same remote cookie-backed principal. Please scope the jar to the local session/user, or avoid installing a shared default jar unless the caller explicitly provides the desired scoping.\n\n<details><summary>中文</summary>\n默认 cookie jar 是按 `A2AAgent` 实例创建并复用的，因此来自不同本地 invocation 的匿名调用可能共享同一个远端 cookie-backed principal。请把 jar 按本地 session/user 做隔离，或者不要自动安装共享默认 jar，除非调用方显式提供了期望的作用域。\n</details>"
+        }
+      ],
+      "review_action": "Submitted COMMENT review only; no approval, no LGTM, no merge. Review URL: https://github.com/trpc-group/trpc-agent-go/pull/2163#pullrequestreview-4670143076",
+      "technical_background": "Agent-to-Agent (A2A, agent 间通信协议) lets a client agent call a remote agent server while preserving conversation context and user identity. In this server, `contextID` is a conversation/session key, while `userID` is a principal used for session ownership and memory isolation. These two concepts must not be derived from each other when the context ID can come from the client.",
+      "problem": "The PR addresses https://github.com/trpc-group/trpc-agent-go/issues/2161, where anonymous A2A requests could derive a principal from a client-controlled context ID. That can bind different callers to the same user identity and mix session or memory ownership if the context is reused or guessed.",
+      "necessity_assessment": "confirmed: current base derives anonymous user identity from A2A context in the message processor path, so the issue is a real identity-boundary problem rather than a speculative refactor.",
+      "evidence_checked": "Issue #2161, current base server/a2a behavior, PR body, server auth provider changes, anonymous cookie middleware, A2AAgent client change, tests, and green checks were inspected.",
+      "problem_framing": "The root cause is conflating conversation routing with trusted principal identity. A fix should give anonymous callers stable-enough continuity without letting a user-controlled conversation key become the security principal.",
+      "approach": "The PR changes the server to generate anonymous principals independently from `contextID`, adds cookie-based anonymous continuity, and installs a default cookie jar in A2AAgent clients so server-issued anonymous cookies can be sent back.",
+      "implementation_derivation": "Moving principal generation into auth/middleware is the right server-side layer because message processing should receive a principal, not derive one from the message context. The client-side default jar, however, introduces a new scoping question because an `A2AAgent` instance can be reused across local callers.",
+      "solution_fit_assessment": "Server-side anonymous cookies fit the identity separation goal, but a shared default client jar is too broad unless it is scoped to the local session/user or explicitly provided by callers that want shared continuity.",
+      "alternative_designs": "Alternatives include per-invocation cookie jars, caller-provided HTTP clients only, explicit anonymous session options, or server-only request-bound principals without client persistence. The right choice depends on whether anonymous continuity should be per local session or per remote client object.",
+      "tradeoffs": "Cookie persistence improves continuity for anonymous A2A clients, but a jar shared at agent construction time can turn continuity into cross-user sharing in long-lived multi-user processes.",
+      "design_assessment": "The server-side design is directionally correct; the current client helper needs a narrower scope to avoid recreating a different identity-sharing bug at the client layer.",
+      "modules": "`server/a2a` auth provider and middleware, `agent/a2aagent` client construction, and related A2A tests.",
+      "api_surface": "Adds anonymous principal cookie behavior, `WithUserIDHeader` semantics remain, and A2AAgent now implicitly supplies an HTTP client with a cookie jar unless the caller overrides options.",
+      "change_inventory": "Adds anonymous user ID generation, cookie middleware, trusted-header precedence tests, server message processor changes, and default cookie persistence in the A2A agent client.",
+      "semantic_changes": "Anonymous requests no longer use `A2A_USER_<contextID>` as principal; they use generated anonymous IDs and may persist them through cookies.",
+      "module_impact": "Direct impact is A2A server identity/session behavior. Indirect impact is memory/session isolation for any A2AAgent embedded in a multi-user process.",
+      "cross_module_impact": "The server principal flows into session and memory keys, while the client HTTP jar determines whether different local invocations reuse a remote anonymous principal.",
+      "behavior_impact": "Expected before/after: client-controlled context IDs should no longer define user identity, while anonymous callers can still get continuity when cookie scope is intentionally preserved.",
+      "tests_docs": "CI is green and tests cover server anonymous ID generation and cookie behavior. The missing coverage is two anonymous invocations through the same shared A2AAgent representing different local sessions.",
+      "outcome": "Commented on the default cookie jar being shared per `A2AAgent` instance.",
+      "risk": "If unfixed, a long-lived shared A2AAgent can make unrelated anonymous local invocations share the same remote principal, reintroducing session or memory mixing."
+    },
+    {
+      "number": 2160,
+      "title": "test: add session memory replay consistency harness",
+      "url": "https://github.com/trpc-group/trpc-agent-go/pull/2160",
+      "author": "xyxhhhhh",
+      "status": "commented",
+      "head_sha": "1f88e4d9a27f40e957690983b960491b9a087f9f",
+      "ci_state": "green (163 checks)",
+      "inline_comments": [
+        {
+          "path": "test/go.mod",
+          "line": 98,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2160#discussion_r3557771146",
+          "body": "These new storage module requirements are not matched by top-level `replace` directives. Since dependency `go.mod` replaces are ignored by the `test` main module, the optional replay tests can resolve published storage modules instead of the local checkout; please add local replaces for `storage/{clickhouse,mysql,postgres}`.\n\n<details><summary>中文</summary>\n这些新增的 storage 模块依赖没有配套顶层 `replace`。由于依赖模块自己的 `go.mod` 里的 replace 不会在 `test` 主模块中生效，optional replay 测试可能解析到已发布的 storage 模块，而不是当前仓库代码；请补上 `storage/{clickhouse,mysql,postgres}` 的本地 replace。\n</details>"
+        },
+        {
+          "path": "session/sqlite/service_helper.go",
+          "line": 98,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2160#discussion_r3557771149",
+          "body": "This fixes summary loading for `GetSession`, but `ListSessions` still drops summaries whenever the event filter returns an empty event slice. Please mirror the same unconditional summary assignment in `listSessions` and cover it with a `ListSessions` empty-window test.\n\n<details><summary>中文</summary>\n这里修复了 `GetSession` 的 summary 加载，但 `ListSessions` 在事件过滤结果为空时仍会丢掉 summary。请在 `listSessions` 中也改成无条件赋值 summary，并补一个 `ListSessions` 空事件窗口测试。\n</details>"
+        },
+        {
+          "path": "session/replaytest/backend.go",
+          "line": 1463,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2160#discussion_r3557771155",
+          "body": "`fileMemoryEntry` still keys JSON-file memories without event time, participants, or location, so metadata-only distinct memories collapse in `upsertMemory`. Please use the same metadata-aware stable ID as the normalizer/expected-memory path here and in `updateFileMemory`.\n\n<details><summary>中文</summary>\n`fileMemoryEntry` 的 JSON-file memory key 仍然没有包含 event time、participants、location，因此仅 metadata 不同的 memory 会在 `upsertMemory` 中互相覆盖。请这里和 `updateFileMemory` 都使用与 normalizer/expected-memory 路径一致的 metadata-aware stable ID。\n</details>"
+        },
+        {
+          "path": "session/replaytest/normalize.go",
+          "line": 538,
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2160#discussion_r3557771159",
+          "body": "Track payload normalization still converts every JSON number to `float64` and rounds non-duration values, which can erase real differences such as large IDs or counters. Please decode with `UseNumber` and only scrub fields that are explicitly duration/elapsed/latency noise.\n\n<details><summary>中文</summary>\nTrack payload 归一化仍会把所有 JSON 数字转成 `float64`，并对非耗时字段也做四舍五入，这会抹掉大整数 ID 或计数器这类真实差异。请改用 `UseNumber` 解码，并且只清洗明确属于 duration/elapsed/latency 噪声的字段。\n</details>"
+        }
+      ],
+      "review_action": "Submitted COMMENT review only; no approval, no LGTM, no merge. Review URL: https://github.com/trpc-group/trpc-agent-go/pull/2160#pullrequestreview-4670143556",
+      "technical_background": "Session services store conversations, summaries, state, track events, and memory across multiple backends. A replay consistency harness replays the same logical scenario against different backends and compares normalized snapshots. That normalization must preserve meaningful differences while removing only backend-specific noise; otherwise the harness can claim consistency while hiding real drift.",
+      "problem": "The PR addresses https://github.com/trpc-group/trpc-agent-go/issues/2001, which asks for a Session/Memory multi-backend replay consistency test framework. The current base has backend-specific tests, but no shared replay oracle for session events, summaries, state, tracks, memory search, TTL, and optional SQL backends.",
+      "necessity_assessment": "confirmed as a feature/testing need: the issue is still open and the current base lacks a reusable cross-backend replay framework for Session and Memory behavior.",
+      "evidence_checked": "Issue #2001 labels/body, PR body, replaytest package, SQLite helper change, optional test module go.mod, generated diff report, green checks, and the current head files were inspected.",
+      "problem_framing": "The deeper problem is test trustworthiness. A replay harness must run against the local checkout, cover the same semantic edge cases in every backend, and normalize only volatile data so real backend differences are not hidden.",
+      "approach": "The PR adds `session/replaytest`, JSON-file and service-backed replay adapters, canonical cases, snapshot normalization, optional SQL/Redis tests under `test`, and a SQLite summary fix that the harness exercises.",
+      "implementation_derivation": "A reusable package with backend adapters is the right shape for cross-backend consistency. The reviewed blockers are places where the harness can accidentally test published modules, keep one backend bug unfixed, or normalize away meaningful differences.",
+      "solution_fit_assessment": "The harness is the right control surface for the problem, but it must be hermetic and precise; otherwise it becomes a green test suite that does not actually validate the current checkout or backend semantics.",
+      "alternative_designs": "Alternatives include backend-specific duplicated tests, a golden-event fixture outside Go tests, or a narrower SQLite-only regression. The shared harness is more maintainable, but only if identity keys and normalization rules are strict.",
+      "tradeoffs": "Broad backend coverage improves confidence but increases the risk of dependency drift, over-normalization, and optional-test configuration mistakes.",
+      "design_assessment": "The design is valuable, but four concrete gaps undermine the reliability of the test oracle and should be fixed before relying on the harness.",
+      "modules": "`session/replaytest`, `session/sqlite`, optional tests in `test`, and storage/session/memory backend module wiring.",
+      "api_surface": "Adds exported replaytest backend/factory/case/snapshot helpers, optional test module dependencies, JSON report fixtures, and SQLite helper behavior for summary loading.",
+      "change_inventory": "Adds replay cases, backend adapters, snapshot comparison, track normalization, memory query normalization, optional SQL/Redis tests, and a SQLite summary boundary fix.",
+      "semantic_changes": "SQLite `GetSession` now loads summaries even when the filtered event window is empty; the replay harness should compare summary, memory, track, and event behavior across backend implementations.",
+      "module_impact": "Direct impact is tests and SQLite summary reads. Indirect impact is confidence in backend compatibility across SQL, Redis, JSON-file, in-memory, and memory services.",
+      "cross_module_impact": "The optional `test` module pulls storage/session/memory submodules together, so replace directives and stable IDs decide whether it validates the local checkout consistently.",
+      "behavior_impact": "Expected before/after: replaying the same operations should produce equivalent normalized snapshots, and edge cases such as empty filtered event windows or metadata-only memory differences should remain visible.",
+      "tests_docs": "CI is green and many replay tests are added. The comments identify missing hermetic module replaces, a remaining `ListSessions` summary gap, metadata-blind JSON-file memory IDs, and numeric over-normalization in track payloads.",
+      "outcome": "Commented on optional module replaces, `ListSessions` summary loading, JSON-file memory identity, and track payload number normalization.",
+      "risk": "If unfixed, the new harness can pass while testing published storage modules, missing a summary bug, collapsing distinct memories, or hiding real numeric track differences."
+    }
+  ],
+  "maintained": [],
+  "blocked": [],
+  "skipped_groups": [
+    {
+      "reason": "reviewed_clean_comment_only",
+      "title": "已深审但本轮只评论，未审批",
+      "count": 1,
+      "prs": [
+        2171
+      ],
+      "items": [
+        {
+          "number": 2171,
+          "title": "evaluation/local: preserve trace mode execution traces",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2171",
+          "author": "Spock12138",
+          "status": "skipped",
+          "skip_reason": "Reviewed deeply and no new blocking issue was found, but this run was comment-only and submitted no approval or merge.",
+          "readiness_audit": "Reviewed deeply and no new blocking issue was found, but this run was comment-only and submitted no approval or merge. Current head 117a41557d2e; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "other",
+              "summary": "Comment-only run: clean review was recorded without approval, LGTM, or merge.",
+              "verification": "The PR was inspected against the current head and CI was green."
+            }
+          ],
+          "review_summary": "Trace-mode execution traces are now copied into local inference results; no new blocker found."
+        }
+      ]
+    },
+    {
+      "reason": "manual_review_deferred_after_clean_code_review",
+      "title": "代码无新 finding，但需要人工选择/maintainer LGTM",
+      "count": 1,
+      "prs": [
+        2164
+      ],
+      "items": [
+        {
+          "number": 2164,
+          "title": "evaluation: add evaluation + prompt optimization regression loop",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2164",
+          "author": "everfid-ever",
+          "status": "skipped",
+          "skip_reason": "Reviewed deeply with no new code finding, but manual-review policy still blocks approval and merge for this Rhino Bird contributor-program issue.",
+          "readiness_audit": "Reviewed deeply with no new code finding, but manual-review policy still blocks approval and merge for this Rhino Bird contributor-program issue. Current head fdfe9c7e3545; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "manual_review",
+              "summary": "Linked Rhino Bird contributor-program issue still requires explicit maintainer selection before approval or merge.",
+              "verification": "Issue #2003 carries Rhino Bird labels; this run only recorded review judgment and did not decide acceptance."
+            }
+          ],
+          "review_summary": "Prompt optimization regression-loop example and reports were checked; no new code finding was found, but Rhino Bird maintainer-selection remains the live gate."
+        }
+      ]
+    },
+    {
+      "reason": "existing_mycr_comment_still_live",
+      "title": "既有 MyCR comment 仍需作者处理",
+      "count": 1,
+      "prs": [
+        2157
+      ],
+      "items": [
+        {
+          "number": 2157,
+          "title": "evaluation/promptiter: add eval+optimization regression loop with aud…",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2157",
+          "author": "d2bz",
+          "status": "skipped",
+          "skip_reason": "This PR was rechecked after a head update; no new finding was added, but the existing MyCR inline comment about scenario help text still maps to the current diff.",
+          "readiness_audit": "This PR was rechecked after a head update; no new finding was added, but the existing MyCR inline comment about scenario help text still maps to the current diff. Current head dc173f377986; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "human_review",
+              "reviewer": "WineChord",
+              "url": "https://github.com/trpc-group/trpc-agent-go/pull/2157#discussion_r3550332251",
+              "path": "examples/evaluation/promptiter/regressionloop/main.go",
+              "line": 2230,
+              "summary": "Existing comment asks the CLI `--scenario` help to list the supported attribution scenario.",
+              "latest_response": "No author fix was verified in this run.",
+              "verification": "Current diff still shows the help text as `success | ineffective | overfit | all` while README documents `attribution`."
+            }
+          ],
+          "review_summary": "No duplicate comment was posted; previous inline comment remains the live blocker."
+        }
+      ]
+    },
+    {
+      "reason": "own_pr_comment_only",
+      "title": "自己的 PR：本轮不做自审/自合入",
+      "count": 9,
+      "prs": [
+        2176,
+        2173,
+        2172,
+        2169,
+        2168,
+        2167,
+        2162,
+        2156,
+        2155
+      ],
+      "items": [
+        {
+          "number": 2176,
+          "title": "tool/arxivsearch: limit PDF content results",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2176",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own PR policy: this comment-only run did not self-review, self-approve, self-merge, or push branch fixes.",
+          "readiness_audit": "Own PR was audited only at ledger level in this comment-only run; no branch fix, review comment, approval, or merge was performed. Current head 68bcd26e62ba; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "own_pr",
+              "summary": "Own PR reserved for external review in this run; CI state is green (164 checks).",
+              "verification": "User explicitly limited this run to comments only, and own PRs must not receive self-review actions."
+            }
+          ]
+        },
+        {
+          "number": 2173,
+          "title": "openclaw/subagentrun: allow sync spawn without delivery",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2173",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own PR policy: this comment-only run did not self-review, self-approve, self-merge, or push branch fixes.",
+          "readiness_audit": "Own PR was audited only at ledger level in this comment-only run; no branch fix, review comment, approval, or merge was performed. Current head d21a2180e823; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "own_pr",
+              "summary": "Own PR reserved for external review in this run; CI state is green (164 checks).",
+              "verification": "User explicitly limited this run to comments only, and own PRs must not receive self-review actions."
+            }
+          ]
+        },
+        {
+          "number": 2172,
+          "title": "openclaw/imageinspect: tolerate duplicated attachment paths",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2172",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own PR policy: this comment-only run did not self-review, self-approve, self-merge, or push branch fixes.",
+          "readiness_audit": "Own PR was audited only at ledger level in this comment-only run; no branch fix, review comment, approval, or merge was performed. Current head f54672920450; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "own_pr",
+              "summary": "Own PR reserved for external review in this run; CI state is green (164 checks).",
+              "verification": "User explicitly limited this run to comments only, and own PRs must not receive self-review actions."
+            }
+          ]
+        },
+        {
+          "number": 2169,
+          "title": "openclaw/browser: support server act targets",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2169",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own PR policy: this comment-only run did not self-review, self-approve, self-merge, or push branch fixes.",
+          "readiness_audit": "Own PR was audited only at ledger level in this comment-only run; no branch fix, review comment, approval, or merge was performed. Current head 1f09782cb3c2; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "own_pr",
+              "summary": "Own PR reserved for external review in this run; CI state is green (164 checks).",
+              "verification": "User explicitly limited this run to comments only, and own PRs must not receive self-review actions."
+            }
+          ]
+        },
+        {
+          "number": 2168,
+          "title": "openclaw/app: sanitize MCP image tool messages",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2168",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own PR policy: this comment-only run did not self-review, self-approve, self-merge, or push branch fixes.",
+          "readiness_audit": "Own PR was audited only at ledger level in this comment-only run; no branch fix, review comment, approval, or merge was performed. Current head 9840539928cc; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "own_pr",
+              "summary": "Own PR reserved for external review in this run; CI state is green (164 checks).",
+              "verification": "User explicitly limited this run to comments only, and own PRs must not receive self-review actions."
+            }
+          ]
+        },
+        {
+          "number": 2167,
+          "title": "openclaw/app: require visible final answer on budget finalization",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2167",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own PR policy: this comment-only run did not self-review, self-approve, self-merge, or push branch fixes.",
+          "readiness_audit": "Own PR was audited only at ledger level in this comment-only run; no branch fix, review comment, approval, or merge was performed. Current head f79f28a66037; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "own_pr",
+              "summary": "Own PR reserved for external review in this run; CI state is green (164 checks).",
+              "verification": "User explicitly limited this run to comments only, and own PRs must not receive self-review actions."
+            }
+          ]
+        },
+        {
+          "number": 2162,
+          "title": "openclaw/app: finalize near request deadline",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2162",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own PR policy: this comment-only run did not self-review, self-approve, self-merge, or push branch fixes.",
+          "readiness_audit": "Own PR was audited only at ledger level in this comment-only run; no branch fix, review comment, approval, or merge was performed. Current head 717d03719706; CI state: 0 fail/cancel, 132 pending, 162 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "0 fail/cancel, 132 pending, 162 checks",
+          "blockers": [
+            {
+              "kind": "own_pr",
+              "summary": "Own PR reserved for external review in this run; CI state is 0 fail/cancel, 132 pending, 162 checks.",
+              "verification": "User explicitly limited this run to comments only, and own PRs must not receive self-review actions."
+            }
+          ]
+        },
+        {
+          "number": 2156,
+          "title": "agent,openclaw: repair text-form tool calls",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2156",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own PR policy: this comment-only run did not self-review, self-approve, self-merge, or push branch fixes.",
+          "readiness_audit": "Own PR was audited only at ledger level in this comment-only run; no branch fix, review comment, approval, or merge was performed. Current head d8976001ebd3; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "own_pr",
+              "summary": "Own PR reserved for external review in this run; CI state is green (164 checks).",
+              "verification": "User explicitly limited this run to comments only, and own PRs must not receive self-review actions."
+            }
+          ]
+        },
+        {
+          "number": 2155,
+          "title": "openclaw,tool: guard blocked web research routes",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2155",
+          "author": "WineChord",
+          "status": "skipped",
+          "skip_reason": "Own PR policy: this comment-only run did not self-review, self-approve, self-merge, or push branch fixes.",
+          "readiness_audit": "Own PR was audited only at ledger level in this comment-only run; no branch fix, review comment, approval, or merge was performed. Current head 650eb22f8c6f; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "own_pr",
+              "summary": "Own PR reserved for external review in this run; CI state is green (164 checks).",
+              "verification": "User explicitly limited this run to comments only, and own PRs must not receive self-review actions."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "reason": "draft_or_wip",
+      "title": "Draft / WIP",
+      "count": 13,
+      "prs": [
+        2144,
+        2143,
+        2133,
+        2086,
+        2076,
+        2058,
+        2047,
+        2037,
+        2010,
+        1901,
+        1778,
+        1710,
+        1678
+      ],
+      "items": [
+        {
+          "number": 2144,
+          "title": "openclaw: add durable request context prompts",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2144",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit. Current head 4b6d1768fdb8; CI state: green (162 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft and has no WIP marker; it is not ready for maintainer review automation.",
+              "verification": "Draft/WIP state was read from the current open PR snapshot."
+            }
+          ]
+        },
+        {
+          "number": 2143,
+          "title": "[WIP] tool/okf: Open Knowledge Format (OKF) support",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2143",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit. Current head a95f074af99b; CI state: 1 fail/cancel, 0 pending, 164 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "1 fail/cancel, 0 pending, 164 checks",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft and has WIP marker; it is not ready for maintainer review automation.",
+              "verification": "Draft/WIP state was read from the current open PR snapshot."
+            }
+          ]
+        },
+        {
+          "number": 2133,
+          "title": "agent/llmagent: continue after image URL failures",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2133",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit. Current head 891b37f767a2; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft and has no WIP marker; it is not ready for maintainer review automation.",
+              "verification": "Draft/WIP state was read from the current open PR snapshot."
+            }
+          ]
+        },
+        {
+          "number": 2086,
+          "title": "fix(model/anthropic): repair truncated tool_use input before stream finalize",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2086",
+          "author": "sks",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit. Current head 4ab44893e9af; CI state: 1 fail/cancel, 0 pending, 162 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "1 fail/cancel, 0 pending, 162 checks",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft and has no WIP marker; it is not ready for maintainer review automation.",
+              "verification": "Draft/WIP state was read from the current open PR snapshot."
+            }
+          ]
+        },
+        {
+          "number": 2076,
+          "title": "feat(sandbox): add macOS denial diagnostics",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2076",
+          "author": "cuboya",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit. Current head 9b9d81e8a6ac; CI state: green (162 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft and has no WIP marker; it is not ready for maintainer review automation.",
+              "verification": "Draft/WIP state was read from the current open PR snapshot."
+            }
+          ]
+        },
+        {
+          "number": 2058,
+          "title": "a2a: add v2 packages backed by trpc-a2a-go/v2 (A2A protocol v1.0)",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2058",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit. Current head 3655c93792ff; CI state: 58 fail/cancel, 0 pending, 161 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "58 fail/cancel, 0 pending, 161 checks",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft and has no WIP marker; it is not ready for maintainer review automation.",
+              "verification": "Draft/WIP state was read from the current open PR snapshot."
+            }
+          ]
+        },
+        {
+          "number": 2047,
+          "title": "agent: add durable session context sources",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2047",
+          "author": "bytethm",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit. Current head 2d9deb64810f; CI state: green (162 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft and has no WIP marker; it is not ready for maintainer review automation.",
+              "verification": "Draft/WIP state was read from the current open PR snapshot."
+            }
+          ]
+        },
+        {
+          "number": 2037,
+          "title": "feat(telemetry): add invoke skill observability",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2037",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit. Current head e21156d28a93; CI state: 1 fail/cancel, 0 pending, 162 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "1 fail/cancel, 0 pending, 162 checks",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft and has no WIP marker; it is not ready for maintainer review automation.",
+              "verification": "Draft/WIP state was read from the current open PR snapshot."
+            }
+          ]
+        },
+        {
+          "number": 2010,
+          "title": "memory/deepsearch: add progressive DeepSearch",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2010",
+          "author": "print-happy",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit. Current head 2602eff631f9; CI state: 3 fail/cancel, 0 pending, 164 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "3 fail/cancel, 0 pending, 164 checks",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft and has no WIP marker; it is not ready for maintainer review automation.",
+              "verification": "Draft/WIP state was read from the current open PR snapshot."
+            }
+          ]
+        },
+        {
+          "number": 1901,
+          "title": "WIP: knowledge: deprecate legacy OCR path",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1901",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit. Current head 5c5f62838568; CI state: green (156 checks); reviewDecision=REVIEW_REQUIRED; mergeState=DIRTY.",
+          "ci_state": "green (156 checks)",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft and has WIP marker; it is not ready for maintainer review automation.",
+              "verification": "Draft/WIP state was read from the current open PR snapshot."
+            }
+          ]
+        },
+        {
+          "number": 1778,
+          "title": "examples: add RLM (Recursive Language Model) demo",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1778",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit. Current head 403338f0c461; CI state: 2 fail/cancel, 0 pending, 160 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "2 fail/cancel, 0 pending, 160 checks",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft and has no WIP marker; it is not ready for maintainer review automation.",
+              "verification": "Draft/WIP state was read from the current open PR snapshot."
+            }
+          ]
+        },
+        {
+          "number": 1710,
+          "title": "a2a: add input schema",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1710",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit. Current head 1a4057120129; CI state: green (87 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (87 checks)",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft and has no WIP marker; it is not ready for maintainer review automation.",
+              "verification": "Draft/WIP state was read from the current open PR snapshot."
+            }
+          ]
+        },
+        {
+          "number": 1678,
+          "title": "agent: centralize invoke_agent telemetry in RunWithPlugins",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1678",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Draft/WIP gate blocked review before code audit.",
+          "readiness_audit": "Draft/WIP gate blocked review before code audit. Current head 657cf9c04385; CI state: 10 fail/cancel, 0 pending, 85 checks; reviewDecision=REVIEW_REQUIRED; mergeState=DIRTY.",
+          "ci_state": "10 fail/cancel, 0 pending, 85 checks",
+          "blockers": [
+            {
+              "kind": "draft_wip",
+              "summary": "PR is draft and has no WIP marker; it is not ready for maintainer review automation.",
+              "verification": "Draft/WIP state was read from the current open PR snapshot."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "reason": "ci_not_green",
+      "title": "CI 非绿或 pending",
+      "count": 23,
+      "prs": [
+        2177,
+        2153,
+        2151,
+        2142,
+        2137,
+        2135,
+        2124,
+        2118,
+        2090,
+        2089,
+        2088,
+        2084,
+        2071,
+        2055,
+        2050,
+        1967,
+        1957,
+        1956,
+        1801,
+        1736,
+        1446,
+        1400,
+        1183
+      ],
+      "items": [
+        {
+          "number": 2177,
+          "title": "Feat/code review agent",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2177",
+          "author": "Violet2314",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head c409579004b8; CI state: 0 fail/cancel, 79 pending, 162 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "0 fail/cancel, 79 pending, 162 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: CodeRabbit / Review=pending; check external consumer (knowledge/embedder/huggingface/go.mod)=pending; check external consumer (knowledge/ocr/tesseract/go.mod)=pending; check external consumer (knowledge/vectorstore/elasticsearch/go.mod)=pending.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 2153,
+          "title": "[codex] add tool execution safety guard",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2153",
+          "author": "GodBlf",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head dc0e0809c6fb; CI state: 1 fail/cancel, 0 pending, 164 checks; reviewDecision=REVIEW_REQUIRED; mergeState=DIRTY.",
+          "ci_state": "1 fail/cancel, 0 pending, 164 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: codecov/patch=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 2151,
+          "title": "实现自动代码评审Agent全套能力",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2151",
+          "author": "xiaoyulox",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head 05e6bf57ef6c; CI state: 2 fail/cancel, 1 pending, 163 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "2 fail/cancel, 1 pending, 163 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: check external consumer (openclaw/go.mod)=pending; go test (go.mod)=fail; lint=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 2142,
+          "title": "session/redis: add WithDisableScriptCache to run Lua scripts via EVAL",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2142",
+          "author": "hyprh",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head c30cfd484d65; CI state: 1 fail/cancel, 0 pending, 160 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "1 fail/cancel, 0 pending, 160 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: lint=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 2137,
+          "title": "feat(toolsearch): refactor into namespaced toolbox with embedding search, MCP support and two-tool mode",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2137",
+          "author": "qiefengying",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head 0c00b35e660f; CI state: 0 fail/cancel, 151 pending, 162 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "0 fail/cancel, 151 pending, 162 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: check examples (1/4)=pending; check examples (2/4)=pending; check examples (3/4)=pending; check examples (4/4)=pending.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 2135,
+          "title": "feat(examples/skills_code_review_agent): add static Go code review agent",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2135",
+          "author": "Lfan-ke",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head 7eec376219fa; CI state: 1 fail/cancel, 0 pending, 162 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "1 fail/cancel, 0 pending, 162 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: lint=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 2124,
+          "title": "tool/file: handle nil list and search requests",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2124",
+          "author": "ahfoysal",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head 1f6731c5e26a; CI state: 2 fail/cancel, 0 pending, 161 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "2 fail/cancel, 0 pending, 161 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: CLAAssistant=fail; go test (evaluation/go.mod)=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 2118,
+          "title": "feat: add Tool Execution Safety Guard for pre-execution command scanning #2002",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2118",
+          "author": "xiaobaicai66695",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head fc357b9bcb1e; CI state: 1 fail/cancel, 0 pending, 162 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "1 fail/cancel, 0 pending, 162 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: lint=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 2090,
+          "title": "feat(examples): add code review agent with skill, sandbox, and database storage",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2090",
+          "author": "coder-mtj",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head 87f0a57d1827; CI state: 2 fail/cancel, 0 pending, 162 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "2 fail/cancel, 0 pending, 162 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: check examples (2/4)=fail; lint=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 2089,
+          "title": "feat(tool): add pre-execution safety scanner with OTel integration",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2089",
+          "author": "coder-mtj",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head 54862a063d37; CI state: 1 fail/cancel, 0 pending, 162 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "1 fail/cancel, 0 pending, 162 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: lint=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 2088,
+          "title": "feat(session): add multi-backend replay consistency test framework",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2088",
+          "author": "coder-mtj",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head 914e015d63c5; CI state: 2 fail/cancel, 0 pending, 162 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "2 fail/cancel, 0 pending, 162 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: lint=fail; typos=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 2084,
+          "title": "feat(model/anthropic): retry streaming requests on transient transport failures",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2084",
+          "author": "sks",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head 664c8ed93f02; CI state: 1 fail/cancel, 0 pending, 162 checks; reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.",
+          "ci_state": "1 fail/cancel, 0 pending, 162 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: codecov/patch=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 2071,
+          "title": "model/internal/model: add MiniMax-M3 context window",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2071",
+          "author": "octo-patch",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head a00992d13f88; CI state: 1 fail/cancel, 0 pending, 162 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "1 fail/cancel, 0 pending, 162 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: CLAAssistant=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 2055,
+          "title": "feat: 新增会话回放一致性测试工具链",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2055",
+          "author": "mingri31164",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head 322fba1998e2; CI state: 3 fail/cancel, 0 pending, 166 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "3 fail/cancel, 0 pending, 166 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: codecov/patch=fail; CLAAssistant=fail; check go.mod version=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 2050,
+          "title": "feat(tool/safety): add tool execution safety guard",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2050",
+          "author": "d2bz",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head 9336d31484d6; CI state: 1 fail/cancel, 0 pending, 164 checks; reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.",
+          "ci_state": "1 fail/cancel, 0 pending, 164 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: check go.mod version=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 1967,
+          "title": "fix(sqlite): allow WithAsyncSummaryNum(0) to disable async workers",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1967",
+          "author": "YellowDusk04",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head 49bac0ed9e90; CI state: 1 fail/cancel, 0 pending, 160 checks; reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.",
+          "ci_state": "1 fail/cancel, 0 pending, 160 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: codecov/patch=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 1957,
+          "title": "fix(session/postgres): cast JSON bytes to string for DB params",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1957",
+          "author": "Ocyss",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head 53153210b0c6; CI state: 1 fail/cancel, 0 pending, 159 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "1 fail/cancel, 0 pending, 159 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: go test (session/postgres/go.mod)=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 1956,
+          "title": "langfuse: add environment config option and pass to OTEL resource attributes",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1956",
+          "author": "Ocyss",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head 604d75d058af; CI state: 2 fail/cancel, 0 pending, 159 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "2 fail/cancel, 0 pending, 159 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: go test (go.mod)=fail; lint=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 1801,
+          "title": "docs/mkdocs/zh/fix/agent.md: fix typo",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1801",
+          "author": "GongNanyue",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head ef95fa2eee09; CI state: 2 fail/cancel, 0 pending, 149 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "2 fail/cancel, 0 pending, 149 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: CLAAssistant=fail; go test (openclaw/go.mod)=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 1736,
+          "title": "all: add deferred tool set",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1736",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head 384aa5d638c4; CI state: 1 fail/cancel, 0 pending, 4 checks; reviewDecision=REVIEW_REQUIRED; mergeState=DIRTY.",
+          "ci_state": "1 fail/cancel, 0 pending, 4 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: test@PULL_REQUEST=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 1446,
+          "title": "feat(a2a): add StructuredOutput → DataPart converter for custom event…",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1446",
+          "author": "SummerLv",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head 79557d7bf2c6; CI state: 3 fail/cancel, 0 pending, 80 checks; reviewDecision=REVIEW_REQUIRED; mergeState=DIRTY.",
+          "ci_state": "3 fail/cancel, 0 pending, 80 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: codecov/patch=fail; GITHUB_OPENSOURCE_SCAN_PIPELINE@PULL_REQUEST=fail; CLAAssistant=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 1400,
+          "title": "{artifact, codeexectutor}: add Head method for artifact service to retrieve metadata without loading content",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1400",
+          "author": "liuzengh",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head 2e5bf368ac08; CI state: 2 fail/cancel, 0 pending, 78 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "2 fail/cancel, 0 pending, 78 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: codecov/patch=fail; go-apidiff=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        },
+        {
+          "number": 1183,
+          "title": "internal/util: add util for streaming parsing of JSON returned by LLM",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1183",
+          "author": "hongxiuzhe",
+          "status": "skipped",
+          "skip_reason": "Current effective checks are not green, so this run did not perform a code review.",
+          "readiness_audit": "Current effective checks are not green, so this run did not perform a code review. Current head 53b1a26538f2; CI state: 3 fail/cancel, 0 pending, 79 checks; reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "3 fail/cancel, 0 pending, 79 checks",
+          "blockers": [
+            {
+              "kind": "ci",
+              "summary": "Non-green checks: codecov/patch=fail; CLAAssistant=fail; lint=fail.",
+              "verification": "Effective checks were refreshed for the current head during this run."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "reason": "merge_conflict_dirty",
+      "title": "存在 merge conflict / DIRTY 状态",
+      "count": 3,
+      "prs": [
+        2128,
+        1930,
+        1923
+      ],
+      "items": [
+        {
+          "number": 2128,
+          "title": "memory/gorm: GORM-backed memory.Service with shared DB injection",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2128",
+          "author": "sks",
+          "status": "skipped",
+          "skip_reason": "Mergeability gate blocked review follow-through because GitHub reports the PR as DIRTY.",
+          "readiness_audit": "Mergeability gate blocked review follow-through because GitHub reports the PR as DIRTY. Current head 55897e8f2a07; CI state: green (166 checks); reviewDecision=REVIEW_REQUIRED; mergeState=DIRTY.",
+          "ci_state": "green (166 checks)",
+          "blockers": [
+            {
+              "kind": "merge_conflict",
+              "summary": "GitHub reports mergeStateStatus=DIRTY, so the branch needs conflict resolution before it can be considered ready.",
+              "verification": "Merge state was refreshed with `gh pr view` for the current head."
+            }
+          ]
+        },
+        {
+          "number": 1930,
+          "title": "fix: set default HTTP client timeout to prevent goroutine leaks",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1930",
+          "author": "123456wda",
+          "status": "skipped",
+          "skip_reason": "Mergeability gate blocked review follow-through because GitHub reports the PR as DIRTY.",
+          "readiness_audit": "Mergeability gate blocked review follow-through because GitHub reports the PR as DIRTY. Current head 576b11d6d1f4; CI state: green (156 checks); reviewDecision=CHANGES_REQUESTED; mergeState=DIRTY.",
+          "ci_state": "green (156 checks)",
+          "blockers": [
+            {
+              "kind": "merge_conflict",
+              "summary": "GitHub reports mergeStateStatus=DIRTY, so the branch needs conflict resolution before it can be considered ready.",
+              "verification": "Merge state was refreshed with `gh pr view` for the current head."
+            }
+          ]
+        },
+        {
+          "number": 1923,
+          "title": "fix(codeexecutor): honor CleanEnv in e2b runtime",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/1923",
+          "author": "yu-xin-c",
+          "status": "skipped",
+          "skip_reason": "Mergeability gate blocked review follow-through because GitHub reports the PR as DIRTY.",
+          "readiness_audit": "Mergeability gate blocked review follow-through because GitHub reports the PR as DIRTY. Current head c424527fe8c6; CI state: green (156 checks); reviewDecision=REVIEW_REQUIRED; mergeState=DIRTY.",
+          "ci_state": "green (156 checks)",
+          "blockers": [
+            {
+              "kind": "merge_conflict",
+              "summary": "GitHub reports mergeStateStatus=DIRTY, so the branch needs conflict resolution before it can be considered ready.",
+              "verification": "Merge state was refreshed with `gh pr view` for the current head."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "reason": "not_reached_comment_only",
+      "title": "绿色但本轮未触达深审",
+      "count": 13,
+      "prs": [
+        2152,
+        2146,
+        2141,
+        2136,
+        2134,
+        2125,
+        2121,
+        2109,
+        2097,
+        2087,
+        2051,
+        2045,
+        2044
+      ],
+      "items": [
+        {
+          "number": 2152,
+          "title": "构建 Evaluation + Optimization 自动回归闭环",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2152",
+          "author": "GodBlf",
+          "status": "skipped",
+          "skip_reason": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review.",
+          "readiness_audit": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review. Current head ccbe5800be5e; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached after priority went to new or updated green candidates that needed fresh review comments. Author is outside the maintainer/member set, so explicit human maintainer LGTM remains required before merge.",
+              "verification": "The PR remains in the visible backlog rather than being hidden under a broad skip bucket."
+            }
+          ]
+        },
+        {
+          "number": 2146,
+          "title": "[codex] add replay consistency harness",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2146",
+          "author": "GodBlf",
+          "status": "skipped",
+          "skip_reason": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review.",
+          "readiness_audit": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review. Current head a3773101339c; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached after priority went to new or updated green candidates that needed fresh review comments. Author is outside the maintainer/member set, so explicit human maintainer LGTM remains required before merge.",
+              "verification": "The PR remains in the visible backlog rather than being hidden under a broad skip bucket."
+            }
+          ]
+        },
+        {
+          "number": 2141,
+          "title": "internal/telemetry:Reduce streaming TraceChat request attribute allocations",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2141",
+          "author": "cuboya",
+          "status": "skipped",
+          "skip_reason": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review.",
+          "readiness_audit": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review. Current head 4887f7ac89d8; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached after priority went to new or updated green candidates that needed fresh review comments. Author is outside the maintainer/member set, so explicit human maintainer LGTM remains required before merge.",
+              "verification": "The PR remains in the visible backlog rather than being hidden under a broad skip bucket."
+            }
+          ]
+        },
+        {
+          "number": 2136,
+          "title": "tool/safety: add pre-execution safety scanner",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2136",
+          "author": "XnLemon",
+          "status": "skipped",
+          "skip_reason": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review.",
+          "readiness_audit": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review. Current head 24f16edacb51; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached after priority went to new or updated green candidates that needed fresh review comments. Author is outside the maintainer/member set, so explicit human maintainer LGTM remains required before merge.",
+              "verification": "The PR remains in the visible backlog rather than being hidden under a broad skip bucket."
+            }
+          ]
+        },
+        {
+          "number": 2134,
+          "title": "test: add replay consistency harness",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2134",
+          "author": "Spock12138",
+          "status": "skipped",
+          "skip_reason": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review.",
+          "readiness_audit": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review. Current head 3f682edb5cfb; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached after priority went to new or updated green candidates that needed fresh review comments. Author is outside the maintainer/member set, so explicit human maintainer LGTM remains required before merge.",
+              "verification": "The PR remains in the visible backlog rather than being hidden under a broad skip bucket."
+            }
+          ]
+        },
+        {
+          "number": 2125,
+          "title": "codeexecutor, agent/llmagent: make workspace registry pluggable via WorkspaceAcquirer",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2125",
+          "author": "grignolalouis",
+          "status": "skipped",
+          "skip_reason": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review.",
+          "readiness_audit": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review. Current head 4fa403fd31dd; CI state: green (162 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached after priority went to new or updated green candidates that needed fresh review comments. Author is outside the maintainer/member set, so explicit human maintainer LGTM remains required before merge.",
+              "verification": "The PR remains in the visible backlog rather than being hidden under a broad skip bucket."
+            }
+          ]
+        },
+        {
+          "number": 2121,
+          "title": "examples/code_review_agent: add sandboxed code review agent example",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2121",
+          "author": "XnLemon",
+          "status": "skipped",
+          "skip_reason": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review.",
+          "readiness_audit": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review. Current head 194a05f4bf6a; CI state: green (164 checks); reviewDecision=REVIEW_REQUIRED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached after priority went to new or updated green candidates that needed fresh review comments. Author is outside the maintainer/member set, so explicit human maintainer LGTM remains required before merge.",
+              "verification": "The PR remains in the visible backlog rather than being hidden under a broad skip bucket."
+            }
+          ]
+        },
+        {
+          "number": 2109,
+          "title": "memoryutils: export helpers and adopt in built-in backends",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2109",
+          "author": "sks",
+          "status": "skipped",
+          "skip_reason": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review.",
+          "readiness_audit": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review. Current head 597e87acb103; CI state: green (162 checks); reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached in this run; the stale or current CHANGES_REQUESTED state still needs a fresh thread-level audit before any new review action. Author is outside the maintainer/member set, so explicit human maintainer LGTM remains required before merge.",
+              "verification": "The PR remains in the visible backlog rather than being hidden under a broad skip bucket."
+            }
+          ]
+        },
+        {
+          "number": 2097,
+          "title": "feat(session,tool/context): Pensieve context self-pruning with example",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2097",
+          "author": "sks",
+          "status": "skipped",
+          "skip_reason": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review.",
+          "readiness_audit": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review. Current head e2bb4bc8fe32; CI state: green (162 checks); reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.",
+          "ci_state": "green (162 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached in this run; the stale or current CHANGES_REQUESTED state still needs a fresh thread-level audit before any new review action. Author is outside the maintainer/member set, so explicit human maintainer LGTM remains required before merge.",
+              "verification": "The PR remains in the visible backlog rather than being hidden under a broad skip bucket."
+            }
+          ]
+        },
+        {
+          "number": 2087,
+          "title": "codeexecutor/opensandbox: add OpenSandbox remote executor",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2087",
+          "author": "Violet2314",
+          "status": "skipped",
+          "skip_reason": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review.",
+          "readiness_audit": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review. Current head fb13ad7a1485; CI state: green (163 checks); reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.",
+          "ci_state": "green (163 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached in this run; the stale or current CHANGES_REQUESTED state still needs a fresh thread-level audit before any new review action. Author is outside the maintainer/member set, so explicit human maintainer LGTM remains required before merge.",
+              "verification": "The PR remains in the visible backlog rather than being hidden under a broad skip bucket."
+            }
+          ]
+        },
+        {
+          "number": 2051,
+          "title": "session/replaytest: add multi-backend replay consistency test framework",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2051",
+          "author": "xiaosansh",
+          "status": "skipped",
+          "skip_reason": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review.",
+          "readiness_audit": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review. Current head a9c7ea990c12; CI state: green (166 checks); reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.",
+          "ci_state": "green (166 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached in this run; the stale or current CHANGES_REQUESTED state still needs a fresh thread-level audit before any new review action. Author is outside the maintainer/member set, so explicit human maintainer LGTM remains required before merge.",
+              "verification": "The PR remains in the visible backlog rather than being hidden under a broad skip bucket."
+            }
+          ]
+        },
+        {
+          "number": 2045,
+          "title": "feat: add tool execution safety guard",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2045",
+          "author": "everfid-ever",
+          "status": "skipped",
+          "skip_reason": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review.",
+          "readiness_audit": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review. Current head d4db8c603c3a; CI state: green (164 checks); reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.",
+          "ci_state": "green (164 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached in this run; the stale or current CHANGES_REQUESTED state still needs a fresh thread-level audit before any new review action. Author is outside the maintainer/member set, so explicit human maintainer LGTM remains required before merge.",
+              "verification": "The PR remains in the visible backlog rather than being hidden under a broad skip bucket."
+            }
+          ]
+        },
+        {
+          "number": 2044,
+          "title": "feat: Tool Safety Scanner with 8 rules and structured audit",
+          "url": "https://github.com/trpc-group/trpc-agent-go/pull/2044",
+          "author": "Nerdlet369",
+          "status": "skipped",
+          "skip_reason": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review.",
+          "readiness_audit": "Green or near-ready PR was visible in the ledger, but this comment-only sweep did not reach it for fresh deep review. Current head 2e7bf1ec19ad; CI state: green (161 checks); reviewDecision=CHANGES_REQUESTED; mergeState=BLOCKED.",
+          "ci_state": "green (161 checks)",
+          "blockers": [
+            {
+              "kind": "not_reached",
+              "summary": "Not reached in this run; the stale or current CHANGES_REQUESTED state still needs a fresh thread-level audit before any new review action. Author is outside the maintainer/member set, so explicit human maintainer LGTM remains required before merge.",
+              "verification": "The PR remains in the visible backlog rather than being hidden under a broad skip bucket."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "follow_up": [
+    {
+      "title": "优先复核已评论 PR 的修复",
+      "reason": "本轮 #2160、#2163、#2174 收到 8 条 inline comments，均是会影响测试可靠性、身份隔离或安全扫描有效性的 blocker。",
+      "next": "下一轮先刷新这三个 PR 的 head、checks 和 review threads，确认作者是否逐条修复。"
+    },
+    {
+      "title": "只评论模式下的 clean/deferred 结果",
+      "reason": "#2171 已深审且未发现新代码 blocker，但本轮禁止 approval/LGTM；#2164 代码层面未发现新 finding，但关联 Rhino Bird 任务仍需要人工选择和明确 maintainer LGTM。",
+      "next": "如果后续允许审批，#2171 可按最新 head 重新判断；#2164 还需要先确认人工选择/maintainer LGTM 这个 gate。"
+    },
+    {
+      "title": "增量状态仍过度保守",
+      "reason": "本轮状态对比仍把全部 open PR 归入 heavy queue，说明前后报告状态字段还没有完全稳定复用。",
+      "next": "继续把轻量状态对比需要的字段稳定到 运行状态快照，减少下轮重复深审成本。"
+    }
+  ],
+  "timeline": [
+    {
+      "event": "Repository refresh",
+      "detail": "Ran `git pull --ff-only` in the MyCR workspace; it was already up to date. Fetched target origin/main to d4f78f624."
+    },
+    {
+      "event": "Open PR snapshot",
+      "detail": "Collected 67 open PRs through REST fallback after bulk GraphQL returned 502, then refreshed per-PR checks and review decisions."
+    },
+    {
+      "event": "Comment-only review",
+      "detail": "Submitted COMMENT reviews on #2160, #2163, and #2174 only. No approval, no LGTM, no merge."
+    },
+    {
+      "event": "Clean deferred review",
+      "detail": "#2171 and #2164 were reviewed without new findings; #2157 was rechecked and no duplicate comment was posted."
+    },
+    {
+      "event": "Report QA",
+      "detail": "The report keeps all open PRs visible in processed or skipped sections and records follow-up items for later MyCR workflow improvement."
+    }
+  ],
+  "skill_evolution": [
+    {
+      "area": "State reuse",
+      "note": "The current state comparison still promoted all open PRs after one day; keep the open-PR ledger stable enough that unchanged PRs can be probed instead of treated as fresh expensive work."
+    },
+    {
+      "area": "Comment-only outcomes",
+      "note": "Clean deep reviews need a first-class displayed outcome distinct from approval, so a comment-only run can show coverage without implying LGTM."
+    },
+    {
+      "area": "Report coverage",
+      "note": "The generated report explicitly counts visible PR coverage and item-level skip reasons so green backlog, own PRs, and non-green PRs do not disappear."
+    }
+  ]
+}
