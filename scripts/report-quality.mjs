@@ -111,6 +111,7 @@ const publicForbiddenText = [
   /\bfinalizer\b/iu,
   /\bcollector\b/iu,
   /\bplanner\b/iu,
+  /performed_via_github_app/iu,
   /run cache/iu,
   /independent report QA/iu,
   /source ledger/iu,
