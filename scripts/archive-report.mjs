@@ -23,8 +23,7 @@ const privateNestedFields = new Set([
   "target_worktree_dirty_preserved",
 ]);
 const publicTextReplacements = [
-  [/openclaw\/subagentrun/giu, "openclaw/agent-run"],
-  [/subagent/giu, "agent"],
+  [/\bsubagent\b/giu, "agent"],
   [/按最新心跳重新执行/gu, "重新执行全量检查"],
   [/按照用户明确要求/gu, "本轮采用 comment-only 策略"],
   [/本轮用户要求只发 comments/gu, "本轮采用 comment-only 策略"],

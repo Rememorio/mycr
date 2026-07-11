@@ -1308,8 +1308,18 @@ function escapeHtml(value) {{
     .replaceAll("'", "&#039;");
 }}
 
+function linkifyPrReferences(html) {{
+  const repo = text(reportData.repo || "trpc-group/trpc-agent-go");
+  if (!repo) return html;
+  return html.replace(
+    /(^|[^\\w/])#(\\d{3,6})\\b/g,
+    (match, prefix, number) =>
+      `${{prefix}}<a href="https://github.com/${{repo}}/pull/${{number}}">#${{number}}</a>`
+  );
+}}
+
 function formatRich(value) {{
-  let html = escapeHtml(value);
+  let html = linkifyPrReferences(escapeHtml(value));
   const replacements = [
     [
       /(P[0-2]|codecov\\/patch=FAILURE|go-apidiff=FAILURE|go-apidiff|FAILURE|失败|阻塞|不能合入|不能 merge|未合并|破坏性|breaking|unbounded|无界|绕过|丢失|重复|不稳定|风险)/gi,
@@ -2014,8 +2024,8 @@ function renderSkipGroups() {{
   const groups = skippedGroups().map(group => {{
     const reason = group.reason || "";
     const title = lang === "zh"
-      ? text(group.title_zh || group.title || group.reason)
-      : text(group.title_en || group.title || group.reason);
+      ? text(group.title_zh || group.label || group.title || group.reason)
+      : text(group.title_en || group.label_en || group.label || group.title || group.reason);
     const items = (group.items || []).map(item => ({{
       ...item,
       status: item.status || "skipped",

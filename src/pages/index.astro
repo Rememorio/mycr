@@ -97,6 +97,7 @@ const reports = Object.entries(reportModules)
       asArray(group.items).map((item) => ({
         ...item,
         groupReason: group.reason || "",
+        groupLabel: group.label || group.title || group.reason || "",
       })),
     );
     const mergedCount = approved.filter((item) => item.status === "merged")
@@ -389,7 +390,7 @@ const statusMetrics = [
                             <ul class="skip-groups">
                               {report.skippedGroups.map((group) => (
                                 <li>
-                                  <strong>{group.reason}</strong>
+                                  <strong>{group.label || group.title || group.reason}</strong>
                                   <span>{asArray(group.items).length} PRs</span>
                                 </li>
                               ))}

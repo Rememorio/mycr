@@ -113,7 +113,7 @@ const publicForbiddenText = [
   /用户限制/u,
   /只允许 comments/u,
   /运行策略只允许/u,
-  /subagent/iu,
+  /\bsubagent\b/iu,
   /\bxhigh\b/iu,
   /\bfinalizer\b/iu,
   /\bcollector\b/iu,
