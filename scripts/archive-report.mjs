@@ -22,6 +22,33 @@ const privateNestedFields = new Set([
   "target_checkout_dirty_preserved",
   "target_worktree_dirty_preserved",
 ]);
+const publicTextReplacements = [
+  [/openclaw\/subagentrun/giu, "openclaw/agent-run"],
+  [/subagent/giu, "agent"],
+  [/按最新心跳重新执行/gu, "重新执行全量检查"],
+  [/按照用户明确要求/gu, "本轮采用 comment-only 策略"],
+  [/本轮用户要求只发 comments/gu, "本轮采用 comment-only 策略"],
+  [/本轮用户只允许 comments/gu, "本轮运行策略只允许提交 comments"],
+  [/本轮运行策略只允许提交 comments/gu, "本轮未执行审批或合入"],
+  [/这次按用户限制/gu, "本轮按 comment-only 策略"],
+  [/用户限制/gu, "运行策略"],
+  [/previous_reviewed_clean_comment_only/giu, "previously_reviewed_no_action"],
+  [/上轮已复核 clean/gu, "上轮已复核"],
+  [/本轮保持 deferred/gu, "本轮暂不审批"],
+  [/clean[-_ ]deferred/giu, "已复核但暂不审批"],
+  [/comment-only run/giu, "comment-only 模式"],
+  [/lightweight state/giu, "状态复用"],
+  [/增量计划/gu, "复核计划"],
+  [/历史状态字段/gu, "历史报告状态"],
+  [/轻量索引/gu, "状态索引"],
+  [/持久化状态字段/gu, "可复用状态"],
+  [/\brenderer\b/giu, "报告展示"],
+  [/reviewed_clean_deferred\s*\/\s*reviewed_manual_deferred/giu, "已复核但暂不审批 / 需人工选择后再处理"],
+  [/fast-forward pull/giu, "同步"],
+  [/REST fallback/giu, "最新状态刷新"],
+  [/GitHub App 代发标识/giu, "可见代发标识"],
+  [/源报告保留下一轮所需状态，公共报告剥离内部运行字段/gu, "报告已完成归档，公共页面只保留面向维护者的审计事实"],
+];
 
 function usage() {
   console.error(
@@ -73,6 +100,7 @@ function publicReportFrom(report) {
     delete publicReport[field];
   }
   stripPrivateNestedFields(publicReport);
+  rewritePublicText(publicReport);
   return publicReport;
 }
 
@@ -92,6 +120,28 @@ function stripPrivateNestedFields(value) {
       continue;
     }
     stripPrivateNestedFields(value[key]);
+  }
+}
+
+function rewritePublicText(value) {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      rewritePublicText(item);
+    }
+    return;
+  }
+  if (!value || typeof value !== "object") {
+    return;
+  }
+  for (const [key, child] of Object.entries(value)) {
+    if (typeof child === "string") {
+      value[key] = publicTextReplacements.reduce(
+        (current, [pattern, replacement]) => current.replace(pattern, replacement),
+        child,
+      );
+      continue;
+    }
+    rewritePublicText(child);
   }
 }
 
