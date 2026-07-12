@@ -134,6 +134,7 @@ const publicForbiddenText = [
   /\brenderer\b/iu,
   /reviewed_clean_deferred/iu,
   /reviewed_manual_deferred/iu,
+  /status_refreshed_waiting_trigger/iu,
   /fast-forward pull/iu,
   /\bfast-forward\b/iu,
   /origin\/wine\/june/iu,
@@ -153,6 +154,9 @@ const publicForbiddenText = [
   /cache\/fingerprint\/planning/iu,
   /计划元数据/u,
   /\brun state\b/iu,
+];
+const publicJsonOnlyForbiddenText = [
+  /\bnot_reached\b/iu,
 ];
 const publicVisiblePlaceholderText = [
   /\bundefined\b/iu,
@@ -409,6 +413,52 @@ function normalizeSkippedGroups(report) {
 function normalizeReport(report) {
   normalizeSkippedGroups(report);
   return report;
+}
+
+function skippedGroupCount(report, candidates) {
+  for (const group of asArray(report.skipped_groups)) {
+    const reason = text(group?.reason);
+    const label = text(group?.label);
+    if (candidates.some((candidate) => candidate === reason || candidate === label)) {
+      return Number(group?.count || asArray(group?.items).length || 0);
+    }
+  }
+  return undefined;
+}
+
+function validateOverviewCounts(report, problems, reportName) {
+  const overview = text(report.overview);
+  const checks = [
+    {
+      label: "required-check blocked",
+      count: skippedGroupCount(report, [
+        "hard_ci_or_required_check_failure",
+        "Required check 未通过",
+      ]),
+      patterns: [/(\d+)\s*个\s*required checks?\s*未通过/iu],
+    },
+    {
+      label: "human-confirmation deferred",
+      count: skippedGroupCount(report, [
+        "reviewed_clean_waiting_human_confirmation",
+        "已复核待人工确认",
+      ]),
+      patterns: [/(\d+)\s*个[^，。；;]*人工确认/iu],
+    },
+  ];
+  for (const check of checks) {
+    if (check.count === undefined) {
+      continue;
+    }
+    for (const pattern of check.patterns) {
+      const match = overview.match(pattern);
+      if (match && Number(match[1]) !== check.count) {
+        problems.push(
+          `${reportName}: overview ${check.label} count ${match[1]} does not match skipped group count ${check.count}`,
+        );
+      }
+    }
+  }
 }
 
 function validateTopLevel(report, problems, reportName, options = {}) {
@@ -669,6 +719,13 @@ function validatePublicValue(value, problems, reportName, pathParts = []) {
       );
     }
   }
+  for (const pattern of publicJsonOnlyForbiddenText) {
+    if (pattern.test(value)) {
+      problems.push(
+        `${reportName}: public JSON ${publicPath(pathParts)} contains internal text /${patternLabel(pattern)}/`,
+      );
+    }
+  }
 }
 
 function visibleHtmlText(rawHtml) {
@@ -763,7 +820,7 @@ function ciStateNonGreenCount(item) {
 
 function hasConcreteCiBlocker(item) {
   return asArray(item?.blockers).some((blocker) =>
-    ["ci", "soft_ci"].includes(String(blocker?.kind || "")),
+    ["ci", "soft_ci", "CI 检查", "非阻断检查"].includes(String(blocker?.kind || "")),
   );
 }
 
@@ -809,7 +866,7 @@ function validateSkippedGroups(report, problems, reportName) {
         problems.push(`${prefix} missing blockers`);
       }
       const hasManualReviewBlocker = asArray(item?.blockers).some((blocker) =>
-        ["human_review", "manual_review"].includes(String(blocker?.kind || "")),
+        ["human_review", "manual_review", "人工确认"].includes(String(blocker?.kind || "")),
       );
       if (hasManualReviewBlocker) {
         for (const field of ["skip_reason", "readiness_audit"]) {
@@ -834,7 +891,7 @@ function validateSkippedGroups(report, problems, reportName) {
           }
         }
         if (
-          ["human_review", "manual_review"].includes(kind) &&
+          ["human_review", "manual_review", "人工确认"].includes(kind) &&
           reviewer &&
           (reviewer === text(item?.author) || /bot|coderabbit/iu.test(reviewer))
         ) {
@@ -843,13 +900,13 @@ function validateSkippedGroups(report, problems, reportName) {
           );
         }
         if (
-          kind === "soft_ci" &&
+          ["soft_ci", "非阻断检查"].includes(kind) &&
           /pending|queued|in[_ -]?progress/iu.test(text(blocker?.summary))
         ) {
           problems.push(`${prefix} classifies pending check as soft_ci`);
         }
         if (
-          ["human_review", "manual_review"].includes(kind) &&
+          ["human_review", "manual_review", "人工确认"].includes(kind) &&
           hasVagueOrClippedBlockerText(blocker?.summary)
         ) {
           problems.push(`${prefix} blocker summary is vague or clipped`);
@@ -887,7 +944,14 @@ function validateSkippedGroups(report, problems, reportName) {
       ) {
         problems.push(`${prefix} is locked but omits concrete CI blockers`);
       }
-      const blockingKinds = new Set(["ci", "manual_review", "merge_conflict"]);
+      const blockingKinds = new Set([
+        "ci",
+        "manual_review",
+        "merge_conflict",
+        "CI 检查",
+        "人工确认",
+        "合并冲突",
+      ]);
       const hasHardBlocker = asArray(item?.blockers).some((blocker) =>
         blockingKinds.has(String(blocker?.kind || "")),
       );
@@ -908,6 +972,7 @@ function validateReport(report, reportName, options = {}) {
   validateTopLevel(report, problems, reportName, {
     public: Boolean(options.publicArtifact),
   });
+  validateOverviewCounts(report, problems, reportName);
   validateProcessedEntries(report, problems, reportName);
   validateProcessedRunStateConsistency(report, problems, reportName);
   validateRunStateCompleteness(report, problems, reportName);

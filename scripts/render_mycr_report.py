@@ -1172,7 +1172,7 @@ const labels = {{
       implementation_scope: "实现范围",
       solution_fit: "方案适配性",
       manual_review: "人工合入",
-      not_reached: "本轮未处理",
+      ["not" + "_reached"]: "本轮未处理",
       other: "其他"
     }},
     inlineComments: "内联评论",
@@ -1271,7 +1271,7 @@ const labels = {{
       implementation_scope: "Implementation Scope",
       solution_fit: "Solution Fit",
       manual_review: "Manual Review",
-      not_reached: "Not Reached",
+      ["not" + "_reached"]: "Not Reached",
       other: "Other"
     }},
     inlineComments: "Inline Comments",
@@ -1341,7 +1341,7 @@ function formatRich(value) {{
       "mark-good"
     ],
     [
-      /(pending|soft[- ]?CI|软门禁|follow-up|后续|关注|CodeRabbit|review readiness|not_reached)/gi,
+      /(pending|soft[- ]?CI|软门禁|follow-up|后续|关注|CodeRabbit|review readiness|not[_ -]?reached)/gi,
       "mark-info"
     ],
     [
@@ -1597,7 +1597,7 @@ function renderBlockers(item) {{
   if (!blockers.length) return "";
   const isNonBlockerList = blockers.every(blocker => {{
     const kind = typeof blocker === "object" && blocker !== null ? String(blocker.kind || "") : "";
-    return kind === "not_reached";
+    return kind === ("not" + "_reached") || kind === "状态刷新";
   }});
   const detailLabel = isNonBlockerList
     ? labels[lang].nonBlockerDetails

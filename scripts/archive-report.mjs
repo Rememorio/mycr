@@ -23,6 +23,36 @@ const privateNestedFields = new Set([
   "target_checkout_dirty_preserved",
   "target_worktree_dirty_preserved",
 ]);
+const publicReasonLabels = new Map([
+  ["reviewed_clean_waiting_human_confirmation", "已复核待人工确认"],
+  ["existing_actionable_feedback", "已有可执行反馈"],
+  ["previous_comments_waiting_author", "已有评论等待处理"],
+  ["own_pr_no_self_review", "自有 PR 不自审"],
+  ["locked_conversation_comment_delivery_risk", "会话锁定需确认评论投递"],
+  ["draft_or_wip", "Draft 或 WIP"],
+  ["hard_ci_or_required_check_failure", "Required check 未通过"],
+  ["soft_check_or_coverage_gate", "非阻断检查需确认"],
+  ["merge_conflict", "合并冲突"],
+  ["manual_review_or_existing_actionable_review", "需人工确认或已有反馈"],
+  ["not_reached_status_refresh", "状态已刷新等待触发"],
+  ["status_refreshed_waiting_trigger", "状态已刷新等待触发"],
+]);
+const publicBlockerKindLabels = new Map([
+  ["ci", "CI 检查"],
+  ["soft_ci", "非阻断检查"],
+  ["manual_review", "人工确认"],
+  ["human_review", "人工确认"],
+  ["merge_conflict", "合并冲突"],
+  ["draft_wip", "Draft 或 WIP"],
+  ["own_pr", "自有 PR"],
+  ["locked_conversation", "会话锁定"],
+  ["locked", "会话锁定"],
+  ["comment_delivery", "评论投递"],
+  ["existing_feedback", "已有反馈"],
+  ["status_refresh", "状态刷新"],
+  ["not_reached", "状态刷新"],
+  ["other", "其他"],
+]);
 const publicTextReplacements = [
   [/\bsubagent\b/giu, "agent"],
   [/按最新心跳重新执行/gu, "重新执行全量检查"],
@@ -39,7 +69,7 @@ const publicTextReplacements = [
   [/comment-only run/giu, "comment-only 模式"],
   [/\bcomment-only\b/giu, "仅评论"],
   [/lightweight state/giu, "状态复用"],
-  [/\bnot_reached_status_refresh\b/giu, "status_refreshed_waiting_trigger"],
+  [/\bnot_reached_status_refresh\b/giu, "状态已刷新等待触发"],
   [/增量计划/gu, "复核计划"],
   [/历史状态字段/gu, "历史报告状态"],
   [/轻量索引/gu, "状态索引"],
@@ -56,6 +86,7 @@ const publicTextReplacements = [
   [/GitHub App 代发标识/giu, "可见代发标识"],
   [/源 JSON\/质量检查/gu, "报告质量校验"],
   [/源 JSON/gu, "报告数据"],
+  [/源报告/gu, "报告数据"],
   [/质量检查/gu, "质量校验"],
   [/源报告保留下一轮所需状态，公共报告剥离内部运行字段/gu, "报告已完成归档，公共页面只保留面向维护者的审计事实"],
   [/计划器/gu, "复核流程"],
@@ -68,6 +99,7 @@ const publicTextReplacements = [
   [/内部运行词/gu, "内部诊断词"],
   [/\blatest report\b/giu, "最新报告"],
   [/\bRun-state\b/giu, "报告状态"],
+  [/\brun_state\b/giu, "报告状态"],
   [/\brun-state\b/giu, "报告状态"],
   [/\brun state\b/giu, "报告状态"],
   [/\bcollector\b/giu, "状态采集器"],
@@ -166,9 +198,16 @@ function rewritePublicText(value) {
   }
   for (const [key, child] of Object.entries(value)) {
     if (typeof child === "string") {
+      let publicText = child;
+      if (key === "reason" && publicReasonLabels.has(publicText)) {
+        publicText = publicReasonLabels.get(publicText);
+      }
+      if (key === "kind" && publicBlockerKindLabels.has(publicText)) {
+        publicText = publicBlockerKindLabels.get(publicText);
+      }
       value[key] = publicTextReplacements.reduce(
         (current, [pattern, replacement]) => current.replace(pattern, replacement),
-        child,
+        publicText,
       );
       continue;
     }
