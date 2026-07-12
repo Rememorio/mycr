@@ -1312,7 +1312,7 @@ function linkifyPrReferences(html) {{
   const repo = text(reportData.repo || "trpc-group/trpc-agent-go");
   if (!repo) return html;
   return html.replace(
-    /(^|[^\\w/])#(\\d{3,6})\\b/g,
+    /(^|[^\\w/])#(\\d{{3,6}})\\b/g,
     (match, prefix, number) =>
       `${{prefix}}<a href="https://github.com/${{repo}}/pull/${{number}}">#${{number}}</a>`
   );
@@ -2133,7 +2133,7 @@ function renderFollowUp() {{
     const prLink = item.url
       ? `<a href="${{escapeHtml(item.url)}}">${{prText}}</a>`
       : prText;
-    const title = escapeHtml(text(item.title || item.next || item.reason));
+    const title = formatRich(text(item.title || item.next || item.reason));
     const cardTitle = hasPrIdentity ? `${{prLink}} · ${{title}}` : title;
     const meta = item.author
       ? `<div class="meta">${{labels[lang].author}}: ${{escapeHtml(item.author)}}</div>`

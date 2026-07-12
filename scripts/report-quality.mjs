@@ -90,6 +90,7 @@ const richBlockedFields = [
   "outcome",
 ];
 const publicForbiddenKeys = new Set([
+  "comment_only",
   "run_state",
   "incremental_plan",
   "metadata_cache_key",
@@ -120,6 +121,7 @@ const publicForbiddenText = [
   /\bplanner\b/iu,
   /clean[-_ ]deferred/iu,
   /previous_reviewed_clean_comment_only/iu,
+  /\bnot_reached_status_refresh\b/iu,
   /comment-only run/iu,
   /本轮保持 deferred/u,
   /上轮已复核 clean/u,
@@ -127,14 +129,19 @@ const publicForbiddenText = [
   /增量计划/u,
   /历史状态字段/u,
   /轻量索引/u,
+  /\bcheap-index\b/iu,
   /持久化状态字段/u,
   /\brenderer\b/iu,
   /reviewed_clean_deferred/iu,
   /reviewed_manual_deferred/iu,
   /fast-forward pull/iu,
+  /\bfast-forward\b/iu,
+  /origin\/wine\/june/iu,
   /REST fallback/iu,
   /GitHub App/u,
   /源报告/u,
+  /源 JSON/u,
+  /深度复核队列/u,
   /performed_via_github_app/iu,
   /run cache/iu,
   /independent report QA/iu,
@@ -145,6 +152,7 @@ const publicForbiddenText = [
   /fingerprint/iu,
   /cache\/fingerprint\/planning/iu,
   /计划元数据/u,
+  /\brun state\b/iu,
 ];
 const publicVisiblePlaceholderText = [
   /\bundefined\b/iu,
@@ -672,6 +680,10 @@ function visibleHtmlText(rawHtml) {
 }
 
 function validatePublicHtml(rawHtml, problems, reportName) {
+  if (/#\(\\d\(3,\s*6\)\)/u.test(rawHtml)) {
+    problems.push(`${reportName}: public HTML contains broken PR reference regex`);
+  }
+
   const rawForbidden = [
     ...publicForbiddenText,
     /\brun_state\b/iu,
