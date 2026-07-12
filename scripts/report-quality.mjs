@@ -532,6 +532,57 @@ function validateProcessedRunStateConsistency(report, problems, reportName) {
   }
 }
 
+function validateRunStateCompleteness(report, problems, reportName) {
+  const stateByPr = asObject(report.run_state?.pull_requests);
+  for (const [number, state] of Object.entries(stateByPr)) {
+    for (const field of [
+      "checks_fingerprint",
+      "review_threads_fingerprint",
+      "comments_fingerprint",
+      "metadata_cache_key",
+    ]) {
+      if (!isFilled(state?.[field])) {
+        problems.push(`${reportName}: run_state PR #${number} missing ${field}`);
+      }
+    }
+    if (!Object.hasOwn(state || {}, "mergeable")) {
+      problems.push(`${reportName}: run_state PR #${number} missing mergeable`);
+    }
+    if (state?.locked && !isFilled(state?.active_lock_reason)) {
+      problems.push(`${reportName}: run_state PR #${number} locked without active_lock_reason`);
+    }
+  }
+}
+
+function validateCoverage(report, problems, reportName) {
+  const expected = Number(report.repo_info?.open_prs || 0);
+  if (!expected) {
+    return;
+  }
+  const represented = new Set();
+  for (const group of processedGroups) {
+    for (const entry of asArray(report[group])) {
+      const number = Number(entry?.number);
+      if (number) {
+        represented.add(number);
+      }
+    }
+  }
+  for (const group of asArray(report.skipped_groups)) {
+    for (const item of asArray(group?.items)) {
+      const number = Number(item?.number);
+      if (number) {
+        represented.add(number);
+      }
+    }
+  }
+  if (represented.size !== expected) {
+    problems.push(
+      `${reportName}: represented PR count ${represented.size} does not match repo_info.open_prs ${expected}`,
+    );
+  }
+}
+
 function validateFollowUp(report, problems, reportName) {
   asArray(report.follow_up).forEach((item, index) => {
     if (typeof item === "string") {
@@ -847,6 +898,8 @@ function validateReport(report, reportName, options = {}) {
   });
   validateProcessedEntries(report, problems, reportName);
   validateProcessedRunStateConsistency(report, problems, reportName);
+  validateRunStateCompleteness(report, problems, reportName);
+  validateCoverage(report, problems, reportName);
   validateSkippedGroups(report, problems, reportName);
   validateFollowUp(report, problems, reportName);
   validateTimeline(report, problems, reportName);
