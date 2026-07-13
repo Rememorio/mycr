@@ -129,6 +129,7 @@ const publicForbiddenText = [
   /增量计划/u,
   /历史状态字段/u,
   /轻量索引/u,
+  /状态已刷新/u,
   /\bcheap-index\b/iu,
   /持久化状态字段/u,
   /\brenderer\b/iu,

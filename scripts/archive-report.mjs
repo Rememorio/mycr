@@ -34,8 +34,8 @@ const publicReasonLabels = new Map([
   ["soft_check_or_coverage_gate", "非阻断检查需确认"],
   ["merge_conflict", "合并冲突"],
   ["manual_review_or_existing_actionable_review", "需人工确认或已有反馈"],
-  ["not_reached_status_refresh", "状态已刷新等待触发"],
-  ["status_refreshed_waiting_trigger", "状态已刷新等待触发"],
+  ["not_reached_status_refresh", "等待新变化后复核"],
+  ["status_refreshed_waiting_trigger", "等待新变化后复核"],
 ]);
 const publicBlockerKindLabels = new Map([
   ["ci", "CI 检查"],
@@ -49,8 +49,8 @@ const publicBlockerKindLabels = new Map([
   ["locked", "会话锁定"],
   ["comment_delivery", "评论投递"],
   ["existing_feedback", "已有反馈"],
-  ["status_refresh", "状态刷新"],
-  ["not_reached", "状态刷新"],
+  ["status_refresh", "等待新变化"],
+  ["not_reached", "等待新变化"],
   ["other", "其他"],
 ]);
 const publicTextReplacements = [
@@ -73,6 +73,8 @@ const publicTextReplacements = [
   [/增量计划/gu, "复核计划"],
   [/历史状态字段/gu, "历史报告状态"],
   [/轻量索引/gu, "状态索引"],
+  [/状态已刷新等待触发/gu, "等待新变化后复核"],
+  [/状态已刷新/gu, "等待新变化"],
   [/持久化状态字段/gu, "可复用状态"],
   [/\bcheap-index\b/giu, "状态索引"],
   [/\brenderer\b/giu, "报告展示"],
