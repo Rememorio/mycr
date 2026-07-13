@@ -122,6 +122,8 @@ const publicForbiddenText = [
   /clean[-_ ]deferred/iu,
   /previous_reviewed_clean_comment_only/iu,
   /\bnot_reached_status_refresh\b/iu,
+  /\bnot_reached_this_run\b/iu,
+  /\blate_new_pr_after_initial_scan\b/iu,
   /comment-only run/iu,
   /本轮保持 deferred/u,
   /上轮已复核 clean/u,
@@ -158,6 +160,7 @@ const publicForbiddenText = [
 ];
 const publicJsonOnlyForbiddenText = [
   /\bnot_reached\b/iu,
+  /\blate_new_pr_after_initial_scan\b/iu,
 ];
 const publicVisiblePlaceholderText = [
   /\bundefined\b/iu,

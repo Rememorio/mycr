@@ -36,6 +36,8 @@ const publicReasonLabels = new Map([
   ["manual_review_or_existing_actionable_review", "需人工确认或已有反馈"],
   ["not_reached_status_refresh", "等待新变化后复核"],
   ["status_refreshed_waiting_trigger", "等待新变化后复核"],
+  ["not_reached_this_run", "本轮未处理到"],
+  ["late_new_pr_after_initial_scan", "运行后段新增 PR"],
 ]);
 const publicBlockerKindLabels = new Map([
   ["ci", "CI 检查"],
